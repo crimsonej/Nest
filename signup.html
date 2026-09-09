@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Sign Up | UniGroup</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card wide">
+      <div class="auth-header">
+        <div class="logo-icon">UG</div>
+        <h1>Create student account</h1>
+        <p>Register to form and join course groups</p>
+      </div>
+
+      <div id="alert" class="alert hidden"></div>
+
+      <form id="signup-form">
+        <div class="form-group">
+          <label for="full_name">Full Name</label>
+          <input type="text" id="full_name" name="full_name" required placeholder="Jane Doe" autocomplete="name" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">University Email</label>
+          <input type="email" id="email" name="email" required placeholder="jane.doe@university.edu" autocomplete="email" />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password" />
+          <p class="form-hint">Minimum 8 characters</p>
+        </div>
+
+        <div class="form-group">
+          <label for="reg_number">Student Registration Number</label>
+          <input type="text" id="reg_number" name="reg_number" required placeholder="e.g. 2023/CS/001" />
+        </div>
+
+        <div class="form-group">
+          <label for="whatsapp">WhatsApp Phone Number</label>
+          <input type="tel" id="whatsapp" name="whatsapp" required placeholder="+254 7XX XXX XXX" />
+          <p class="form-hint">Include country code</p>
+        </div>
+
+        <div class="form-group">
+          <label for="course">Course / Programme</label>
+          <select id="course" name="course" required>
+            <option value="">Select your course</option>
+            <option value="BSc Computer Science">BSc Computer Science</option>
+            <option value="BSc Information Technology">BSc Information Technology</option>
+            <option value="BSc Software Engineering">BSc Software Engineering</option>
+            <option value="BSc Mathematics">BSc Mathematics</option>
+            <option value="BSc Statistics">BSc Statistics</option>
+            <option value="BA English">BA English</option>
+            <option value="BCom Business">BCom Business</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="submit-btn">Create Account</button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/signup.js"></script>
+</body>
+</html>

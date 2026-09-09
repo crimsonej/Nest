@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniGroup | University Course Group Management</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="landing">
+    <nav class="nav">
+      <div class="nav-brand">
+        <span class="logo-icon">UG</span>
+        <span class="logo-text">UniGroup</span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="login.html" class="btn btn-outline">Sign in</a>
+        <a href="signup.html" class="btn btn-primary">Student Sign up</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-content">
+        <h1>Organize course groups.<br />Collaborate smarter.</h1>
+        <p class="hero-sub">
+          A centralized platform for students to form project & study groups by course unit,
+          and for coordinators to monitor, intervene, and export everything in real time.
+        </p>
+        <div class="hero-actions">
+          <a href="signup.html" class="btn btn-primary btn-lg">Get started as Student</a>
+          <a href="login.html" class="btn btn-secondary btn-lg">Coordinator Login</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="dashboard-preview">
+          <div class="preview-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="preview-body">
+            <div class="metric-row">
+              <div class="metric-card">
+                <span class="metric-value">12</span>
+                <span class="metric-label">Course Units</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-value">248</span>
+                <span class="metric-label">Students</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-value">47</span>
+                <span class="metric-label">Active Groups</span>
+              </div>
+            </div>
+            <div class="table-preview">
+              <div class="table-row header">
+                <span>Course</span><span>Group</span><span>Leader</span><span>Members</span>
+              </div>
+              <div class="table-row">
+                <span>CSC 301</span><span>Alpha Team</span><span>Jane D.</span><span>5/5</span>
+              </div>
+              <div class="table-row">
+                <span>MTH 210</span><span>Calc Squad</span><span>John K.</span><span>4/6</span>
+              </div>
+              <div class="table-row">
+                <span>ENG 102</span><span>Writers</span><span>Amina R.</span><span>3/4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="features" class="features">
+      <h2>Built for students & coordinators</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Group Formation</h3>
+          <p>Create, browse, and join groups by course unit. Public or private visibility with join requests.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Task Tracking</h3>
+          <p>Per-coursework to-do lists: To-Do → In Progress → Submitted for both individual and group work.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Live Oversight</h3>
+          <p>Coordinators see real-time rosters, member counts, and can lock formation after deadlines.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔄</div>
+          <h3>Auto Sync</h3>
+          <p>Every new group automatically updates a Google Sheet via Edge Functions for seamless admin tracking.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛠️</div>
+          <h3>Intervention Tools</h3>
+          <p>View unassigned students, force-add/remove members, or auto-fill remaining seats randomly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📥</div>
+          <h3>Export & Reports</h3>
+          <p>CSV/Excel downloads, filterable PDF reports, and bulk roster imports.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="how-it-works">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Students register</h3>
+          <p>Sign up with full name, registration number, WhatsApp, email, and course.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Form or join groups</h3>
+          <p>Per coursework: create groups, set size limits, invite peers or accept requests.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Coordinators monitor</h3>
+          <p>Dashboard shows live groups, lock formation, intervene, and export data.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="nav-brand">
+          <span class="logo-icon">UG</span>
+          <span class="logo-text">UniGroup</span>
+        </div>
+        <p>University Course Group Management System</p>
+        <p class="muted">Built with Supabase · HTML/CSS/JS</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
