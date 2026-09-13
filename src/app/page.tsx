@@ -14,23 +14,26 @@ export default function HomePage() {
       </div>
 
       <header className="sticky top-0 z-20 border-b border-border/80 bg-background/85 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-4 py-5">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <Users className="h-5 w-5 text-white" />
+        <div className="container mx-auto flex items-center justify-between px-2.5 sm:px-4 py-3 sm:py-5">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <span className="text-xl font-semibold tracking-[0.18em] text-text-primary">NEST</span>
+              <span className="text-lg sm:text-xl font-semibold tracking-[0.18em] text-text-primary">NEST</span>
               <p className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:block">Ndejje University</p>
             </div>
           </div>
-          <nav className="flex items-center gap-4 sm:gap-6">
+          <nav className="flex items-center gap-1.5 sm:gap-4">
             <Link href="#features" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Features</Link>
             <Link href="#how-it-works" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">How It Works</Link>
             <ThemeToggle />
             <Link href="/student/dashboard" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Student portal</Link>
             <Link href="/coordinator/dashboard">
-              <Button>Coordinator portal</Button>
+              <Button size="sm" className="px-2.5 sm:px-4 text-xs sm:text-sm">
+                <span className="hidden min-[360px]:inline">Coordinator portal</span>
+                <span className="min-[360px]:hidden">Portal</span>
+              </Button>
             </Link>
           </nav>
         </div>

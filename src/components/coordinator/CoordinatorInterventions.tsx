@@ -161,12 +161,12 @@ export function CoordinatorInterventions() {
           <h1 className="text-2xl font-bold text-text-primary">Interventions & Automation</h1>
           <p className="text-text-secondary">Manage unassigned students and group assignments</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchData} loading={loading}>
+        <div className="flex flex-col min-[380px]:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={fetchData} loading={loading} className="w-full min-[380px]:w-auto">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
-          <Button onClick={handleAutoFill} loading={autoFillLoading}>
+          <Button onClick={handleAutoFill} loading={autoFillLoading} className="w-full min-[380px]:w-auto">
             <Shuffle className="h-4 w-4" />
             Auto-Assign All
           </Button>

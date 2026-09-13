@@ -14,17 +14,23 @@ export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-background/75 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-2.5 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <div className="hidden h-8 w-px bg-border sm:block" />
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{role === 'student' ? 'Student workspace' : 'Coordinator workspace'}</p>
-            <p className="mt-0.5 hidden text-sm font-medium text-text-primary sm:block">{role === 'student' ? 'Stay on top of your group work' : 'A clear view of course activity'}</p>
+          <div className="min-w-0 truncate">
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary truncate max-w-[110px] min-[400px]:max-w-none">
+              {role === 'student' ? 'Student workspace' : 'Coordinator workspace'}
+            </p>
+            <p className="mt-0.5 hidden text-sm font-medium text-text-primary md:block">
+              {role === 'student' ? 'Stay on top of your group work' : 'A clear view of course activity'}
+            </p>
           </div>
-          <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-text-muted md:flex"><MapPin className="h-3 w-3 text-primary" />Kampala Campus</div>
+          <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-text-muted lg:flex">
+            <MapPin className="h-3 w-3 text-primary" />Kampala Campus
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <ThemeToggle />
 
           <button

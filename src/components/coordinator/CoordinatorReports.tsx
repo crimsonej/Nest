@@ -232,7 +232,7 @@ export function CoordinatorReports() {
           <CardTitle>Report Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full">
             <Select
               value={reportType}
               onChange={(value) => setReportType(value as typeof reportType)}
@@ -242,21 +242,21 @@ export function CoordinatorReports() {
                 { value: 'coursework', label: 'Coursework Report' },
                 { value: 'tasks', label: 'Tasks Report' },
               ]}
-              className="w-48"
+              className="w-full sm:w-48"
             />
             <Input
               type="date"
               value={dateRange.from}
               onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
               placeholder="From Date"
-              className="w-40"
+              className="w-full sm:w-40"
             />
             <Input
               type="date"
               value={dateRange.to}
               onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
               placeholder="To Date"
-              className="w-40"
+              className="w-full sm:w-40"
             />
             <Select
               value={courseworkFilter}
@@ -265,16 +265,16 @@ export function CoordinatorReports() {
                 { value: 'all', label: 'All Coursework' },
                 ...courseworks.map(cw => ({ value: cw.id, label: `${cw.course_unit?.code} - ${cw.title}` })),
               ]}
-              className="w-56"
+              className="w-full sm:w-56"
               disabled={reportType === 'students'}
             />
           </div>
-          <div className="flex gap-2">
-            <Button onClick={handleGenerate} loading={generating} className="flex-1 sm:flex-none">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleGenerate} loading={generating} className="w-full sm:w-auto">
               <BarChart3 className="h-4 w-4" />
               Generate Report
             </Button>
-            <Button variant="outline" onClick={handleExport} disabled={data.length === 0}>
+            <Button variant="outline" onClick={handleExport} disabled={data.length === 0} className="w-full sm:w-auto">
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
