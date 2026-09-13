@@ -34,14 +34,22 @@ export function DevProfileSwitcher() {
     setLoading(true)
 
     try {
+      // Clear previous user session & cookies
+      try { await supabase.auth.signOut() } catch {}
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('nest-preview-profile', JSON.stringify(targetUser))
+        window.localStorage.setItem('nest-local-user-id', targetUser.id)
+        document.cookie = `nest-preview-user-id=${targetUser.id}; path=/; max-age=86400`
+        document.cookie = `nest-preview-role=${targetUser.role}; path=/; max-age=86400`
+        document.cookie = `nest-preview-status=${targetUser.status || 'normal'}; path=/; max-age=86400`
+      }
+
       if (isLocalDataMode()) {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nest-local-user-id', targetUser.id)
-          window.localStorage.setItem('nest-preview-profile', JSON.stringify(targetUser))
-        }
         await supabase.auth.signInWithPassword({ email: targetUser.email, password: 'local-demo' })
       } else {
-        const password = targetUser.role === 'coordinator' ? 'NestCoordinator123!' : 'NestStudent123!'
+        const isCoordRole = targetUser.role === 'coordinator' || targetUser.status === 'coordinator'
+        const password = isCoordRole ? 'NestCoordinator123!' : 'NestStudent123!'
         const { error } = await supabase.auth.signInWithPassword({
           email: targetUser.email,
           password,
@@ -53,16 +61,14 @@ export function DevProfileSwitcher() {
 
       await refreshUser()
 
-      const dest = targetUser.role === 'coordinator' ? '/coordinator/dashboard' : '/student/dashboard'
-      router.push(dest)
-      router.refresh()
-      setIsOpen(false)
+      const isCoordinatorAccess = targetUser.role === 'coordinator' || targetUser.status === 'coordinator' || targetUser.status === 'selected_coordinator'
+      const dest = isCoordinatorAccess ? '/coordinator/dashboard' : '/student/dashboard'
+      window.location.href = dest
     } catch (err) {
       setPreviewProfile(targetUser)
-      const dest = targetUser.role === 'coordinator' ? '/coordinator/dashboard' : '/student/dashboard'
-      router.push(dest)
-      router.refresh()
-      setIsOpen(false)
+      const isCoordinatorAccess = targetUser.role === 'coordinator' || targetUser.status === 'coordinator' || targetUser.status === 'selected_coordinator'
+      const dest = isCoordinatorAccess ? '/coordinator/dashboard' : '/student/dashboard'
+      window.location.href = dest
     } finally {
       setLoading(false)
       setSwitchingId(null)

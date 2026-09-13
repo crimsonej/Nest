@@ -93,7 +93,7 @@ export function CoordinatorDashboard() {
         supabase.from('course_units').select('id', { count: 'exact' }).eq('is_active', true),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'student'),
         supabase.from('groups').select('id', { count: 'exact' }).in('status', ['forming', 'active']),
-        supabase.from('group_members').select('user_id').in('groups.status', ['forming', 'active']),
+        supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active']),
         supabase.from('group_join_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
       ])
 
@@ -158,7 +158,7 @@ export function CoordinatorDashboard() {
       setRecentCourseworks(courseworksRes.data || [])
 
       const groupedStudentIds = new Set(
-        (await supabase.from('group_members').select('user_id').in('groups.status', ['forming', 'active'])).data?.map((m: { user_id: string }) => m.user_id) || []
+        (await supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active'])).data?.map((m: { user_id: string }) => m.user_id) || []
       )
       const unassigned = (unassignedRes.data || []).filter((s: { id: string }) => !groupedStudentIds.has(s.id))
       setUnassignedStudents(unassigned)

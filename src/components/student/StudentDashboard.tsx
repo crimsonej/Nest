@@ -161,7 +161,7 @@ export function StudentDashboard() {
         const [groupsRes, tasksRes, enrollmentsRes, cwRes, allUnitsRes] = await Promise.all([
           supabase
             .from('group_members')
-            .select('group:groups(id, name, status, coursework:courseworks(title, course_unit:course_units(code)))')
+            .select('group:groups!inner(id, name, status, coursework:courseworks(title, course_unit:course_units(code)))')
             .eq('user_id', user.id)
             .in('groups.status', ['forming', 'active']),
           supabase

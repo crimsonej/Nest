@@ -17,8 +17,9 @@ export async function POST(request: Request) {
         const parts = line.split(/[,;\t|]+/).map((p: string) => p.trim())
         if (parts.length >= 2) {
           const regNoCandidate = parts.find((p: string) => /\d{2}\/\d/.test(p)) || parts[1] || ''
-          const emailCandidate = parts.find((p: string) => p.includes('@')) || `${parts[0].toLowerCase().replace(/\s+/g, '')}@nest.edu`
+          const emailCandidate = parts.find((p: string) => p.includes('@')) || parts[2] || ''
           const genderCandidate = parts.find((p: string) => ['male', 'female', 'other'].includes(p.toLowerCase())) || 'female'
+          const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCandidate)
 
           parsedRows.push({
             full_name: parts[0] || 'Unknown Student',
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
             course: 'BSc Computer Science',
             faculty: 'Faculty of Computing',
             university: 'Ndejje University',
+            isValidEmail,
             isValidReg: validateRegNumber(regNoCandidate),
           })
         }
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
           course: 'BSc Computer Science',
           faculty: 'Faculty of Computing',
           university: 'Ndejje University',
+          isValidEmail: true,
           isValidReg: true,
         })
       }
@@ -65,14 +68,28 @@ export async function POST(request: Request) {
       }
 
       const verifiedRows = parsedRows.map((r) => {
-        const isDuplicateEmail = existingEmails.has(r.email.toLowerCase())
-        const isDuplicateReg = existingRegs.has(r.student_registration_number.toLowerCase())
+        const isDuplicateEmail = r.email ? existingEmails.has(r.email.toLowerCase()) : false
+        const isDuplicateReg = r.student_registration_number ? existingRegs.has(r.student_registration_number.toLowerCase()) : false
         const isDuplicate = isDuplicateEmail || isDuplicateReg
+
+        let status = 'valid_new'
+        let notes = 'Ready for database insert'
+
+        if (isDuplicate) {
+          status = 'duplicate_skipped'
+          notes = 'Duplicate record already exists in database'
+        } else if (!r.isValidEmail) {
+          status = 'invalid_email'
+          notes = 'Invalid email address format (required for account creation)'
+        } else if (!r.isValidReg) {
+          status = 'invalid_reg'
+          notes = 'Invalid Ndejje reg number format'
+        }
 
         return {
           ...r,
-          status: isDuplicate ? 'duplicate_skipped' : r.isValidReg ? 'valid_new' : 'invalid_reg',
-          notes: isDuplicate ? 'Duplicate record already exists in database' : !r.isValidReg ? 'Invalid Ndejje reg number format' : 'Ready for database insert',
+          status,
+          notes,
         }
       })
 
@@ -135,6 +152,7 @@ export async function POST(request: Request) {
       } else {
         const supabase = await createClient()
         const payload = validRows.map((r: any) => ({
+          id: crypto.randomUUID(),
           email: r.email,
           full_name: r.full_name,
           role: 'student',
