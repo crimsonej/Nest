@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils'
 export interface CheckboxProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   description?: string
+  onCheckedChange?: (checked: boolean) => void
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, label, description, id, ...props }, ref) => {
+  ({ className, label, description, id, onCheckedChange, onChange, ...props }, ref) => {
     const checkboxId = id || label.toLowerCase().replace(/\s+/g, '-')
 
     return (
@@ -24,6 +25,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             className
           )}
           {...props}
+          onChange={(event) => {
+            onChange?.(event)
+            onCheckedChange?.(event.target.checked)
+          }}
         />
         <div className="flex flex-col">
           <label htmlFor={checkboxId} className="label cursor-pointer mb-0">

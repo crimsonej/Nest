@@ -265,7 +265,8 @@ export function CoordinatorCoursework() {
             error={form.formState.errors.courseUnitId?.message}
             options={courseUnits.map((cu) => ({ value: cu.id, label: `${cu.code} - ${cu.name}` }))}
             placeholder="Select course unit"
-            {...form.register('courseUnitId')}
+            value={form.watch('courseUnitId')}
+            onChange={(value) => form.setValue('courseUnitId', value, { shouldValidate: true })}
           />
           <Input
             label="Title"
@@ -288,7 +289,8 @@ export function CoordinatorCoursework() {
                 { value: 'presentation', label: 'Presentation' },
                 { value: 'lab', label: 'Lab' },
               ]}
-              {...form.register('type')}
+              value={form.watch('type')}
+              onChange={(value) => form.setValue('type', value as 'assignment' | 'project' | 'presentation' | 'lab', { shouldValidate: true })}
             />
             <Input
               label="Lock Date & Time"

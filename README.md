@@ -2,12 +2,15 @@
 
 A centralized web platform for streamlining course unit grouping, collaborative organization, and administrative oversight for students and lecturers.
 
+Created by Kibirige Joachim Elijah.
+GitHub: https://github.com/crimsonej/crimsonej
+
 ## Features
 
 ### Student Portal
 - **Group Formation**: Create, browse, and join project/study groups by course unit
 - **Coursework Management**: Track tasks with Kanban-style boards (To Do, In Progress, Submitted)
-- **Real-time Sync**: Automatic roster updates and status changes
+- **Real-time Sync**: Supabase Realtime can be enabled for roster updates and status changes
 - **Resource Sharing**: Upload and share files within groups
 
 ### Coordinator Portal
@@ -16,7 +19,7 @@ A centralized web platform for streamlining course unit grouping, collaborative 
 - **Coursework Manager**: Create assignments, set group sizes, configure auto-lock deadlines
 - **Interventions**: Auto-assign unassigned students, manual override controls
 - **Reports**: Filterable exports (Groups, Students, Coursework, Tasks) with CSV download
-- **Google Sheets Sync**: Automated background synchronization
+- **Google Sheets Sync**: Optional background synchronization after credentials and Edge Functions are configured
 
 ## Tech Stack
 

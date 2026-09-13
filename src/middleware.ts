@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isLocalDataMode } from '@/lib/local-data'
 
 export async function middleware(request: NextRequest) {
+  if (isLocalDataMode()) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -44,8 +49,17 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login before protected layouts render.
   if (!user) {
+    if (process.env.NODE_ENV === 'development' && (isStudentPage || isCoordinatorPage)) {
+      return supabaseResponse
+    }
+    if (isStudentPage || isCoordinatorPage) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/login'
+      url.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(url)
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)

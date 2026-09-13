@@ -15,6 +15,10 @@ export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOpt
   })
 }
 
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-US').format(value)
+}
+
 export function formatDateTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleDateString('en-US', {

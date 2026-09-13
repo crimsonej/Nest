@@ -3,26 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Sign Up | UniGroup</title>
+  <title>Student Sign Up | NEST</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="auth-page">
     <div class="auth-card wide">
       <div class="auth-header">
-        <div class="logo-icon">UG</div>
-        <h1>Create student account</h1>
-        <p>Register to form and join course groups</p>
+        <div class="logo-icon">N</div>
+        <h1>Student registration</h1>
+        <p>Registration is routed through the live NEST app and the database-backed university rules.</p>
       </div>
 
-      <div id="alert" class="alert hidden"></div>
+      <div class="auth-topbar">
+        <div class="theme-switcher" aria-label="Choose site theme">
+          <button class="theme-option active" data-theme="light" type="button">Light</button>
+          <button class="theme-option" data-theme="mid" type="button">Mid</button>
+          <button class="theme-option" data-theme="dark" type="button">Dark</button>
+        </div>
+      </div>
 
-      <form id="signup-form">
-        <div class="form-group">
-          <label for="full_name">Full Name</label>
-          <input type="text" id="full_name" name="full_name" required placeholder="Jane Doe" autocomplete="name" />
+      <div class="alert">Use the live student workspace or continue through the main app while the Supabase connection is restored.</div>
+
+      <form id="signup-form" aria-disabled="true" onsubmit="return false;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" required placeholder="Jane Doe" autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+              <option value="">Select gender</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -36,15 +56,46 @@
           <p class="form-hint">Minimum 8 characters</p>
         </div>
 
-        <div class="form-group">
-          <label for="reg_number">Student Registration Number</label>
-          <input type="text" id="reg_number" name="reg_number" required placeholder="e.g. 2023/CS/001" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="university">University</label>
+            <select id="university" name="university" required>
+              <option value="">Select university</option>
+              <option value="Ndejje University - Kampala Campus">Ndejje University - Kampala Campus</option>
+              <option value="Other">Other university</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="faculty">Faculty / School</label>
+            <input type="text" id="faculty" name="faculty" placeholder="e.g. Faculty of Computing & IT" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="reg_number">Student Registration Number</label>
+            <input type="text" id="reg_number" name="reg_number" required placeholder="e.g. 26/2/222/D/2222" />
+            <p class="form-hint">Example accepted format for Ndejje first-year students</p>
+          </div>
+
+          <div class="form-group">
+            <label for="year_of_study">Year of Study</label>
+            <select id="year_of_study" name="year_of_study">
+              <option value="">Select year</option>
+              <option value="1">Year 1</option>
+              <option value="2">Year 2</option>
+              <option value="3">Year 3</option>
+              <option value="4">Year 4</option>
+              <option value="5">Year 5</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="whatsapp">WhatsApp Phone Number</label>
-          <input type="tel" id="whatsapp" name="whatsapp" required placeholder="+254 7XX XXX XXX" />
-          <p class="form-hint">Include country code</p>
+          <input type="tel" id="whatsapp" name="whatsapp" required placeholder="+256 7XX XXX XXX" />
+          <p class="form-hint">Include country code; this is only visible to members of the same group.</p>
         </div>
 
         <div class="form-group">
@@ -62,7 +113,7 @@
           </select>
         </div>
 
-        <button type="submit" class="btn btn-primary w-full" id="submit-btn">Create Account</button>
+        <button type="button" class="btn btn-primary w-full" disabled id="submit-btn">Registration temporarily disabled</button>
       </form>
 
       <div class="auth-footer">
@@ -72,6 +123,7 @@
   </div>
 
   <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/signup.js"></script>
 </body>
 </html>

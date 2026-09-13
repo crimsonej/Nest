@@ -1,15 +1,27 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  initSupabase();
+  if (!document.getElementById('login-form')) return;
 
-  // If already logged in, redirect
-  const existing = await getCurrentUser();
-  if (existing) {
-    window.location.href = existing.role === 'coordinator' ? 'coordinator.html' : 'student.html';
-    return;
-  }
+  initSupabase();
 
   const form = document.getElementById('login-form');
   const submitBtn = document.getElementById('submit-btn');
+
+  if (!supabase) {
+    showAlert('alert', 'Demo mode is active. Connect Supabase in js/config.js to enable live authentication and database access.', 'error');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Demo Mode';
+    return;
+  }
+
+  try {
+    const existing = await getCurrentUser();
+    if (existing) {
+      window.location.href = existing.role === 'coordinator' ? 'coordinator.html' : 'student.html';
+      return;
+    }
+  } catch (error) {
+    console.warn('Could not resolve current user:', error);
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -24,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (error) throw error;
 
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('users')
         .select('role')
         .eq('id', data.user.id)
         .single();

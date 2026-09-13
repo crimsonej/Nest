@@ -2,9 +2,9 @@
 
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { StudentSidebar } from './student/StudentSidebar'
-import { CoordinatorSidebar } from './coordinator/CoordinatorSidebar'
-import { TopBar } from './shared/TopBar'
+import { StudentSidebar } from '../student/StudentSidebar'
+import { CoordinatorSidebar } from '../coordinator/CoordinatorSidebar'
+import { TopBar } from './TopBar'
 import { useAuth } from '@/hooks/useAuth'
 
 interface LayoutProps {
@@ -28,14 +28,12 @@ export function AppLayout({ children, role }: LayoutProps) {
   }
 
   const Sidebar = role === 'student' ? StudentSidebar : CoordinatorSidebar
-  const sidebarWidth = 'lg:w-64'
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="workspace-surface min-h-screen bg-background">
       <Sidebar />
-      <div className={cn('transition-all duration-300', sidebarWidth, 'lg:pl-64')}>
-        <TopBar />
-        <main className="p-4 lg:p-6" role="main">
+      <div className={cn('min-h-screen transition-all duration-300', 'lg:pl-[17rem]')}>
+        <TopBar role={role} />
+        <main className="mx-auto w-full max-w-[1500px] p-4 sm:p-7 lg:p-10" role="main">
           {children}
         </main>
       </div>

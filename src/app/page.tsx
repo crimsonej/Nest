@@ -1,62 +1,79 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Users, BookOpen, Shield, BarChart3, ArrowRight, CheckCircle } from 'lucide-react'
+import DatabaseStatus from '@/components/shared/DatabaseStatus'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="site-grid min-h-screen bg-background">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
+        <div className="hero-orb hero-orb-three" />
+      </div>
+
+      <header className="sticky top-0 z-20 border-b border-white/70 bg-background/85 backdrop-blur">
+        <div className="container mx-auto flex items-center justify-between px-4 py-5">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
               <Users className="h-5 w-5 text-white" />
             </div>
-            <span className="font-semibold text-xl text-text-primary">NEST</span>
+            <div>
+              <span className="text-xl font-semibold tracking-[0.18em] text-text-primary">NEST</span>
+              <p className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:block">Ndejje University</p>
+            </div>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-text-secondary hover:text-text-primary transition-colors">Features</Link>
             <Link href="#how-it-works" className="text-text-secondary hover:text-text-primary transition-colors">How It Works</Link>
-            <Link href="/auth/login" className="text-text-secondary hover:text-text-primary transition-colors">Sign In</Link>
-            <Link href="/auth/register">
-              <Button>Get Started</Button>
+            <Link href="/student/dashboard" className="text-text-secondary hover:text-text-primary transition-colors">Student portal</Link>
+            <Link href="/coordinator/dashboard">
+              <Button>Coordinator portal</Button>
             </Link>
           </nav>
         </div>
       </header>
 
       <main>
-        <section className="container mx-auto px-4 py-20 lg:py-32 text-center">
-          <div className="max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+        <section className="container relative mx-auto px-4 py-24 lg:py-36">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              New: Real-time Google Sheets sync now available
+              Built for Ndejje University, Kampala Campus
             </div>
-            <h1 className="text-4xl lg:text-6xl font-bold text-text-primary mb-6">
-              Streamline Course Group Management
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+              Local demo mode active
+            </div>
+            <h1 className="fade-up text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary lg:text-7xl">
+              The calm center for course groups, tasks, and deadlines.
             </h1>
-            <p className="text-lg lg:text-xl text-text-secondary mb-8 max-w-2xl mx-auto">
-              A centralized platform for students and coordinators to create, manage, and track course groups with real-time synchronization and automated administrative reporting.
+            <p className="fade-up mx-auto mb-9 max-w-2xl text-lg leading-8 text-text-secondary lg:text-xl">
+              NEST gives students and coordinators one clear space to manage course units, group membership, assignments, and campus-wide coordination without duplicate data or stale information.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/auth/register">
+            <div className="fade-up flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link href="/student/dashboard">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Start Free Trial
+                  Open student portal
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
-              <Link href="#demo">
+              <Link href="/coordinator/dashboard">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  View Demo
+                  Open coordinator portal
                 </Button>
               </Link>
             </div>
+            <p className="mt-6 text-sm text-text-muted">
+              Created by Kibirige Joachim Elijah · GitHub: <a href="https://github.com/crimsonej/crimsonej" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:text-primary-hover">crimsonej/crimsonej</a>
+            </p>
+            <DatabaseStatus />
           </div>
         </section>
 
-        <section id="features" className="container mx-auto px-4 py-20">
+        <section id="features" className="container mx-auto px-4 py-24">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">Built for University Workflows</h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
@@ -64,7 +81,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-6 md:grid-cols-3">
             <FeatureCard
               icon={Users}
               title="Student Group Formation"
@@ -86,7 +103,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="bg-surface border-y border-border py-20">
+        <section id="how-it-works" className="border-y border-border bg-surface/80 py-24">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">How It Works</h2>
@@ -121,11 +138,11 @@ export default function HomePage() {
         <section className="container mx-auto px-4 py-20 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">Ready to Simplify Group Management?</h2>
           <p className="text-lg text-text-secondary mb-8 max-w-2xl mx-auto">
-            Join universities already using NEST to streamline their course group administration.
+            Register with your university details, then manage course units, groups, and coursework in one place.
           </p>
           <Link href="/auth/register">
             <Button size="lg">
-              Create Free Account
+              Register now
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </Link>
@@ -134,7 +151,10 @@ export default function HomePage() {
 
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 text-center text-text-muted">
-          <p>© 2024 NEST. Built for university course management.</p>
+          <p>© 2024 NEST. Created by Kibirige Joachim Elijah.</p>
+          <p className="mt-2">
+            GitHub: <a href="https://github.com/crimsonej/crimsonej" target="_blank" rel="noreferrer" className="font-medium text-primary hover:text-primary-hover">crimsonej/crimsonej</a>
+          </p>
         </div>
       </footer>
     </div>

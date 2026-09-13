@@ -1,0 +1,45 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { isLocalDataMode, getLocalState } from '@/lib/local-data'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET() {
+  const checkedAt = new Date().toISOString()
+
+  if (isLocalDataMode()) {
+    const state = getLocalState()
+    return NextResponse.json({
+      connected: true,
+      database: 'Local demo data',
+      universities: state.universities.length,
+      checkedAt,
+    })
+  }
+
+  try {
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from('universities')
+      .select('id', { count: 'exact', head: true })
+
+    if (error) throw error
+
+    return NextResponse.json({
+      connected: true,
+      database: 'Supabase',
+      universities: count || 0,
+      checkedAt,
+    })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : ''
+    return NextResponse.json({
+      connected: false,
+      database: 'Supabase',
+      error: errorMessage.includes('fetch failed')
+        ? 'Supabase could not be reached.'
+        : errorMessage || 'Database query failed.',
+      checkedAt,
+    }, { status: 503 })
+  }
+}

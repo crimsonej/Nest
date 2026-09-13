@@ -50,10 +50,10 @@ export function Select({
       )
     : options.filter((opt) => !opt.disabled)
 
-  const selectedOptions = multi
-    ? (value?.split(',').map((v) => options.find((o) => o.value === v)).filter(Boolean) as SelectOption[])
+  const selectedOptions: SelectOption[] = multi
+    ? value?.split(',').map((v) => options.find((o) => o.value === v)).filter((o): o is SelectOption => Boolean(o)) || []
     : value
-    ? [options.find((o) => o.value === value)].filter(Boolean)
+    ? options.filter((o) => o.value === value)
     : []
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export function Select({
   }
 
   const displayValue = multi
-    ? selectedOptions.map((o) => o.label).join(', ') || placeholder
+    ? selectedOptions.filter((o): o is SelectOption => Boolean(o)).map((o) => o.label).join(', ') || placeholder
     : selectedOptions[0]?.label || placeholder
 
   return (

@@ -37,7 +37,7 @@ export function useRealtime<T = Record<string, unknown>>({
           table,
           filter,
         },
-        (payload) => {
+        (payload: { eventType: string; new?: T; old?: T }) => {
           switch (payload.eventType) {
             case 'INSERT':
               onInsert?.(payload.new as T)
@@ -80,11 +80,11 @@ export function useRealtimeSubscription(
       )
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    return () => { void supabase.removeChannel(channel) }
   }, deps)
 }
 
-export function useLiveQuery<T>(
+export function useLiveQuery<T extends { id: string }>(
   queryFn: () => Promise<T[]>,
   deps: unknown[] = [],
   realtimeTable?: string,

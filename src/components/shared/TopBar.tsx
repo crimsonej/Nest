@@ -1,37 +1,50 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Bell, User, LogOut, Moon, Sun } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, User, LogOut, Moon, Sun, ChevronDown, Sparkles, MapPin, Radio } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from './Button'
+import { Button } from '../ui/Button'
 import { useTheme } from 'next-themes'
 
-export function TopBar({ children }: { children: React.ReactNode }) {
+export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  const cycleTheme = () => {
+    const order = ['light', 'mid', 'dark'] as const
+    const currentIndex = order.indexOf((theme as (typeof order)[number]) || 'light')
+    const nextTheme = order[(currentIndex + 1) % order.length]
+    setTheme(nextTheme)
+  }
+
   return (
-    <header className="sticky top-0 z-20 h-16 bg-surface/80 backdrop-blur-md border-b border-border">
-      <div className="flex h-full items-center justify-between px-4 lg:px-6">
-        <div className="flex items-center gap-4 lg:hidden">
-          {children}
-        </div>
-        
-        <div className="flex-1 lg:flex-none" />
-        
+    <header className="sticky top-0 z-20 border-b border-border/80 bg-background/75 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
+          <div className="hidden h-8 w-px bg-border sm:block" />
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{role === 'student' ? 'Student workspace' : 'Coordinator workspace'}</p>
+            <p className="mt-0.5 hidden text-sm font-medium text-text-primary sm:block">{role === 'student' ? 'Stay on top of your group work' : 'A clear view of course activity'}</p>
+          </div>
+          <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-text-muted md:flex"><MapPin className="h-3 w-3 text-primary" />Kampala Campus</div>
+        </div>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="mr-1 hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success md:flex"><Radio className="h-3 w-3" />Local data</div>
           <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg hover:bg-surface-hover transition-colors"
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            onClick={cycleTheme}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            aria-label="Cycle color theme"
+            title="Switch theme"
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : theme === 'mid' ? <Sparkles className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
           <button
-            className="relative p-2 rounded-lg hover:bg-surface-hover transition-colors"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             aria-label="Notifications"
             aria-expanded={notificationsOpen}
@@ -42,7 +55,7 @@ export function TopBar({ children }: { children: React.ReactNode }) {
 
           <div className="relative">
             <button
-              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-hover transition-colors"
+              className="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-surface-hover"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               aria-label="User menu"
               aria-expanded={userMenuOpen}
@@ -53,6 +66,7 @@ export function TopBar({ children }: { children: React.ReactNode }) {
               <span className="hidden sm:block text-sm font-medium text-text-primary">
                 {user?.full_name}
               </span>
+              <ChevronDown className="hidden h-4 w-4 text-text-muted sm:block" />
             </button>
 
             {userMenuOpen && (
@@ -83,5 +97,3 @@ export function TopBar({ children }: { children: React.ReactNode }) {
     </header>
   )
 }
-
-import { useState } from 'react'

@@ -1,8 +1,10 @@
+'use client'
+
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { User, Mail, Phone, IDCard, Save, Loader2 } from 'lucide-react'
+import { User, Mail, Phone, Contact, Save, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
 export default function StudentSettingsPage() {

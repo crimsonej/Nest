@@ -1,10 +1,19 @@
 /**
- * UniGroup – Supabase Configuration
- * Replace the placeholders below with your actual Supabase project credentials.
- * Get them from: Supabase Dashboard → Project Settings → API
+ * NEST – Supabase Configuration
+ * The anon key is safe for browser use; database access remains protected by RLS.
  */
-const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+window.NEST_APP = {
+  appName: 'NEST',
+  university: 'Ndejje University',
+  regNumberExample: '26/2/222/D/2222',
+  defaultTheme: 'light',
+  supports: ['light', 'mid', 'dark'],
+  demoMode: false,
+  backend: 'Supabase'
+};
+
+const SUPABASE_URL = 'https://mdnocngeawlqqthfthtk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1jAtR72jyMK4s2HudOsx0A_cQCDHRry';
 
 // Initialize Supabase client (loaded via CDN in HTML pages)
 let supabase = null;
@@ -14,6 +23,12 @@ function initSupabase() {
     console.error('Supabase JS library not loaded. Include the CDN script.');
     return null;
   }
+
+  if (SUPABASE_URL.includes('YOUR_PROJECT_REF') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
+    console.warn('NEST is running in demo mode. Configure Supabase in js/config.js to connect to the database.');
+    return null;
+  }
+
   supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return supabase;
 }
@@ -29,11 +44,13 @@ const ROLES = {
  */
 async function getCurrentUser() {
   if (!supabase) initSupabase();
+  if (!supabase) return null;
+
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session) return null;
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('id', session.user.id)
     .single();
@@ -66,7 +83,9 @@ async function requireAuth(allowedRoles = null) {
  */
 async function signOut() {
   if (!supabase) initSupabase();
-  await supabase.auth.signOut();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
   window.location.href = 'login.html';
 }
 

@@ -1,13 +1,8 @@
 import { NextAuthOptions } from 'next-auth'
-import { SupabaseAdapter } from '@auth/supabase-adapter'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { createClient } from '@supabase/supabase-js'
 
 export const authOptions: NextAuthOptions = {
-  adapter: SupabaseAdapter({
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  }),
   providers: [
     CredentialsProvider({
       name: 'Email/Password',

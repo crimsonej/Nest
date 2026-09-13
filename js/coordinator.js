@@ -74,7 +74,7 @@ async function loadCourseUnits() {
 async function loadOverview() {
   // Metrics
   const { count: courseCount } = await supabase.from('course_units').select('*', { count: 'exact', head: true });
-  const { count: studentCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+  const { count: studentCount } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student');
   const { count: groupCount } = await supabase.from('groups').select('*', { count: 'exact', head: true });
   const { count: assignCount } = await supabase.from('assignments').select('*', { count: 'exact', head: true }).eq('is_locked', false);
 
@@ -296,7 +296,7 @@ async function loadStudentsTable() {
   const courseFilter = document.getElementById('students-course-filter')?.value || '';
 
   let query = supabase
-    .from('profiles')
+    .from('users')
     .select('*, group_members(count)')
     .eq('role', 'student')
     .order('full_name');
@@ -348,7 +348,7 @@ document.getElementById('students-course-filter')?.addEventListener('change', lo
 async function loadInterventions() {
   // Students not in any group
   const { data: students } = await supabase
-    .from('profiles')
+    .from('users')
     .select('id, full_name, reg_number, course, group_members(group_id)')
     .eq('role', 'student');
 
@@ -427,7 +427,7 @@ async function autoFillRandom() {
     .eq('is_locked', false);
 
   const { data: students } = await supabase
-    .from('profiles')
+    .from('users')
     .select('id, group_members(group_id)')
     .eq('role', 'student');
 
@@ -499,7 +499,7 @@ async function exportCSV() {
 
 async function exportStudentsCSV() {
   const { data } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('role', 'student');
 

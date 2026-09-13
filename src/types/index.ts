@@ -5,9 +5,13 @@ export interface User {
   email: string
   full_name: string
   role: UserRole
+  gender?: 'male' | 'female' | 'other'
+  university?: string
   student_registration_number?: string
   whatsapp_phone?: string
+  faculty?: string
   course?: string
+  status?: 'normal' | 'coordinator' | 'selected_coordinator'
   created_at: string
   updated_at: string
 }

@@ -1,13 +1,16 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { BarChart3, Users, BookOpen, Target, TrendingUp, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
+import { Button } from '../ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { formatNumber } from '@/lib/utils'
+import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 interface MetricCardProps {
   title: string
@@ -28,7 +31,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-5 sm:p-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary">{title}</p>
@@ -43,7 +46,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
               </p>
             )}
           </div>
-          <div className={cn('p-3 rounded-xl', colorClasses[color])}>
+          <div className={cn('rounded-xl p-3', colorClasses[color])}>
             {icon}
           </div>
         </div>
@@ -57,20 +60,28 @@ export function StudentDashboard() {
   const supabase = createClient()
   const [metrics, setMetrics] = useState({
     myGroups: 0,
+    registeredCourseUnits: 0,
     activeTasks: 0,
     completedTasks: 0,
     upcomingDeadlines: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [dataError, setDataError] = useState('')
   const [recentGroups, setRecentGroups] = useState<any[]>([])
   const [recentTasks, setRecentTasks] = useState<any[]>([])
+  const [dataVersion, setDataVersion] = useState(0)
+
+  useEffect(() => {
+    if (!isLocalDataMode()) return
+    return subscribeLocalData(() => setDataVersion((version) => version + 1))
+  }, [])
 
   useEffect(() => {
     async function fetchData() {
       if (!user) return
 
       try {
-        const [groupsRes, tasksRes] = await Promise.all([
+        const [groupsRes, tasksRes, enrollmentsRes] = await Promise.all([
           supabase
             .from('group_members')
             .select('group:groups(id, name, status, coursework:courseworks(title, course_unit:course_units(code)))')
@@ -82,29 +93,39 @@ export function StudentDashboard() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(10),
+            supabase
+            .from('student_course_units')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'active'),
         ])
+
+          const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error
+        if (queryError) throw queryError
 
         const groups = groupsRes.data || []
         const tasks = tasksRes.data || []
 
         setMetrics({
           myGroups: groups.length,
-          activeTasks: tasks.filter((t) => t.status === 'in_progress').length,
-          completedTasks: tasks.filter((t) => t.status === 'completed' || t.status === 'submitted').length,
-          upcomingDeadlines: tasks.filter((t) => t.due_date && new Date(t.due_date) > new Date() && t.status !== 'completed').length,
+          registeredCourseUnits: enrollmentsRes.data?.length || 0,
+          activeTasks: tasks.filter((t: { status: string }) => t.status === 'in_progress').length,
+          completedTasks: tasks.filter((t: { status: string }) => t.status === 'completed' || t.status === 'submitted').length,
+          upcomingDeadlines: tasks.filter((t: { status: string; due_date?: string | null }) => t.due_date && new Date(t.due_date) > new Date() && t.status !== 'completed').length,
         })
 
         setRecentGroups(groups.slice(0, 5))
         setRecentTasks(tasks.slice(0, 5))
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
+        setDataError(error instanceof Error ? error.message : 'Unable to load dashboard data from Supabase.')
       } finally {
         setLoading(false)
       }
     }
 
     fetchData()
-  }, [user, supabase])
+  }, [user, dataVersion])
 
   if (loading) {
     return (
@@ -125,12 +146,26 @@ export function StudentDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Welcome back, {user?.full_name?.split(' ')[0]}!</h1>
-        <p className="text-text-secondary mt-1">Here's an overview of your academic activity.</p>
+      {dataError && (
+        <div className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm text-danger" role="alert">
+          Unable to load live dashboard data: {dataError}
+        </div>
+      )}
+      <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Student workspace</p>
+          <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">Welcome back, {user?.full_name?.split(' ')[0]}.</h1>
+          <p className="mt-1 text-text-secondary">Your groups, tasks, and deadlines at a glance.</p>
+        </div>
+        <Link href="/student/coursework">
+          <Button className="w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Find coursework
+          </Button>
+        </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="My Groups"
           value={metrics.myGroups}
@@ -138,10 +173,10 @@ export function StudentDashboard() {
           color="primary"
         />
         <MetricCard
-          title="Active Tasks"
-          value={metrics.activeTasks}
+          title="Registered Course Units"
+          value={metrics.registeredCourseUnits}
           icon={<BookOpen className="h-6 w-6" />}
-          color="warning"
+          color="primary"
         />
         <MetricCard
           title="Completed"
@@ -157,13 +192,15 @@ export function StudentDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
             <CardTitle>My Groups</CardTitle>
-            <Badge variant="primary">{recentGroups.length}</Badge>
+            <Link href="/student/groups" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
+              View all <ArrowRight className="h-4 w-4" />
+            </Link>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 py-4 sm:px-6">
             {recentGroups.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-12 w-12 mx-auto text-text-muted" />
@@ -173,7 +210,7 @@ export function StudentDashboard() {
             ) : (
               <div className="space-y-3">
                 {recentGroups.map(({ group }) => (
-                  <div key={group.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-hover transition-colors">
+                  <div key={group.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-surface-hover">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Users className="h-5 w-5 text-primary" />
@@ -196,11 +233,13 @@ export function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
             <CardTitle>Recent Tasks</CardTitle>
-            <Badge variant="secondary">{recentTasks.length}</Badge>
+            <Link href="/student/tasks" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
+              View all <ArrowRight className="h-4 w-4" />
+            </Link>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 py-4 sm:px-6">
             {recentTasks.length === 0 ? (
               <div className="text-center py-8">
                 <BookOpen className="h-12 w-12 mx-auto text-text-muted" />
@@ -210,7 +249,7 @@ export function StudentDashboard() {
             ) : (
               <div className="space-y-3">
                 {recentTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-hover transition-colors">
+                  <div key={task.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-surface-hover">
                     <div className="flex items-center gap-3">
                       <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', {
                         'bg-warning/10 text-warning': task.priority === 'high',

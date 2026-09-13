@@ -1,28 +1,45 @@
 import { z } from 'zod'
+import { resolveUniversityRule } from '@/lib/university-config'
 
 export const studentRegistrationSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
+  gender: z.enum(['male', 'female', 'other'], { errorMap: () => ({ message: 'Gender is required' }) }),
+  university: z.string().min(2, 'University is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   studentRegistrationNumber: z
     .string()
+    .trim()
     .min(6, 'Registration number must be at least 6 characters')
-    .max(15, 'Registration number must be at most 15 characters')
-    .regex(/^[A-Z0-9]+$/i, 'Registration number can only contain letters and numbers'),
+    .max(25, 'Registration number must be at most 25 characters'),
   whatsappPhone: z
     .string()
     .min(10, 'Phone number must be at least 10 digits')
     .max(15, 'Phone number must be at most 15 digits')
     .regex(/^[\d\s\-\+\(\)]+$/, 'Invalid phone number format'),
+  faculty: z.string().min(2, 'Faculty is required'),
   course: z.string().min(2, 'Course is required'),
+}).superRefine((data, ctx) => {
+  const selectedUniversity = resolveUniversityRule(data.university)
+  const pattern = new RegExp(selectedUniversity.acceptedRegNumberPattern, 'i')
+
+  if (!pattern.test(data.studentRegistrationNumber.trim())) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['studentRegistrationNumber'],
+      message: `Registration number must match ${selectedUniversity.university} format, for example ${selectedUniversity.exampleRegNumber}`,
+    })
+  }
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
 })
 
+const localIdString = z.string().min(1, 'Required value is missing')
+
 export const courseworkSchema = z.object({
-  courseUnitId: z.string().uuid('Invalid course unit'),
+  courseUnitId: localIdString,
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
   description: z.string().optional(),
   type: z.enum(['assignment', 'project', 'presentation', 'lab']),
@@ -36,7 +53,7 @@ export const courseworkSchema = z.object({
 })
 
 export const groupCreationSchema = z.object({
-  courseworkId: z.string().uuid('Invalid coursework'),
+  courseworkId: localIdString,
   name: z.string().min(3, 'Group name must be at least 3 characters').max(100),
   description: z.string().optional(),
   isPrivate: z.boolean().default(false),
@@ -44,12 +61,12 @@ export const groupCreationSchema = z.object({
 })
 
 export const groupJoinRequestSchema = z.object({
-  groupId: z.string().uuid('Invalid group'),
+  groupId: localIdString,
 })
 
 export const taskSchema = z.object({
-  groupId: z.string().uuid().optional().nullable(),
-  courseworkId: z.string().uuid('Invalid coursework'),
+  groupId: localIdString.optional().nullable(),
+  courseworkId: localIdString,
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
   description: z.string().optional(),
   status: z.enum(['todo', 'in_progress', 'submitted', 'graded']).default('todo'),
@@ -58,7 +75,7 @@ export const taskSchema = z.object({
 })
 
 export const resourceSchema = z.object({
-  groupId: z.string().uuid('Invalid group'),
+  groupId: localIdString,
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
   description: z.string().optional(),
   fileUrl: z.string().url('Invalid file URL'),
@@ -67,7 +84,7 @@ export const resourceSchema = z.object({
 })
 
 export const csvImportSchema = z.object({
-  courseworkId: z.string().uuid('Invalid coursework'),
+  courseworkId: localIdString,
   csvData: z.string().min(1, 'CSV data is required'),
 })
 

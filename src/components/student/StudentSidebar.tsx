@@ -2,15 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Bell, User } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, User, Sparkles, ListChecks } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from './Button'
+import { Button } from '../ui/Button'
 
 const navigation = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
   { name: 'My Groups', href: '/student/groups', icon: Users },
   { name: 'Coursework', href: '/student/coursework', icon: BookOpen },
+  { name: 'Tasks & deadlines', href: '/student/tasks', icon: ListChecks },
   { name: 'Settings', href: '/student/settings', icon: Settings },
 ]
 
@@ -22,7 +24,7 @@ export function StudentSidebar() {
   return (
     <>
       <button
-        className="lg:hidden fixed top-4 left-4 z-50 btn btn-outline"
+        className="fixed left-4 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-text-primary shadow-sm lg:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open menu"
       >
@@ -31,15 +33,16 @@ export function StudentSidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border transform transition-transform duration-300 lg:translate-x-0',
+          'rail-sheen fixed inset-y-0 left-0 z-40 w-[17rem] transform border-r border-[#43534d] bg-[#20312d] text-[#f4f1e9] transition-transform duration-300 lg:translate-x-0',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         aria-label="Student navigation"
       >
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between px-6 border-b border-border">
-            <Link href="/student/dashboard" className="font-semibold text-lg text-text-primary">
-              NEST
+          <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
+            <Link href="/student/dashboard" className="flex items-center gap-3 text-[#f4f1e9]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm"><Sparkles className="h-4 w-4" /></span>
+              <span><strong className="block text-base tracking-[0.16em]">NEST</strong><small className="block text-[10px] font-medium uppercase tracking-[0.12em] text-[#a7b6ad]">Student portal</small></span>
             </Link>
             <button
               className="lg:hidden p-1 rounded-lg hover:bg-surface-hover"
@@ -50,7 +53,8 @@ export function StudentSidebar() {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 p-4 overflow-y-auto" role="navigation" aria-label="Main navigation">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-6" role="navigation" aria-label="Main navigation">
+            <p className="px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#91a39a]">Workspace</p>
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
@@ -58,10 +62,10 @@ export function StudentSidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+                      ? 'bg-white/10 text-white before:absolute before:left-0 before:h-6 before:w-1 before:rounded-r-full before:bg-primary'
+                      : 'text-[#b7c4bc] hover:bg-white/5 hover:text-white'
                   )}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -72,14 +76,14 @@ export function StudentSidebar() {
             })}
           </nav>
 
-          <div className="border-t border-border p-4">
+          <div className="border-t border-white/10 p-4">
             <div className="flex items-center gap-3 px-3 py-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
+              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+                <User className="h-4 w-4 text-[#f0a35b]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-primary truncate">{user?.full_name}</p>
-                <p className="text-xs text-text-muted truncate">{user?.email}</p>
+                <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+                <p className="text-xs text-[#9eaea5] truncate">{user?.email}</p>
               </div>
             </div>
             <Button variant="outline" className="w-full mt-3" onClick={signOut}>
@@ -100,5 +104,3 @@ export function StudentSidebar() {
     </>
   )
 }
-
-import { useState } from 'react'

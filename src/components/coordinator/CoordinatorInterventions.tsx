@@ -87,6 +87,21 @@ export function CoordinatorInterventions() {
         }
       }
 
+      const { data: currentMemberships } = await supabase.from('group_members').select('group_id, user_id')
+      const duplicateMembers = new Set<string>((currentMemberships || []).map((row: any) => `${row.group_id}:${row.user_id}`))
+      if (duplicateMembers.size > 0) {
+        await Promise.all(Array.from(duplicateMembers).map(async (key: string) => {
+          const [groupId, userId] = key.split(':')
+          const existing = await supabase.from('group_members').select('id').eq('group_id', groupId).eq('user_id', userId)
+          if ((existing.data || []).length > 1) {
+            const duplicateIds = (existing.data || []).slice(1).map((row: any) => row.id)
+            if (duplicateIds.length > 0) {
+              await Promise.all(duplicateIds.map((duplicateId: string) => supabase.from('group_members').delete().eq('id', duplicateId)))
+            }
+          }
+        }))
+      }
+
       fetchData()
     } catch (error) {
       console.error('Auto-fill error:', error)

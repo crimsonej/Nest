@@ -3,46 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In | UniGroup</title>
+  <title>Sign In | NEST</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="auth-page">
     <div class="auth-card">
       <div class="auth-header">
-        <div class="logo-icon">UG</div>
-        <h1>Welcome back</h1>
-        <p>Sign in to your UniGroup account</p>
+        <div class="logo-icon">N</div>
+        <h1>Choose a workspace</h1>
+        <p>Use the live NEST portals below to continue to the student or coordinator workspace.</p>
       </div>
 
-      <div id="alert" class="alert hidden"></div>
-
-      <form id="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required placeholder="you@university.edu" autocomplete="email" />
+      <div class="auth-topbar">
+        <div class="theme-switcher" aria-label="Choose site theme">
+          <button class="theme-option active" data-theme="light" type="button">Light</button>
+          <button class="theme-option" data-theme="mid" type="button">Mid</button>
+          <button class="theme-option" data-theme="dark" type="button">Dark</button>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required placeholder="Your password" autocomplete="current-password" />
-        </div>
-
-        <button type="submit" class="btn btn-primary w-full" id="submit-btn">Sign In</button>
-      </form>
+      <div class="portal-choice">
+        <a href="student.html" class="btn btn-primary btn-lg w-full">Open student portal</a>
+        <a href="coordinator.html" class="btn btn-secondary btn-lg w-full">Open coordinator portal</a>
+      </div>
 
       <div class="auth-footer">
-        Student without an account? <a href="signup.html">Sign up</a><br />
+        The active application workspace is the Next.js NEST app. Static fallback pages are kept for local navigation while the backend connectivity is restored.<br />
         <span class="text-sm text-muted" style="display:block;margin-top:0.75rem">
-          Coordinators: use credentials provided by your administrator.
+          Faculty and selected coordinators: use the credentials provided by your administrator.
         </span>
       </div>
     </div>
   </div>
 
   <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/login.js"></script>
 </body>
 </html>

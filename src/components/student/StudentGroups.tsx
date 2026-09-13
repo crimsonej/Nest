@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Search, Filter, ChevronDown, Users, Lock, Globe } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { groupCreationSchema } from '@/lib/validators'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DataTable } from '../ui/DataTable'
 
@@ -25,10 +25,13 @@ export function StudentGroups() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [courseworkFilter, setCourseworkFilter] = useState('all')
   const [courseworks, setCourseworks] = useState<any[]>([])
+  const [myGroupIds, setMyGroupIds] = useState<Set<string>>(new Set())
+  const [myCourseworkGroups, setMyCourseworkGroups] = useState<Record<string, string[]>>({})
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [joinModalOpen, setJoinModalOpen] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
+  const [joinMessage, setJoinMessage] = useState('')
 
   const form = useForm({
     resolver: zodResolver(groupCreationSchema),
@@ -53,6 +56,33 @@ export function StudentGroups() {
       .eq('is_published', true)
       .order('created_at', { ascending: false })
     setCourseworks(data || [])
+  }
+
+  async function fetchMyMemberships() {
+    if (!user?.id) {
+      setMyGroupIds(new Set())
+      setMyCourseworkGroups({})
+      return
+    }
+
+    const { data } = await supabase
+      .from('group_members')
+      .select('group_id, groups!inner(coursework_id)')
+      .eq('user_id', user.id)
+
+    const nextGroupIds = new Set<string>()
+    const nextMyCourseworkGroups: Record<string, string[]> = {}
+
+    for (const member of data || []) {
+      if (member.group_id) nextGroupIds.add(member.group_id)
+      const courseworkId = (member as any).groups?.coursework_id
+      if (courseworkId) {
+        nextMyCourseworkGroups[courseworkId] = [...(nextMyCourseworkGroups[courseworkId] || []), member.group_id].filter(Boolean)
+      }
+    }
+
+    setMyGroupIds(nextGroupIds)
+    setMyCourseworkGroups(nextMyCourseworkGroups)
   }
 
   async function fetchGroups() {
@@ -82,8 +112,12 @@ export function StudentGroups() {
         query = query.ilike('name', `%${searchQuery}%`)
       }
 
-      const { data } = await query.order('created_at', { ascending: false })
-      setGroups(data || [])
+      const [groupsResponse, membershipsResponse] = await Promise.all([
+        query.order('created_at', { ascending: false }),
+        fetchMyMemberships(),
+      ])
+
+      setGroups(groupsResponse.data || [])
     } catch (error) {
       console.error('Error fetching groups:', error)
     } finally {
@@ -91,24 +125,26 @@ export function StudentGroups() {
     }
   }
 
-  async function fetchMyGroups() {
-    const { data } = await supabase
-      .from('group_members')
-      .select('group:groups(*)')
-      .eq('user_id', user?.id)
-    return data?.map((d) => d.group).filter(Boolean) || []
-  }
-
   const onSubmit = async (values: any) => {
     setCreating(true)
+    setJoinMessage('')
     try {
+      if (!user?.id) {
+        throw new Error('You need to be signed in before creating a group.')
+      }
+
+      const existingCourseworkGroups = myCourseworkGroups[values.courseworkId] || []
+      if (existingCourseworkGroups.length > 0) {
+        throw new Error('You are already in a group for this coursework. One group per course unit is allowed.')
+      }
+
       const { data: group, error } = await supabase
         .from('groups')
         .insert({
           coursework_id: values.courseworkId,
           name: values.name,
           description: values.description,
-          leader_id: user?.id,
+          leader_id: user.id,
           is_private: values.isPrivate,
           max_members: values.maxMembers,
           status: 'forming',
@@ -118,23 +154,32 @@ export function StudentGroups() {
 
       if (error) throw error
 
-      await supabase.from('group_members').insert({
+      const membershipInsert = await supabase.from('group_members').insert({
         group_id: group.id,
-        user_id: user?.id,
+        user_id: user.id,
         role: 'leader',
       })
 
+      if (membershipInsert.error) throw membershipInsert.error
+
       setCreateModalOpen(false)
       form.reset()
-      fetchGroups()
+      await fetchGroups()
     } catch (error) {
       console.error('Error creating group:', error)
+      setJoinMessage(error instanceof Error ? error.message : 'Unable to create the group')
     } finally {
       setCreating(false)
     }
   }
 
   const handleJoin = async (groupId: string) => {
+    const selectedCourseworkId = groups.find((group) => group.id === groupId)?.coursework_id
+    if (selectedCourseworkId && myCourseworkGroups[selectedCourseworkId]?.length) {
+      setJoinMessage('You already belong to a group in this coursework. One group per course unit is allowed.')
+      return
+    }
+
     const { error } = await supabase.from('group_members').insert({
       group_id: groupId,
       user_id: user?.id,
@@ -143,16 +188,28 @@ export function StudentGroups() {
     if (!error) {
       fetchGroups()
       setJoinModalOpen(false)
+      setJoinMessage('')
+    } else {
+      setJoinMessage(error.message || 'Unable to join this group.')
     }
   }
 
   const handleRequestJoin = async (groupId: string) => {
+    const selectedCourseworkId = groups.find((group) => group.id === groupId)?.coursework_id
+    if (selectedCourseworkId && myCourseworkGroups[selectedCourseworkId]?.length) {
+      setJoinMessage('You already belong to a group in this coursework, so this request is blocked.')
+      return
+    }
+
     const { error } = await supabase.from('group_join_requests').insert({
       group_id: groupId,
       user_id: user?.id,
     })
     if (!error) {
       setJoinModalOpen(false)
+      setJoinMessage('')
+    } else {
+      setJoinMessage(error.message || 'Unable to request group access.')
     }
   }
 
@@ -162,9 +219,6 @@ export function StudentGroups() {
     const matchesCoursework = courseworkFilter === 'all' || g.coursework_id === courseworkFilter
     return matchesSearch && matchesStatus && matchesCoursework
   })
-
-  const myGroupIds = new Set()
-  // This would be populated from fetchMyGroups
 
   const columns = [
     {
@@ -261,6 +315,12 @@ export function StudentGroups() {
         </Button>
       </div>
 
+      {joinMessage && (
+        <div className="rounded-xl border border-warning/20 bg-warning-light px-4 py-3 text-sm text-warning">
+          {joinMessage}
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -307,12 +367,19 @@ export function StudentGroups() {
 
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Create New Group" size="lg">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Select
-            label="Coursework"
-            error={form.formState.errors.courseworkId?.message}
-            options={courseworks.map((cw) => ({ value: cw.id, label: `${cw.course_unit?.code} - ${cw.title}` }))}
-            placeholder="Select coursework"
-            {...form.register('courseworkId')}
+          <Controller
+            name="courseworkId"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                label="Coursework"
+                error={form.formState.errors.courseworkId?.message}
+                options={courseworks.map((cw) => ({ value: cw.id, label: `${cw.course_unit?.code} - ${cw.title}` }))}
+                placeholder="Select coursework"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
           />
           <Input
             label="Group Name"
@@ -327,14 +394,24 @@ export function StudentGroups() {
             placeholder="5"
             {...form.register('maxMembers', { valueAsNumber: true })}
           />
-          <Select
-            label="Visibility"
-            options={[
-              { value: 'false', label: 'Public - Anyone can join' },
-              { value: 'true', label: 'Private - Requires approval' },
-            ]}
-            {...form.register('isPrivate')}
+          <Controller
+            name="isPrivate"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                label="Visibility"
+                options={[
+                  { value: 'false', label: 'Public - Anyone can join' },
+                  { value: 'true', label: 'Private - Requires approval' },
+                ]}
+                value={String(field.value)}
+                onChange={(value) => field.onChange(value === 'true')}
+              />
+            )}
           />
+          <div className="rounded-xl border border-primary/15 bg-primary/[0.04] p-3 text-sm text-text-secondary">
+            WhatsApp visibility stays private to group members only and coordinator-managed group links are added to the course or faculty space.
+          </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setCreateModalOpen(false)}>
               Cancel

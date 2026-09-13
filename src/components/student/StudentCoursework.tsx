@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, Filter, BookOpen, Clock, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Plus, Search, Filter, BookOpen, Clock, Lock, CheckCircle, AlertTriangle, UserPlus, UserMinus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -11,6 +11,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, formatRelativeTime } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
+import { Modal } from '../ui/Modal'
+import { cn } from '@/lib/utils'
 
 export function StudentCoursework() {
   const { user } = useAuth()
@@ -23,10 +25,42 @@ export function StudentCoursework() {
   const [selectedCoursework, setSelectedCoursework] = useState<any>(null)
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [tasks, setTasks] = useState<any[]>([])
+  const [courseUnits, setCourseUnits] = useState<any[]>([])
+  const [enrolledUnitIds, setEnrolledUnitIds] = useState<Set<string>>(new Set())
+  const [enrollmentError, setEnrollmentError] = useState('')
 
   useEffect(() => {
     fetchCourseworks()
+    fetchEnrollments()
   }, [user])
+
+  async function fetchEnrollments() {
+    if (!user) return
+    const [{ data: units, error: unitsError }, { data: enrollments, error: enrollmentsError }] = await Promise.all([
+      supabase.from('course_units').select('id, code, name, description').eq('is_active', true).order('code'),
+      supabase.from('student_course_units').select('course_unit_id').eq('user_id', user.id).eq('status', 'active'),
+    ])
+    if (unitsError || enrollmentsError) {
+      setEnrollmentError((unitsError || enrollmentsError)?.message || 'Unable to load course-unit enrollment.')
+      return
+    }
+    setCourseUnits(units || [])
+    setEnrolledUnitIds(new Set((enrollments || []).map((enrollment: { course_unit_id: string }) => enrollment.course_unit_id)))
+  }
+
+  async function toggleEnrollment(courseUnitId: string) {
+    if (!user) return
+    setEnrollmentError('')
+    const isEnrolled = enrolledUnitIds.has(courseUnitId)
+    const result = isEnrolled
+      ? await supabase.from('student_course_units').update({ status: 'withdrawn' }).eq('user_id', user.id).eq('course_unit_id', courseUnitId)
+      : await supabase.from('student_course_units').upsert({ user_id: user.id, course_unit_id: courseUnitId, status: 'active' }, { onConflict: 'user_id,course_unit_id' })
+    if (result.error) {
+      setEnrollmentError(result.error.message)
+      return
+    }
+    await fetchEnrollments()
+  }
 
   async function fetchCourseworks() {
     setLoading(true)
@@ -140,6 +174,32 @@ export function StudentCoursework() {
           <p className="text-text-secondary">View and manage your coursework tasks and deadlines</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>My Course Units</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {enrollmentError && <p className="rounded-lg bg-danger-light p-3 text-sm text-danger" role="alert">{enrollmentError}</p>}
+          {courseUnits.length === 0 ? (
+            <p className="text-sm text-text-muted">No active course units are available.</p>
+          ) : courseUnits.map((courseUnit) => {
+            const enrolled = enrolledUnitIds.has(courseUnit.id)
+            return (
+              <div key={courseUnit.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                <div>
+                  <p className="font-medium text-text-primary">{courseUnit.code} - {courseUnit.name}</p>
+                  <p className="text-sm text-text-muted">{courseUnit.description || 'Course unit enrollment'}</p>
+                </div>
+                <Button variant={enrolled ? 'outline' : 'primary'} size="sm" onClick={() => toggleEnrollment(courseUnit.id)}>
+                  {enrolled ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  {enrolled ? 'Remove' : 'Register'}
+                </Button>
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-4">

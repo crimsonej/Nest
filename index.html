@@ -3,37 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UniGroup | University Course Group Management</title>
+  <title>NEST | University Course Group Management</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="landing">
     <nav class="nav">
       <div class="nav-brand">
-        <span class="logo-icon">UG</span>
-        <span class="logo-text">UniGroup</span>
+        <span class="logo-icon">N</span>
+        <span class="logo-text">NEST</span>
       </div>
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#how-it-works">How it works</a>
-        <a href="login.html" class="btn btn-outline">Sign in</a>
-        <a href="signup.html" class="btn btn-primary">Student Sign up</a>
+        <div class="theme-switcher" aria-label="Choose site theme">
+          <button class="theme-option active" data-theme="light" type="button">Light</button>
+          <button class="theme-option" data-theme="mid" type="button">Mid</button>
+          <button class="theme-option" data-theme="dark" type="button">Dark</button>
+        </div>
+        <a href="/student/dashboard" class="btn btn-outline">Student portal</a>
+        <a href="/coordinator/dashboard" class="btn btn-primary">Coordinator portal</a>
       </div>
     </nav>
 
     <header class="hero">
       <div class="hero-content">
+        <p class="eyebrow">Ndejje University - Kampala Campus</p>
         <h1>Organize course groups.<br />Collaborate smarter.</h1>
         <p class="hero-sub">
-          A centralized platform for students to form project & study groups by course unit,
-          and for coordinators to monitor, intervene, and export everything in real time.
+          NEST connects students, selected coordinators, and faculty staff in one dynamic system for course unit management,
+          group formation, assignment tracking, and university-ready reporting.
         </p>
         <div class="hero-actions">
-          <a href="signup.html" class="btn btn-primary btn-lg">Get started as Student</a>
-          <a href="login.html" class="btn btn-secondary btn-lg">Coordinator Login</a>
+          <a href="/student/dashboard" class="btn btn-primary btn-lg">Open student portal</a>
+          <a href="/coordinator/dashboard" class="btn btn-secondary btn-lg">Open coordinator portal</a>
         </div>
       </div>
       <div class="hero-visual">
@@ -46,30 +52,30 @@
           <div class="preview-body">
             <div class="metric-row">
               <div class="metric-card">
-                <span class="metric-value">12</span>
+                <span class="metric-value">Live</span>
                 <span class="metric-label">Course Units</span>
               </div>
               <div class="metric-card">
-                <span class="metric-value">248</span>
+                <span class="metric-value">Live</span>
                 <span class="metric-label">Students</span>
               </div>
               <div class="metric-card">
-                <span class="metric-value">47</span>
-                <span class="metric-label">Active Groups</span>
+                <span class="metric-value">Live</span>
+                <span class="metric-label">Groups</span>
               </div>
             </div>
             <div class="table-preview">
               <div class="table-row header">
-                <span>Course</span><span>Group</span><span>Leader</span><span>Members</span>
+                <span>Course</span><span>Group</span><span>Leader</span><span>Status</span>
               </div>
               <div class="table-row">
-                <span>CSC 301</span><span>Alpha Team</span><span>Jane D.</span><span>5/5</span>
+                <span>Awaiting sync</span><span>Pending</span><span>—</span><span>Loading</span>
               </div>
               <div class="table-row">
-                <span>MTH 210</span><span>Calc Squad</span><span>John K.</span><span>4/6</span>
+                <span>Awaiting sync</span><span>Pending</span><span>—</span><span>Loading</span>
               </div>
               <div class="table-row">
-                <span>ENG 102</span><span>Writers</span><span>Amina R.</span><span>3/4</span>
+                <span>Awaiting sync</span><span>Pending</span><span>—</span><span>Loading</span>
               </div>
             </div>
           </div>
@@ -82,33 +88,33 @@
       <div class="feature-grid">
         <div class="feature-card">
           <div class="feature-icon">👥</div>
-          <h3>Group Formation</h3>
-          <p>Create, browse, and join groups by course unit. Public or private visibility with join requests.</p>
+          <h3>Smart Group Formation</h3>
+          <p>Students can form, browse, and join course-based groups while the system guards against duplicate memberships and invalid data.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📋</div>
-          <h3>Task Tracking</h3>
-          <p>Per-coursework to-do lists: To-Do → In Progress → Submitted for both individual and group work.</p>
+          <h3>Task & Deadline Tracking</h3>
+          <p>Assignments and coursework timelines are surfaced with completion status, missed work, and nearest deadline countdowns.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📊</div>
           <h3>Live Oversight</h3>
-          <p>Coordinators see real-time rosters, member counts, and can lock formation after deadlines.</p>
+          <p>Coordinators monitor rosters, unassigned students, group balance and course unit health in one place.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔄</div>
-          <h3>Auto Sync</h3>
-          <p>Every new group automatically updates a Google Sheet via Edge Functions for seamless admin tracking.</p>
+          <h3>Dynamic University Rules</h3>
+          <p>Registration number validation is flexible per university, faculty, intake, program and course structure.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🛠️</div>
           <h3>Intervention Tools</h3>
-          <p>View unassigned students, force-add/remove members, or auto-fill remaining seats randomly.</p>
+          <p>Force-add members, lock group creation, reassign leaders and manage orphaned students with clear admin controls.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📥</div>
-          <h3>Export & Reports</h3>
-          <p>CSV/Excel downloads, filterable PDF reports, and bulk roster imports.</p>
+          <h3>Reports & Data Imports</h3>
+          <p>Support includes spreadsheet imports, CSV exports, Google Sheets sync and audit logging for safe data updates.</p>
         </div>
       </div>
     </section>
@@ -119,17 +125,17 @@
         <div class="step">
           <div class="step-num">1</div>
           <h3>Students register</h3>
-          <p>Sign up with full name, registration number, WhatsApp, email, and course.</p>
+          <p>Sign up with full name, registration number, WhatsApp, gender, email, and programme details.</p>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <h3>Form or join groups</h3>
-          <p>Per coursework: create groups, set size limits, invite peers or accept requests.</p>
+          <p>Group creation rules, capacity limits and randomizer tools help keep the process balanced and fair.</p>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <h3>Coordinators monitor</h3>
-          <p>Dashboard shows live groups, lock formation, intervene, and export data.</p>
+          <p>Faculty and selected coordinators can track coursework, publish tasks and intervene when needed.</p>
         </div>
       </div>
     </section>
@@ -137,13 +143,16 @@
     <footer class="footer">
       <div class="footer-inner">
         <div class="nav-brand">
-          <span class="logo-icon">UG</span>
-          <span class="logo-text">UniGroup</span>
+          <span class="logo-icon">N</span>
+          <span class="logo-text">NEST</span>
         </div>
         <p>University Course Group Management System</p>
-        <p class="muted">Built with Supabase · HTML/CSS/JS</p>
+        <p class="muted">Built for Ndejje University - Kampala Campus · Supabase · NEST</p>
       </div>
     </footer>
   </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
 </body>
 </html>

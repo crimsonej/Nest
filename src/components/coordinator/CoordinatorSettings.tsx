@@ -7,6 +7,7 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Checkbox } from '../ui/Checkbox'
+import { Badge } from '../ui/Badge'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from 'next-themes'
@@ -91,7 +92,7 @@ export function CoordinatorSettings() {
               <p className="font-medium text-text-primary">Theme</p>
               <p className="text-sm text-text-muted">Choose your preferred color scheme</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={theme === 'light' ? 'primary' : 'outline'}
                 onClick={() => setTheme('light')}
@@ -99,16 +100,16 @@ export function CoordinatorSettings() {
                 <Sun className="h-4 w-4 mr-2" /> Light
               </Button>
               <Button
+                variant={theme === 'mid' ? 'primary' : 'outline'}
+                onClick={() => setTheme('mid')}
+              >
+                <Globe className="h-4 w-4 mr-2" /> Mid
+              </Button>
+              <Button
                 variant={theme === 'dark' ? 'primary' : 'outline'}
                 onClick={() => setTheme('dark')}
               >
                 <Moon className="h-4 w-4 mr-2" /> Dark
-              </Button>
-              <Button
-                variant={theme === 'system' ? 'primary' : 'outline'}
-                onClick={() => setTheme('system')}
-              >
-                <Globe className="h-4 w-4 mr-2" /> System
               </Button>
             </div>
           </div>

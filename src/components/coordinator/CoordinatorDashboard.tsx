@@ -1,14 +1,16 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Users, BookOpen, Target, TrendingUp, AlertCircle, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownRight, ArrowRight, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { formatNumber } from '@/lib/utils'
+import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
+import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 interface MetricCardProps {
   title: string
@@ -69,14 +71,21 @@ export function CoordinatorDashboard() {
     pendingJoinRequests: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [dataError, setDataError] = useState('')
   const [recentGroups, setRecentGroups] = useState<any[]>([])
   const [recentCourseworks, setRecentCourseworks] = useState<any[]>([])
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([])
+  const [dataVersion, setDataVersion] = useState(0)
+
+  useEffect(() => {
+    if (!isLocalDataMode()) return
+    return subscribeLocalData(() => setDataVersion((version) => version + 1))
+  }, [])
 
   useEffect(() => {
     fetchMetrics()
     fetchRecentData()
-  }, [user])
+  }, [user, dataVersion])
 
   async function fetchMetrics() {
     try {
@@ -88,10 +97,13 @@ export function CoordinatorDashboard() {
         supabase.from('group_join_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
       ])
 
+      const queryError = unitsRes.error || studentsRes.error || groupsRes.error || membersRes.error || requestsRes.error
+      if (queryError) throw queryError
+
       const activeCourseUnits = unitsRes.count || 0
       const totalStudents = studentsRes.count || 0
       const totalGroups = groupsRes.count || 0
-      const groupedStudents = new Set(membersRes.data?.map((m) => m.user_id) || []).size
+      const groupedStudents = new Set(membersRes.data?.map((m: { user_id: string }) => m.user_id) || []).size
       const groupFormationRate = totalStudents > 0 ? Math.round((groupedStudents / totalStudents) * 100) : 0
       const unassignedStudents = totalStudents - groupedStudents
       const pendingJoinRequests = requestsRes.count || 0
@@ -106,6 +118,7 @@ export function CoordinatorDashboard() {
       })
     } catch (error) {
       console.error('Error fetching metrics:', error)
+      setDataError(error instanceof Error ? error.message : 'Unable to load coordinator metrics from Supabase.')
     }
   }
 
@@ -138,16 +151,20 @@ export function CoordinatorDashboard() {
           .limit(10),
       ])
 
+      const queryError = groupsRes.error || courseworksRes.error || unassignedRes.error
+      if (queryError) throw queryError
+
       setRecentGroups(groupsRes.data || [])
       setRecentCourseworks(courseworksRes.data || [])
 
       const groupedStudentIds = new Set(
-        (await supabase.from('group_members').select('user_id').in('groups.status', ['forming', 'active'])).data?.map((m) => m.user_id) || []
+        (await supabase.from('group_members').select('user_id').in('groups.status', ['forming', 'active'])).data?.map((m: { user_id: string }) => m.user_id) || []
       )
-      const unassigned = (unassignedRes.data || []).filter((s) => !groupedStudentIds.has(s.id))
+      const unassigned = (unassignedRes.data || []).filter((s: { id: string }) => !groupedStudentIds.has(s.id))
       setUnassignedStudents(unassigned)
     } catch (error) {
       console.error('Error fetching recent data:', error)
+      setDataError(error instanceof Error ? error.message : 'Unable to load coordinator data from Supabase.')
     } finally {
       setLoading(false)
     }
@@ -174,12 +191,52 @@ export function CoordinatorDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Coordinator Dashboard</h1>
-        <p className="text-text-secondary mt-1">Overview of course units, students, and group activity</p>
+      {dataError && (
+        <div className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm text-danger" role="alert">
+          Unable to load live dashboard data: {dataError}
+        </div>
+      )}
+      <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Coordinator overview</p>
+          <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">Keep every group moving.</h1>
+          <p className="mt-1 text-text-secondary">Monitor course activity and resolve the next priority from one place.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/coordinator/coursework">
+            <Button variant="outline" size="sm">
+              <Plus className="h-4 w-4" />
+              New coursework
+            </Button>
+          </Link>
+          <Link href="/coordinator/interventions">
+            <Button size="sm">
+              Review priorities
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {(metrics.unassignedStudents > 0 || metrics.pendingJoinRequests > 0) && (
+        <div className="flex flex-col gap-3 rounded-xl border border-warning/25 bg-warning-light/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <p className="text-sm text-text-primary">
+              <span className="font-semibold">Attention needed:</span>{' '}
+              {metrics.unassignedStudents > 0 && `${metrics.unassignedStudents} student${metrics.unassignedStudents === 1 ? '' : 's'} without a group`}
+              {metrics.unassignedStudents > 0 && metrics.pendingJoinRequests > 0 && ' and '}
+              {metrics.pendingJoinRequests > 0 && `${metrics.pendingJoinRequests} pending join request${metrics.pendingJoinRequests === 1 ? '' : 's'}`}.
+            </p>
+          </div>
+          <Link href="/coordinator/interventions" className="inline-flex items-center gap-1 text-sm font-semibold text-warning hover:underline">
+            Open interventions
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           title="Active Course Units"
           value={metrics.activeCourseUnits}
@@ -218,13 +275,13 @@ export function CoordinatorDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
             <CardTitle>Recent Groups</CardTitle>
             <Badge variant="primary">{recentGroups.length}</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 py-4 sm:px-6">
             {recentGroups.length === 0 ? (
               <p className="text-text-muted text-center py-8">No groups formed yet</p>
             ) : (
@@ -250,11 +307,11 @@ export function CoordinatorDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
             <CardTitle>Unassigned Students</CardTitle>
             <Badge variant="danger">{unassignedStudents.length}</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 py-4 sm:px-6">
             {unassignedStudents.length === 0 ? (
               <p className="text-text-muted text-center py-8">All students are assigned to groups</p>
             ) : (
@@ -283,10 +340,10 @@ export function CoordinatorDashboard() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="px-5 py-4 sm:px-6">
           <CardTitle>Recent Coursework</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-5 py-4 sm:px-6">
           <DataTable
             columns={[
               { key: 'title', header: 'Coursework', render: (row: any) => (

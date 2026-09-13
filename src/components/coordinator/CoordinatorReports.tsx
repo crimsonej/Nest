@@ -235,7 +235,7 @@ export function CoordinatorReports() {
           <div className="flex flex-wrap gap-4">
             <Select
               value={reportType}
-              onChange={setReportType}
+              onChange={(value) => setReportType(value as typeof reportType)}
               options={[
                 { value: 'groups', label: 'Groups Report' },
                 { value: 'students', label: 'Students Report' },

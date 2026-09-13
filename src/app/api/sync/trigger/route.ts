@@ -27,16 +27,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Trigger the Edge Function
-    const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/google-sheets-sync`
-    await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ entity_type, entity_id }),
-    })
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (supabaseUrl && serviceRoleKey) {
+      const functionUrl = `${supabaseUrl}/functions/v1/google-sheets-sync`
+      try {
+        await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ entity_type, entity_id }),
+        })
+      } catch (fetchError) {
+        console.warn('Supabase edge sync skipped because the function endpoint is unavailable:', fetchError)
+      }
+    }
 
     return NextResponse.json({ success: true, message: 'Sync queued' })
   } catch (error) {

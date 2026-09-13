@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, User, Phone, IDCard, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, User, Phone, Contact, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { createClient } from '@/lib/supabase/client'
 import { studentRegistrationSchema } from '@/lib/validators'
+import { defaultUniversity, getUniversityOptions, resolveUniversityRule } from '@/lib/university-config'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -19,24 +20,25 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [courses, setCourses] = useState([])
-  const [courseOptions, setCourseOptions] = useState([])
+  const [facultyOptions, setFacultyOptions] = useState<Array<{ value: string; label: string; id: string }>>([])
+  const [courseOptions, setCourseOptions] = useState<Array<{ value: string; label: string; facultyId: string }>>([])
+  const universityOptions = getUniversityOptions()
 
-  async function fetchCourses() {
+  async function fetchAcademicOptions() {
     try {
-      const { data } = await supabase
-        .from('course_units')
-        .select('id, code, name')
-        .eq('is_active', true)
-      setCourses(data || [])
-      setCourseOptions(data?.map((cu: any) => ({ value: cu.id, label: `${cu.code} - ${cu.name}` })) || [])
+      const [{ data: faculties }, { data: courses }] = await Promise.all([
+        supabase.from('faculties').select('id, code, name').eq('is_active', true).order('name'),
+        supabase.from('courses').select('id, code, name, faculty_id').eq('is_active', true).order('name'),
+      ])
+      setFacultyOptions(faculties?.map((faculty: { code: string; name: string; id: string }) => ({ value: faculty.code, label: `${faculty.code} - ${faculty.name}`, id: faculty.id })) || [])
+      setCourseOptions(courses?.map((course: { code: string; name: string; faculty_id: string }) => ({ value: course.code, label: `${course.code} - ${course.name}`, facultyId: course.faculty_id })) || [])
     } catch (err) {
-      console.error('Error fetching courses:', err)
+      console.error('Error fetching academic options:', err)
     }
   }
 
   useEffect(() => {
-    fetchCourses()
+    fetchAcademicOptions()
   }, [supabase])
 
   const form = useForm({
@@ -44,12 +46,24 @@ export default function RegisterPage() {
     defaultValues: {
       fullName: '',
       email: '',
+      gender: 'male',
+      university: defaultUniversity.university,
       password: '',
       confirmPassword: '',
       studentRegistrationNumber: '',
       whatsappPhone: '',
+      faculty: '',
       course: '',
     },
+  })
+
+  const selectedUniversity = form.watch('university') || defaultUniversity.university
+  const selectedUniversityRule = resolveUniversityRule(selectedUniversity)
+  const selectedFaculty = form.watch('faculty')
+  const selectedFacultyId = facultyOptions.find((option) => option.value === selectedFaculty)?.id
+  const visibleCourseOptions = courseOptions.filter((option) => {
+    if (!selectedFacultyId) return true
+    return option.facultyId === selectedFacultyId
   })
 
   async function onSubmit(values: any) {
@@ -63,6 +77,8 @@ export default function RegisterPage() {
           data: {
             full_name: values.fullName,
             role: 'student',
+            gender: values.gender,
+            university: values.university,
           },
         },
       })
@@ -74,10 +90,14 @@ export default function RegisterPage() {
           .from('users')
           .update({
             full_name: values.fullName,
+            gender: values.gender,
+            university: values.university,
             student_registration_number: values.studentRegistrationNumber,
             whatsapp_phone: values.whatsappPhone,
+            faculty: values.faculty,
             course: values.course,
             role: 'student',
+            status: 'normal',
           })
           .eq('id', data.user.id)
 
@@ -135,16 +155,41 @@ export default function RegisterPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        <Select
+          label="Gender *"
+          error={form.formState.errors.gender?.message}
+          options={[
+            { value: 'male', label: 'Male' },
+            { value: 'female', label: 'Female' },
+            { value: 'other', label: 'Other' },
+          ]}
+          placeholder="Select your gender"
+          value={form.watch('gender')}
+          onChange={(value) => form.setValue('gender', value as 'male' | 'female' | 'other', { shouldValidate: true })}
+        />
+        <Select
+          label="University *"
+          error={form.formState.errors.university?.message}
+          options={universityOptions}
+          placeholder="Select your university"
+          value={form.watch('university')}
+          onChange={(value) => form.setValue('university', value, { shouldValidate: true })}
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
         <Input
           label="Student Registration Number"
-          placeholder="CS2024001"
+          placeholder={selectedUniversityRule.exampleRegNumber}
+          helperText={`Accepted example: ${selectedUniversityRule.exampleRegNumber}`}
+          error={form.formState.errors.studentRegistrationNumber?.message}
           {...form.register('studentRegistrationNumber')}
-          icon={<IDCard className="h-4 w-4" />}
+          icon={<Contact className="h-4 w-4" />}
           autoComplete="off"
         />
         <Input
           label="WhatsApp Phone Number"
-          placeholder="+1 555 123 4567"
+          placeholder="+256 700 123 456"
           {...form.register('whatsappPhone')}
           icon={<Phone className="h-4 w-4" />}
           autoComplete="tel"
@@ -153,11 +198,23 @@ export default function RegisterPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Select
-          label="Course *"
+          label="Faculty *"
+          error={form.formState.errors.faculty?.message}
+          options={facultyOptions}
+          placeholder="Select your faculty"
+          value={form.watch('faculty')}
+          onChange={(value) => {
+            form.setValue('faculty', value, { shouldValidate: true })
+            form.setValue('course', '', { shouldValidate: true })
+          }}
+        />
+        <Select
+          label="Degree / Course *"
           error={form.formState.errors.course?.message}
-          options={courseOptions}
-          placeholder="Select your course"
-          {...form.register('course')}
+          options={visibleCourseOptions}
+          placeholder="Select your degree course"
+          value={form.watch('course')}
+          onChange={(value) => form.setValue('course', value, { shouldValidate: true })}
         />
       </div>
 
