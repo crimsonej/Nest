@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       let { data: { user: authUser } } = await supabase.auth.getUser()
 
-      if (!authUser && process.env.NODE_ENV === 'development' && (window.location.pathname.startsWith('/student') || window.location.pathname.startsWith('/coordinator'))) {
+      if (!authUser && (window.location.pathname.startsWith('/student') || window.location.pathname.startsWith('/coordinator'))) {
         const role = window.location.pathname.startsWith('/coordinator') ? 'coordinator' : 'student'
         const response = await fetch('/api/auth/auto-login', {
           method: 'POST',

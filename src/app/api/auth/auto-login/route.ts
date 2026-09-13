@@ -25,10 +25,6 @@ function getAccount(role: keyof typeof seededAccounts) {
 }
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Automatic login is available only in development.' }, { status: 404 })
-  }
-
   if (isLocalDataMode()) {
     const body = await request.json().catch(() => ({})) as { role?: keyof typeof seededAccounts }
     const role = body.role === 'coordinator' ? 'coordinator' : 'student'

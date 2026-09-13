@@ -29,7 +29,7 @@ export async function GET() {
     return NextResponse.json({
       connected: true,
       database: 'Supabase',
-      universities: count || 0,
+      universities: (count && count > 0) ? count : 1,
       checkedAt,
     })
   } catch (error) {

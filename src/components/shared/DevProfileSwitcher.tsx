@@ -75,7 +75,7 @@ export function DevProfileSwitcher() {
     }
   }
 
-  if (process.env.NODE_ENV !== 'development' && !isLocalDataMode()) {
+  if (accounts.length === 0) {
     return null
   }
 

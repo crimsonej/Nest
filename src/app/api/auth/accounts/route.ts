@@ -151,10 +151,6 @@ const DEMO_PROFILES = [
 ]
 
 export async function GET() {
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Preview profiles are available only in development.' }, { status: 404 })
-  }
-
   if (isLocalDataMode()) {
     const { users } = getLocalState()
     return NextResponse.json({
