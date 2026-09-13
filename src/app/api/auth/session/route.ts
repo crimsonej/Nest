@@ -1,6 +1,36 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+export async function GET() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ authenticated: false, user: null }, { status: 200 })
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    return NextResponse.json({
+      authenticated: true,
+      user: profile || {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || 'User Profile',
+        role: user.user_metadata?.role || 'student',
+        status: user.user_metadata?.status || 'normal',
+      },
+    })
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -44,3 +74,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
 }
+

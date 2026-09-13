@@ -98,13 +98,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    window.localStorage.removeItem(PREVIEW_PROFILE_KEY)
-    // Clear preview cookies
-    document.cookie = 'nest-preview-user-id=; path=/; max-age=0'
-    document.cookie = 'nest-preview-role=; path=/; max-age=0'
-    document.cookie = 'nest-preview-status=; path=/; max-age=0'
-    setUser(null)
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      // Ignore auth signout error
+    }
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(PREVIEW_PROFILE_KEY)
+      window.localStorage.removeItem('nest-local-user-id')
+      document.cookie = 'nest-preview-user-id=; path=/; max-age=0'
+      document.cookie = 'nest-preview-role=; path=/; max-age=0'
+      document.cookie = 'nest-preview-status=; path=/; max-age=0'
+      setUser(null)
+      window.location.href = '/auth/login'
+    }
   }
 
   const setPreviewProfile = (profile: User) => {
