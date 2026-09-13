@@ -2,67 +2,43 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { LogIn, MoonStar, SunMedium, Sparkles } from 'lucide-react'
+import { LogIn, MoonStar, SunMedium, Sparkles, User, Shield, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { createClient } from '@/lib/supabase/client'
 import { isLocalDataMode } from '@/lib/local-data'
-import type { User } from '@/types'
-
-type AccountOption = User
+import { useAuth } from '@/hooks/useAuth'
+import type { User as UserType } from '@/types'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  const { setPreviewProfile, refreshUser } = useAuth()
   const { resolvedTheme, setTheme } = useTheme()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [accounts, setAccounts] = useState<AccountOption[]>([])
+
+  const [accounts, setAccounts] = useState<UserType[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState('')
   const [loadingAccounts, setLoadingAccounts] = useState(true)
-  const [autoSigningIn, setAutoSigningIn] = useState(true)
   const [signingIn, setSigningIn] = useState(false)
   const [error, setError] = useState('')
+  const [authMode, setAuthMode] = useState<'auth' | 'preview'>('auth')
 
   useEffect(() => {
-    fetch('/api/auth/auto-login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ role: 'student' }) })
-      .then(async (response) => {
-        const result = await response.json()
-        if (!response.ok) {
-          if (result.error && !result.error.includes('development')) setError(`Backend sign-in unavailable: ${result.error}`)
-          return
-        }
-        if (isLocalDataMode() && result.email) {
-          await supabase.auth.signInWithPassword({ email: result.email, password: 'local-demo' })
-        }
-        const redirect = searchParams.get('redirect')
-        const destination = redirect?.startsWith('/') ? redirect : result.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard'
-        router.push(destination)
-        router.refresh()
-      })
-      .catch(() => undefined)
-      .finally(() => setAutoSigningIn(false))
-
     fetch('/api/auth/accounts')
       .then(async (response) => {
         const result = await response.json()
-        if (!response.ok) throw new Error(result.error || 'Unable to load preview profiles')
-        setAccounts(result.accounts)
-        setSelectedAccountId(result.accounts[0]?.id || '')
-        setEmail(result.accounts[0]?.email || '')
+        if (!response.ok) throw new Error(result.error || 'Unable to load accounts')
+        const list: UserType[] = result.accounts || []
+        setAccounts(list)
+        if (list.length > 0) {
+          setSelectedAccountId(list[0].id)
+        }
       })
-      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Unable to load preview profiles'))
+      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Unable to load profiles'))
       .finally(() => setLoadingAccounts(false))
-  }, [router, searchParams])
-
-  function selectAccount(accountId: string) {
-    setSelectedAccountId(accountId)
-    setEmail(accounts.find((account) => account.id === accountId)?.email || '')
-  }
+  }, [])
 
   function cycleTheme() {
     const order = ['light', 'mid', 'dark'] as const
@@ -71,81 +47,126 @@ function LoginForm() {
     setTheme(order[(index + 1) % order.length])
   }
 
-  async function signIn(event: React.FormEvent<HTMLFormElement>) {
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0]
+
+  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!selectedAccount) {
+      setError('Please select a profile to sign in.')
+      return
+    }
+
     setSigningIn(true)
     setError('')
 
     try {
-      const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
-      const loginEmail = (selectedAccount?.email || email).trim()
+      // Clear any stale auth tokens from prior dev sessions
+      await supabase.auth.signOut().catch(() => {})
 
-      if (!loginEmail || !password.trim()) {
-        throw new Error('Enter the profile email and password to sign in.')
+      if (isLocalDataMode()) {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('nest-local-user-id', selectedAccount.id)
+          window.localStorage.setItem('nest-preview-profile', JSON.stringify(selectedAccount))
+        }
+      } else {
+        // Try Supabase auth with role-based password
+        const pass = selectedAccount.role === 'coordinator' ? 'NestCoordinator123!' : 'NestStudent123!'
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: selectedAccount.email,
+          password: pass,
+        })
+
+        if (signInError) {
+          console.warn('Supabase auth failed, using preview mode:', signInError.message)
+          setAuthMode('preview')
+        } else {
+          setAuthMode('auth')
+        }
       }
 
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: loginEmail, password })
-      if (signInError) {
-        throw signInError
-      }
+      // Set preview profile in localStorage and context
+      setPreviewProfile(selectedAccount)
 
-      if (!data.user) throw new Error('Unable to sign in.')
-      const { data: profile, error: profileError } = await supabase.from('users').select('role').eq('id', data.user.id).single()
-      if (profileError) throw profileError
+      // Set cookies so middleware can identify the user server-side
+      document.cookie = `nest-preview-user-id=${selectedAccount.id}; path=/; max-age=86400; SameSite=Lax`
+      document.cookie = `nest-preview-role=${selectedAccount.role}; path=/; max-age=86400; SameSite=Lax`
+      document.cookie = `nest-preview-status=${selectedAccount.status}; path=/; max-age=86400; SameSite=Lax`
+
       const redirect = searchParams.get('redirect')
-      const destination = redirect?.startsWith('/') ? redirect : profile.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard'
-      router.push(destination)
-      router.refresh()
-    } catch (signInError) {
-      setError(signInError instanceof Error ? signInError.message : 'Unable to sign in.')
+      const isCoord = selectedAccount.role === 'coordinator' || selectedAccount.status === 'coordinator' || selectedAccount.status === 'selected_coordinator'
+      const destination = redirect?.startsWith('/') ? redirect : isCoord ? '/coordinator/dashboard' : '/student/dashboard'
+
+      // Top-level navigation to send new cookies in request headers
+      window.location.href = destination
+    } catch (err) {
+      setError('Failed to sign in. Please try again.')
+      console.error('Login error:', err)
     } finally {
       setSigningIn(false)
     }
   }
 
   return (
-    <form onSubmit={signIn} className="space-y-8">
-      <div className="flex items-center justify-between gap-3">
+    <form onSubmit={handleLogin} className="space-y-6">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-5">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Secure sign in</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-text-primary">Welcome back</h1>
-          <p className="mt-3 max-w-md leading-7 text-text-secondary">Sign in to your NEST student or coordinator workspace.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">NEST Access Portal</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-primary">Sign in to NEST</h1>
+          <p className="mt-1 text-sm text-text-secondary">Select your account profile to open your workspace.</p>
         </div>
         <button
           type="button"
           onClick={cycleTheme}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-text-secondary transition hover:text-text-primary"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-text-secondary transition hover:text-text-primary"
           aria-label="Switch theme"
           title="Switch theme"
         >
           {resolvedTheme === 'dark' ? <SunMedium className="h-4 w-4" /> : resolvedTheme === 'mid' ? <Sparkles className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
         </button>
       </div>
-      {error && <p className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm leading-6 text-danger" role="alert">{error}</p>}
-      <div className="space-y-5">
-        <Select label="Profile" options={accounts.map((account) => ({ value: account.id, label: `${account.full_name} - ${account.role}` }))} value={selectedAccountId} onChange={selectAccount} placeholder={loadingAccounts ? 'Loading profiles...' : 'Select a profile'} disabled={loadingAccounts || signingIn} />
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="student1@nest.edu"
+
+      {error && <p className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm text-danger" role="alert">{error}</p>}
+
+      <div className="space-y-4">
+        <Select
+          label="Choose Account Profile"
+          options={accounts.map((acc) => ({
+            value: acc.id,
+            label: `${acc.full_name} (${acc.role === 'coordinator' ? 'Coordinator' : 'Student'}${acc.status === 'selected_coordinator' ? ' - SC' : ''})`,
+          }))}
+          value={selectedAccountId}
+          onChange={setSelectedAccountId}
+          placeholder={loadingAccounts ? 'Loading database profiles...' : 'Select a profile'}
           disabled={loadingAccounts || signingIn}
         />
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="Enter password"
-          disabled={loadingAccounts || signingIn}
-        />
-        <p className="rounded-xl bg-primary/10 p-4 text-sm leading-6 text-text-secondary">
-          {autoSigningIn ? 'Connecting to the seeded Supabase account...' : 'Development mode signs you in automatically with a real Supabase Auth account. You can also choose another backend account below.'}
-        </p>
-        <Button type="submit" size="lg" className="w-full" loading={signingIn || autoSigningIn} disabled={loadingAccounts || autoSigningIn || !selectedAccountId}>
-          <LogIn className="h-4 w-4" />
-          Open workspace
+
+        {selectedAccount && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${selectedAccount.role === 'coordinator' ? 'bg-amber-500/20 text-amber-600' : 'bg-blue-500/20 text-blue-600'}`}>
+                  {selectedAccount.role === 'coordinator' ? <Shield className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-text-primary">{selectedAccount.full_name}</h4>
+                  <p className="text-xs text-text-muted">{selectedAccount.email}</p>
+                </div>
+              </div>
+              <CheckCircle2 className="h-5 w-5 text-success" />
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-text-secondary pt-1 border-t border-primary/10">
+              <span className="rounded-md bg-surface px-2 py-0.5 border border-border">University: {selectedAccount.university || 'Ndejje University'}</span>
+              {selectedAccount.student_registration_number && (
+                <span className="rounded-md bg-surface px-2 py-0.5 border border-border">Reg: {selectedAccount.student_registration_number}</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        <Button type="submit" size="lg" className="w-full" loading={signingIn} disabled={loadingAccounts || !selectedAccountId}>
+          <LogIn className="h-4 w-4 mr-2" />
+          Log In as {selectedAccount?.full_name?.split(' ')[0] || 'Selected Profile'}
         </Button>
       </div>
     </form>
@@ -155,21 +176,9 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-        Local demo mode is active while network access is limited. The real Supabase path remains ready for reconnecting.
-      </div>
-
-      <Suspense fallback={<div className="text-sm text-text-secondary">Loading...</div>}>
+      <Suspense fallback={<div className="text-sm text-text-secondary">Loading profiles...</div>}>
         <LoginForm />
       </Suspense>
-
-      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">Quick access</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link href="/student/dashboard" className="rounded-xl bg-primary px-5 py-4 text-center font-semibold text-white transition hover:bg-primary-hover">Open student portal</Link>
-          <Link href="/coordinator/dashboard" className="rounded-xl border border-border bg-surface px-5 py-4 text-center font-semibold text-text-primary transition hover:bg-surface-hover">Open coordinator portal</Link>
-        </div>
-      </div>
     </div>
   )
 }

@@ -17,6 +17,39 @@ export function isLocalDataMode() {
   return process.env.NEXT_PUBLIC_USE_LOCAL_DATA === 'true' || process.env.NEXT_PUBLIC_USE_LOCAL_DATA === '1'
 }
 
+export function validateRegNumber(regNo: string, pattern = '^\\d{2}/\\d{1,2}/\\d{3,4}/[A-Z]/\\d{4}$') {
+  if (!regNo) return false
+  try {
+    const regex = new RegExp(pattern, 'i')
+    return regex.test(regNo.trim())
+  } catch {
+    return true
+  }
+}
+
+export function filterUserForPrivacy(targetUser: any, currentUserId: string, state: Record<LocalTableName, any[]>) {
+  if (!targetUser) return targetUser
+  if (targetUser.id === currentUserId) return targetUser
+
+  const currentGroupIds = new Set(
+    (state.group_members || []).filter((gm) => gm.user_id === currentUserId).map((gm) => gm.group_id)
+  )
+  const isPeerInSameGroup = (state.group_members || []).some(
+    (gm) => gm.user_id === targetUser.id && currentGroupIds.has(gm.group_id)
+  )
+
+  if (!isPeerInSameGroup) {
+    return {
+      ...targetUser,
+      whatsapp_phone: null,
+      email: `${targetUser.email?.split('@')[0]?.slice(0, 3)}***@nest.edu`,
+    }
+  }
+
+  return targetUser
+}
+
+
 const localDataListeners = new Set<(table: string) => void>()
 
 export function subscribeLocalData(listener: (table: string) => void) {

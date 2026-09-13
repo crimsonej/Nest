@@ -2,14 +2,14 @@
 
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus } from 'lucide-react'
+import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus, Calendar, Check, AlertCircle, Trash2 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { formatNumber } from '@/lib/utils'
 import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 interface MetricCardProps {
@@ -19,9 +19,10 @@ interface MetricCardProps {
   changeType?: 'increase' | 'decrease' | 'neutral'
   icon: React.ReactNode
   color: 'primary' | 'success' | 'warning' | 'danger'
+  onClick?: () => void
 }
 
-function MetricCard({ title, value, change, changeType = 'neutral', icon, color }: MetricCardProps) {
+function MetricCard({ title, value, change, changeType = 'neutral', icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
     primary: 'bg-primary/10 text-primary',
     success: 'bg-success/10 text-success',
@@ -30,7 +31,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
   }
 
   return (
-    <Card>
+    <Card className={onClick ? 'cursor-pointer hover:border-primary/50 transition-all' : ''} onClick={onClick}>
       <CardContent className="p-5 sm:p-6">
         <div className="flex items-start justify-between">
           <div>
@@ -55,6 +56,78 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
   )
 }
 
+function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null)
+
+  useEffect(() => {
+    function calculate() {
+      const diff = new Date(lockAt).getTime() - Date.now()
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        return
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((diff / 1000 / 60) % 60)
+      const seconds = Math.floor((diff / 1000) % 60)
+      setTimeLeft({ days, hours, minutes, seconds })
+    }
+
+    calculate()
+    const timer = setInterval(calculate, 1000)
+    return () => clearInterval(timer)
+  }, [lockAt])
+
+  if (!timeLeft) return null
+
+  const isExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0
+
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardContent className="p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-danger animate-ping" />
+              <p className="text-xs font-bold uppercase tracking-wider text-primary">Nearest Deadline Countdown</p>
+            </div>
+            <h3 className="mt-1 text-lg font-bold text-text-primary">{title}</h3>
+            <p className="text-xs text-text-muted">Due Date: {new Date(lockAt).toLocaleString()}</p>
+          </div>
+
+          {isExpired ? (
+            <div className="rounded-xl bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
+              Deadline Expired
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
+                <span className="text-xl font-bold text-text-primary">{timeLeft.days}</span>
+                <span className="text-[10px] uppercase text-text-muted">Days</span>
+              </div>
+              <span className="text-xl font-bold text-text-muted">:</span>
+              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
+                <span className="text-xl font-bold text-text-primary">{String(timeLeft.hours).padStart(2, '0')}</span>
+                <span className="text-[10px] uppercase text-text-muted">Hrs</span>
+              </div>
+              <span className="text-xl font-bold text-text-muted">:</span>
+              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
+                <span className="text-xl font-bold text-text-primary">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                <span className="text-[10px] uppercase text-text-muted">Min</span>
+              </div>
+              <span className="text-xl font-bold text-text-muted">:</span>
+              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
+                <span className="text-xl font-bold text-primary">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                <span className="text-[10px] uppercase text-text-muted">Sec</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function StudentDashboard() {
   const { user } = useAuth()
   const supabase = createClient()
@@ -69,6 +142,10 @@ export function StudentDashboard() {
   const [dataError, setDataError] = useState('')
   const [recentGroups, setRecentGroups] = useState<any[]>([])
   const [recentTasks, setRecentTasks] = useState<any[]>([])
+  const [nearestCoursework, setNearestCoursework] = useState<any>(null)
+  const [allCourseUnits, setAllCourseUnits] = useState<any[]>([])
+  const [myCourseUnitIds, setMyCourseUnitIds] = useState<string[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [dataVersion, setDataVersion] = useState(0)
 
   useEffect(() => {
@@ -81,7 +158,7 @@ export function StudentDashboard() {
       if (!user) return
 
       try {
-        const [groupsRes, tasksRes, enrollmentsRes] = await Promise.all([
+        const [groupsRes, tasksRes, enrollmentsRes, cwRes, allUnitsRes] = await Promise.all([
           supabase
             .from('group_members')
             .select('group:groups(id, name, status, coursework:courseworks(title, course_unit:course_units(code)))')
@@ -93,22 +170,29 @@ export function StudentDashboard() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(10),
-            supabase
+          supabase
             .from('student_course_units')
-            .select('id')
+            .select('course_unit_id')
             .eq('user_id', user.id)
             .eq('status', 'active'),
+          supabase
+            .from('courseworks')
+            .select('*, course_unit:course_units(name, code)')
+            .eq('is_published', true)
+            .order('lock_at', { ascending: true }),
+          supabase
+            .from('course_units')
+            .select('*')
+            .eq('is_active', true),
         ])
-
-          const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error
-        if (queryError) throw queryError
 
         const groups = groupsRes.data || []
         const tasks = tasksRes.data || []
+        const enrolledIds = (enrollmentsRes.data || []).map((e: any) => e.course_unit_id)
 
         setMetrics({
           myGroups: groups.length,
-          registeredCourseUnits: enrollmentsRes.data?.length || 0,
+          registeredCourseUnits: enrolledIds.length,
           activeTasks: tasks.filter((t: { status: string }) => t.status === 'in_progress').length,
           completedTasks: tasks.filter((t: { status: string }) => t.status === 'completed' || t.status === 'submitted').length,
           upcomingDeadlines: tasks.filter((t: { status: string; due_date?: string | null }) => t.due_date && new Date(t.due_date) > new Date() && t.status !== 'completed').length,
@@ -116,9 +200,14 @@ export function StudentDashboard() {
 
         setRecentGroups(groups.slice(0, 5))
         setRecentTasks(tasks.slice(0, 5))
+        setAllCourseUnits(allUnitsRes.data || [])
+        setMyCourseUnitIds(enrolledIds)
+
+        const activeCw = (cwRes.data || []).find((c: any) => c.lock_at && new Date(c.lock_at) > new Date())
+        setNearestCoursework(activeCw || (cwRes.data || [])[0] || null)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
-        setDataError(error instanceof Error ? error.message : 'Unable to load dashboard data from Supabase.')
+        setDataError(error instanceof Error ? error.message : 'Unable to load dashboard data.')
       } finally {
         setLoading(false)
       }
@@ -126,6 +215,30 @@ export function StudentDashboard() {
 
     fetchData()
   }, [user, dataVersion])
+
+  async function toggleCourseUnitEnrollment(unitId: string) {
+    if (!user) return
+    const isEnrolled = myCourseUnitIds.includes(unitId)
+
+    try {
+      if (isEnrolled) {
+        await supabase
+          .from('student_course_units')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('course_unit_id', unitId)
+        setMyCourseUnitIds((prev) => prev.filter((id) => id !== unitId))
+      } else {
+        await supabase
+          .from('student_course_units')
+          .insert({ user_id: user.id, course_unit_id: unitId, status: 'active' })
+        setMyCourseUnitIds((prev) => [...prev, unitId])
+      }
+      setDataVersion((v) => v + 1)
+    } catch (err) {
+      console.error('Failed to toggle course unit enrollment:', err)
+    }
+  }
 
   if (loading) {
     return (
@@ -151,19 +264,30 @@ export function StudentDashboard() {
           Unable to load live dashboard data: {dataError}
         </div>
       )}
+
       <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Student workspace</p>
+          <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Student Workspace</p>
           <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">Welcome back, {user?.full_name?.split(' ')[0]}.</h1>
-          <p className="mt-1 text-text-secondary">Your groups, tasks, and deadlines at a glance.</p>
+          <p className="mt-1 text-text-secondary">Ndejje University - Kampala Campus</p>
         </div>
-        <Link href="/student/coursework">
-          <Button className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Find coursework
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setIsModalOpen(true)}>
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            Manage Registered Course Units ({myCourseUnitIds.length})
           </Button>
-        </Link>
+          <Link href="/student/coursework">
+            <Button>
+              <Plus className="h-4 w-4 mr-1.5" />
+              Browse Coursework
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {nearestCoursework && nearestCoursework.lock_at && (
+        <CountdownWidget lockAt={nearestCoursework.lock_at} title={`${nearestCoursework.course_unit?.code || 'Course'} - ${nearestCoursework.title}`} />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
@@ -177,9 +301,10 @@ export function StudentDashboard() {
           value={metrics.registeredCourseUnits}
           icon={<BookOpen className="h-6 w-6" />}
           color="primary"
+          onClick={() => setIsModalOpen(true)}
         />
         <MetricCard
-          title="Completed"
+          title="Completed Tasks"
           value={metrics.completedTasks}
           icon={<TrendingUp className="h-6 w-6" />}
           color="success"
@@ -282,6 +407,53 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="My Registered Course Units" size="lg">
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-text-secondary">
+            Select or remove course units you are taking this semester. Group discovery and coursework deadlines will be tailored to these course units.
+          </p>
+
+          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+            {allCourseUnits.map((unit) => {
+              const isEnrolled = myCourseUnitIds.includes(unit.id)
+              return (
+                <div key={unit.id} className="flex items-center justify-between rounded-xl border border-border bg-surface p-3.5 shadow-sm">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-primary">{unit.code}</span>
+                      <span className="font-semibold text-text-primary">{unit.name}</span>
+                    </div>
+                    <p className="text-xs text-text-muted mt-0.5">{unit.description || 'Ndejje University Course Unit'}</p>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant={isEnrolled ? 'outline' : 'primary'}
+                    onClick={() => toggleCourseUnitEnrollment(unit.id)}
+                  >
+                    {isEnrolled ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-success mr-1" />
+                        Registered
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Register
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex justify-end pt-3">
+            <Button onClick={() => setIsModalOpen(false)}>Done</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

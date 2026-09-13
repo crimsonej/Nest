@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isLocalDataMode, getLocalState } from '@/lib/local-data'
 
 export const dynamic = 'force-dynamic'
@@ -11,14 +11,14 @@ export async function GET() {
     const state = getLocalState()
     return NextResponse.json({
       connected: true,
-      database: 'Local demo data',
+      database: 'Local data',
       universities: state.universities.length,
       checkedAt,
     })
   }
 
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const { count, error } = await supabase
       .from('universities')
       .select('id', { count: 'exact', head: true })

@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Sparkles, Bot } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '../ui/Button'
 
@@ -11,6 +12,7 @@ const navigation = [
   { name: 'Overview', href: '/coordinator/dashboard', icon: LayoutDashboard },
   { name: 'Group Monitor', href: '/coordinator/groups', icon: Users },
   { name: 'Coursework Manager', href: '/coordinator/coursework', icon: BookOpen },
+  { name: 'AI Entry (Crimson)', href: '/coordinator/ai-entry', icon: Bot },
   { name: 'Interventions', href: '/coordinator/interventions', icon: Shield },
   { name: 'Reports', href: '/coordinator/reports', icon: FileText },
   { name: 'Settings', href: '/coordinator/settings', icon: Settings },
@@ -104,5 +106,3 @@ export function CoordinatorSidebar() {
     </>
   )
 }
-
-import { useState } from 'react'

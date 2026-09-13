@@ -5,20 +5,12 @@ import { useState } from 'react'
 import { Bell, User, LogOut, Moon, Sun, ChevronDown, Sparkles, MapPin, Radio } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '../ui/Button'
-import { useTheme } from 'next-themes'
+import ThemeToggle from './ThemeToggle'
 
 export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
   const { user, signOut } = useAuth()
-  const { theme, setTheme } = useTheme()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-
-  const cycleTheme = () => {
-    const order = ['light', 'mid', 'dark'] as const
-    const currentIndex = order.indexOf((theme as (typeof order)[number]) || 'light')
-    const nextTheme = order[(currentIndex + 1) % order.length]
-    setTheme(nextTheme)
-  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-background/75 backdrop-blur-md">
@@ -32,16 +24,8 @@ export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
           <div className="hidden items-center gap-1.5 rounded-full border border-border bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-text-muted md:flex"><MapPin className="h-3 w-3 text-primary" />Kampala Campus</div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="mr-1 hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success md:flex"><Radio className="h-3 w-3" />Local data</div>
-          <button
-            onClick={cycleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
-            aria-label="Cycle color theme"
-            title="Switch theme"
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : theme === 'mid' ? <Sparkles className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
 
           <button
             className="relative flex h-10 w-10 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"

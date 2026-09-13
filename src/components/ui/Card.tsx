@@ -2,13 +2,13 @@
 
 import { cn } from '@/lib/utils'
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   className?: string
   hover?: boolean
 }
 
-export function Card({ children, className, hover = false }: CardProps) {
+export function Card({ children, className, hover = false, ...props }: CardProps) {
   return (
     <div
       className={cn(
@@ -16,11 +16,13 @@ export function Card({ children, className, hover = false }: CardProps) {
         hover && 'hover:shadow-lg transition-shadow cursor-pointer',
         className
       )}
+      {...props}
     >
       {children}
     </div>
   )
 }
+
 
 export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn('card-header', className)}>{children}</div>

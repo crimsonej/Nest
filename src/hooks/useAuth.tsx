@@ -44,41 +44,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('users')
           .select('*')
           .eq('id', authUser.id)
-          .single()
-        setUser(profile)
+          .maybeSingle()
+
+        if (profile) {
+          setUser(profile)
+        } else {
+          const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
+          if (savedProfile) {
+            setUser(JSON.parse(savedProfile) as User)
+          } else {
+            setUser({
+              id: authUser.id,
+              email: authUser.email || '',
+              full_name: (authUser.user_metadata?.full_name as string) || 'User Profile',
+              role: (authUser.user_metadata?.role as UserRole) || 'student',
+              status: (authUser.user_metadata?.status as User['status']) || 'normal',
+              created_at: authUser.created_at,
+              updated_at: authUser.updated_at || new Date().toISOString(),
+            })
+          }
+        }
       } else {
-        const savedProfile = window.localStorage.getItem(PREVIEW_PROFILE_KEY)
+        const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
         if (savedProfile) {
           setUser(JSON.parse(savedProfile) as User)
-        } else if (process.env.NODE_ENV === 'development') {
-          const isCoordinator = window.location.pathname.startsWith('/coordinator')
-          const demoProfile: User = {
-            id: isCoordinator ? '11111111-1111-4111-8111-111111111111' : '22222222-2222-4222-8222-222222222222',
-            email: isCoordinator ? 'coordinator@nest.edu' : 'student1@nest.edu',
-            full_name: isCoordinator ? 'Development Coordinator' : 'Development Student',
-            role: isCoordinator ? 'coordinator' : 'student',
-            status: isCoordinator ? 'coordinator' : 'normal',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-          setUser(demoProfile)
         } else {
           setUser(null)
         }
       }
     } catch (error) {
       console.error('Error fetching user:', error)
-      if (process.env.NODE_ENV === 'development') {
-        const isCoordinator = window.location.pathname.startsWith('/coordinator')
-        setUser({
-          id: isCoordinator ? '11111111-1111-4111-8111-111111111111' : '22222222-2222-4222-8222-222222222222',
-          email: isCoordinator ? 'coordinator@nest.edu' : 'student1@nest.edu',
-          full_name: isCoordinator ? 'Development Coordinator' : 'Development Student',
-          role: isCoordinator ? 'coordinator' : 'student',
-          status: isCoordinator ? 'coordinator' : 'normal',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+      const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
+      if (savedProfile) {
+        setUser(JSON.parse(savedProfile) as User)
       } else {
         setUser(null)
       }
@@ -102,11 +100,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut()
     window.localStorage.removeItem(PREVIEW_PROFILE_KEY)
+    // Clear preview cookies
+    document.cookie = 'nest-preview-user-id=; path=/; max-age=0'
+    document.cookie = 'nest-preview-role=; path=/; max-age=0'
+    document.cookie = 'nest-preview-status=; path=/; max-age=0'
     setUser(null)
   }
 
   const setPreviewProfile = (profile: User) => {
-    void supabase.auth.signOut()
+    // Don't call signOut here — it disrupts navigation and session refresh
     window.localStorage.setItem(PREVIEW_PROFILE_KEY, JSON.stringify(profile))
     setUser(profile)
   }

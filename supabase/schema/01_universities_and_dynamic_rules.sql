@@ -388,3 +388,66 @@ SELECT
 FROM public.users u
 LEFT JOIN public.student_course_units scu ON scu.user_id = u.id
 LEFT JOIN public.course_units cu ON cu.id = scu.course_unit_id;
+
+-- Group Change Requests Table (within 24h of group formation)
+CREATE TABLE IF NOT EXISTS public.group_change_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  current_group_id UUID REFERENCES public.groups(id) ON DELETE SET NULL,
+  target_course_unit_id UUID NOT NULL REFERENCES public.course_units(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+-- Active Sessions Table (Enforce single active session for normal students)
+CREATE TABLE IF NOT EXISTS public.active_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  session_token TEXT NOT NULL UNIQUE,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- AI Audit Logs Table (For Crimson AI Agent Data Modifications)
+CREATE TABLE IF NOT EXISTS public.ai_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  action_taken TEXT NOT NULL,
+  data_preview JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.group_change_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.active_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_audit_logs ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'group_change_requests' AND policyname = 'Users can view own change requests') THEN
+    CREATE POLICY "Users can view own change requests" ON public.group_change_requests FOR SELECT USING (user_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'group_change_requests' AND policyname = 'Users can create change requests') THEN
+    CREATE POLICY "Users can create change requests" ON public.group_change_requests FOR INSERT WITH CHECK (user_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'group_change_requests' AND policyname = 'Coordinators can manage change requests') THEN
+    CREATE POLICY "Coordinators can manage change requests" ON public.group_change_requests FOR ALL USING (
+      EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('coordinator', 'lecturer'))
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'active_sessions' AND policyname = 'Users can view own sessions') THEN
+    CREATE POLICY "Users can view own sessions" ON public.active_sessions FOR SELECT USING (user_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'ai_audit_logs' AND policyname = 'Coordinators can view AI logs') THEN
+    CREATE POLICY "Coordinators can view AI logs" ON public.ai_audit_logs FOR SELECT USING (
+      EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('coordinator', 'lecturer'))
+    );
+  END IF;
+END $$;
+

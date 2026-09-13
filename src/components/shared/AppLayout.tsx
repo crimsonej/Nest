@@ -1,10 +1,11 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { StudentSidebar } from '../student/StudentSidebar'
 import { CoordinatorSidebar } from '../coordinator/CoordinatorSidebar'
 import { TopBar } from './TopBar'
+import { RoleSwitchModal } from './RoleSwitchModal'
 import { useAuth } from '@/hooks/useAuth'
 
 interface LayoutProps {
@@ -14,6 +15,17 @@ interface LayoutProps {
 
 export function AppLayout({ children, role }: LayoutProps) {
   const { user, loading } = useAuth()
+  const [roleModalOpen, setRoleModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (user && (user.status === 'coordinator' || user.status === 'selected_coordinator')) {
+      const hasPrompted = typeof window !== 'undefined' ? window.sessionStorage.getItem(`role-prompted-${user.id}`) : null
+      if (!hasPrompted) {
+        setRoleModalOpen(true)
+        if (typeof window !== 'undefined') window.sessionStorage.setItem(`role-prompted-${user.id}`, 'true')
+      }
+    }
+  }, [user])
 
   if (loading) {
     return (
@@ -23,11 +35,12 @@ export function AppLayout({ children, role }: LayoutProps) {
     )
   }
 
-  if (!user || user.role !== role) {
+  if (!user) {
     return null
   }
 
   const Sidebar = role === 'student' ? StudentSidebar : CoordinatorSidebar
+
   return (
     <div className="workspace-surface min-h-screen bg-background">
       <Sidebar />
@@ -37,6 +50,8 @@ export function AppLayout({ children, role }: LayoutProps) {
           {children}
         </main>
       </div>
+
+      <RoleSwitchModal isOpen={roleModalOpen} onClose={() => setRoleModalOpen(false)} user={user} />
     </div>
   )
 }

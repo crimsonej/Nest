@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Users, BookOpen, Shield, BarChart3, ArrowRight, CheckCircle } from 'lucide-react'
 import DatabaseStatus from '@/components/shared/DatabaseStatus'
+import ThemeToggle from '@/components/shared/ThemeToggle'
 
 export default function HomePage() {
   return (
@@ -12,7 +13,7 @@ export default function HomePage() {
         <div className="hero-orb hero-orb-three" />
       </div>
 
-      <header className="sticky top-0 z-20 border-b border-white/70 bg-background/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border/80 bg-background/85 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-4 py-5">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
@@ -23,10 +24,11 @@ export default function HomePage() {
               <p className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:block">Ndejje University</p>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="#features" className="text-text-secondary hover:text-text-primary transition-colors">Features</Link>
-            <Link href="#how-it-works" className="text-text-secondary hover:text-text-primary transition-colors">How It Works</Link>
-            <Link href="/student/dashboard" className="text-text-secondary hover:text-text-primary transition-colors">Student portal</Link>
+          <nav className="flex items-center gap-4 sm:gap-6">
+            <Link href="#features" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Features</Link>
+            <Link href="#how-it-works" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">How It Works</Link>
+            <ThemeToggle />
+            <Link href="/student/dashboard" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Student portal</Link>
             <Link href="/coordinator/dashboard">
               <Button>Coordinator portal</Button>
             </Link>
@@ -43,9 +45,6 @@ export default function HomePage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
               Built for Ndejje University, Kampala Campus
-            </div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-              Local demo mode active
             </div>
             <h1 className="fade-up text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary lg:text-7xl">
               The calm center for course groups, tasks, and deadlines.
