@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isLocalDataMode, getLocalState } from '@/lib/local-data'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {

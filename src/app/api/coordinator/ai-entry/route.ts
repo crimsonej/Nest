@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getLocalState, isLocalDataMode, validateRegNumber } from '@/lib/local-data'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 type Provider = 'gemini' | 'nvidia' | 'openrouter' | 'claude'

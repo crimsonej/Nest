@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLocalState, isLocalDataMode } from '@/lib/local-data'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 // Fallback demo profiles when Supabase DB has no users yet

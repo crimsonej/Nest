@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { parseCSV } from '@/lib/utils'
 import { validateRegistrationNumber } from '@/lib/university-config'
 
+export const runtime = 'edge'
+
 export async function POST(request: Request) {
   try {
     const authClient = await createClient()
