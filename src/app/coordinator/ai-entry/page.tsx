@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Bot, KeyRound, Database, Sparkles, Send, ShieldCheck, Eye, CheckCircle2, AlertTriangle, UserCheck, FileSpreadsheet, RefreshCw } from 'lucide-react'
+import { Bot, KeyRound, Sparkles, Send, ShieldCheck, CheckCircle2, AlertTriangle, FileSpreadsheet, RefreshCw, Wifi, Cpu, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -16,6 +16,15 @@ const providers = [
   { value: 'claude', label: 'Anthropic Claude' },
 ]
 
+type ModelOption = { id: string; label: string; provider: string }
+
+function readableRequestError(error: unknown, fallback: string) {
+  if (error instanceof TypeError && error.message.toLowerCase().includes('fetch')) {
+    return 'NEST could not reach the application server. Check that the development server is running, then try again.'
+  }
+  return error instanceof Error ? error.message : fallback
+}
+
 interface Message {
   id: string
   sender: 'user' | 'crimson'
@@ -26,6 +35,11 @@ interface Message {
 export default function AICoordinatorEntryPage() {
   const [provider, setProvider] = useState('gemini')
   const [apiKey, setApiKey] = useState('')
+  const [models, setModels] = useState<ModelOption[]>([])
+  const [model, setModel] = useState('')
+  const [discovering, setDiscovering] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState('No provider connected')
+  const [connectionError, setConnectionError] = useState('')
   const [inputText, setInputText] = useState('')
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -40,6 +54,35 @@ export default function AICoordinatorEntryPage() {
   const [summary, setSummary] = useState({ totalDetected: 0, newRecords: 0, duplicates: 0 })
   const [commitStatus, setCommitStatus] = useState('')
   const [committing, setCommitting] = useState(false)
+
+  async function handleDiscoverModels() {
+    if (!apiKey.trim()) {
+      setConnectionError('Enter a provider key to discover available models.')
+      return
+    }
+    setDiscovering(true)
+    setConnectionError('')
+    setConnectionStatus('Testing provider access...')
+    try {
+      const res = await fetch('/api/coordinator/ai-entry', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'models', provider, apiKey: apiKey.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Unable to discover models.')
+      setModels(data.models || [])
+      setModel(data.models?.[0]?.id || '')
+      setConnectionStatus(`${data.models?.length || 0} usable model${data.models?.length === 1 ? '' : 's'} found`)
+    } catch (error) {
+      setModels([])
+      setModel('')
+      setConnectionStatus('Provider connection failed')
+      setConnectionError(readableRequestError(error, 'Unable to discover models.'))
+    } finally {
+      setDiscovering(false)
+    }
+  }
 
   async function handleSendPrompt() {
     if (!inputText.trim()) return
@@ -85,7 +128,7 @@ export default function AICoordinatorEntryPage() {
       const errorMsg: Message = {
         id: String(Date.now() + 1),
         sender: 'crimson',
-        text: `Error: ${err instanceof Error ? err.message : 'Unable to parse AI request.'}`,
+        text: `Error: ${readableRequestError(err, 'Unable to parse AI request.')}`,
         timestamp: new Date().toLocaleTimeString(),
       }
       setMessages((prev) => [...prev, errorMsg])
@@ -124,7 +167,7 @@ export default function AICoordinatorEntryPage() {
       }
       setMessages((prev) => [...prev, aiMsg])
     } catch (err) {
-      setCommitStatus(`Error during DB write: ${err instanceof Error ? err.message : 'Write error'}`)
+      setCommitStatus(`Error during DB write: ${readableRequestError(err, 'Write error')}`)
     } finally {
       setCommitting(false)
     }
@@ -177,15 +220,53 @@ export default function AICoordinatorEntryPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Select options={providers} value={provider} onChange={setProvider} label="AI Provider" />
+              <Select
+                options={providers}
+                value={provider}
+                onChange={(value) => {
+                  setProvider(value)
+                  setModels([])
+                  setModel('')
+                  setConnectionStatus('No provider connected')
+                  setConnectionError('')
+                }}
+                label="AI Provider"
+              />
               <Input
-                label="API Key (Optional / Dev Override)"
+                label="Provider API Key"
                 type="password"
                 value={apiKey}
-                placeholder="Paste API key or use system default"
+                placeholder="Used for this session only"
                 onChange={(event) => setApiKey(event.target.value)}
                 icon={<KeyRound className="h-4 w-4" />}
               />
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/[0.04] p-4 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Select
+                  options={models.map((item) => ({ value: item.id, label: item.label }))}
+                  value={model}
+                  onChange={setModel}
+                  label="Usable model"
+                  placeholder={models.length ? 'Choose a model' : 'Discover models first'}
+                  disabled={!models.length}
+                  searchable
+                />
+              </div>
+              <Button variant="outline" onClick={handleDiscoverModels} loading={discovering} disabled={!apiKey.trim()}>
+                <RefreshCw className="h-4 w-4" />
+                Test & discover models
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ${connectionError ? 'bg-danger-light text-danger' : models.length ? 'bg-success-light text-success' : 'bg-surface-hover text-text-muted'}`}>
+                {models.length ? <Wifi className="h-3.5 w-3.5" /> : <Cpu className="h-3.5 w-3.5" />}
+                {connectionStatus}
+              </span>
+              <span className="inline-flex items-center gap-1 text-text-muted"><LockKeyhole className="h-3.5 w-3.5" />Key is never saved by NEST</span>
+              {connectionError && <span className="text-danger">{connectionError}</span>}
             </div>
           </div>
 
@@ -195,7 +276,7 @@ export default function AICoordinatorEntryPage() {
                 <Bot className="h-5 w-5 text-primary" />
                 <h2 className="text-base font-semibold text-text-primary">Crimson AI Agent Workspace</h2>
               </div>
-              <Badge variant="primary">Active Agent</Badge>
+              <Badge variant={model ? 'success' : 'secondary'}>{model ? `Using ${model}` : 'Parser mode'}</Badge>
             </div>
 
             <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
@@ -248,9 +329,9 @@ export default function AICoordinatorEntryPage() {
                   </Button>
                 </div>
 
-                <Button onClick={handleSendPrompt} loading={loading} disabled={!inputText.trim()}>
+                <Button onClick={handleSendPrompt} loading={loading} disabled={!inputText.trim() || Boolean(apiKey && !model)}>
                   <Send className="h-4 w-4 mr-1.5" />
-                  Process & Preview
+                  {model ? 'Ask Crimson & preview' : 'Parse & preview'}
                 </Button>
               </div>
             </div>
