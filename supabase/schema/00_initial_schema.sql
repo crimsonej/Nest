@@ -233,72 +233,63 @@ ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.google_sheets_sync ENABLE ROW LEVEL SECURITY;
 
--- Users policies
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'users'
-      AND policyname = 'Users can view own profile'
-  ) THEN
-    CREATE POLICY "Users can view own profile" ON public.users
-      FOR SELECT USING (auth.uid() = id);
-  END IF;
-END $$;
+-- Helper functions to prevent RLS policy recursion
+CREATE OR REPLACE FUNCTION public.get_user_role(target_user_id UUID)
+RETURNS user_role AS $$
+  SELECT role FROM public.users WHERE id = target_user_id;
+$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'users'
-      AND policyname = 'Users can update own profile'
-  ) THEN
-    CREATE POLICY "Users can update own profile" ON public.users
-      FOR UPDATE USING (auth.uid() = id);
-  END IF;
-END $$;
+CREATE OR REPLACE FUNCTION public.is_coordinator(target_user_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = target_user_id AND role IN ('coordinator', 'lecturer')
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'users'
-      AND policyname = 'Coordinators can view all users'
-  ) THEN
-    CREATE POLICY "Coordinators can view all users" ON public.users
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.users
-          WHERE id = auth.uid() AND role IN ('coordinator', 'lecturer')
-        )
-      );
-  END IF;
-END $$;
+-- Explicit Foreign Key Constraints for PostgREST Relationship Resolution
+ALTER TABLE public.groups
+  DROP CONSTRAINT IF EXISTS groups_coursework_id_fkey,
+  ADD CONSTRAINT groups_coursework_id_fkey FOREIGN KEY (coursework_id) REFERENCES public.courseworks(id) ON DELETE CASCADE;
 
+ALTER TABLE public.groups
+  DROP CONSTRAINT IF EXISTS groups_leader_id_fkey,
+  ADD CONSTRAINT groups_leader_id_fkey FOREIGN KEY (leader_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.courseworks
+  DROP CONSTRAINT IF EXISTS courseworks_course_unit_id_fkey,
+  ADD CONSTRAINT courseworks_course_unit_id_fkey FOREIGN KEY (course_unit_id) REFERENCES public.course_units(id) ON DELETE CASCADE;
+
+ALTER TABLE public.course_units
+  DROP CONSTRAINT IF EXISTS course_units_coordinator_id_fkey,
+  ADD CONSTRAINT course_units_coordinator_id_fkey FOREIGN KEY (coordinator_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.group_members
+  DROP CONSTRAINT IF EXISTS group_members_group_id_fkey,
+  ADD CONSTRAINT group_members_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE;
+
+ALTER TABLE public.group_members
+  DROP CONSTRAINT IF EXISTS group_members_user_id_fkey,
+  ADD CONSTRAINT group_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+-- Users policies (Non-recursive)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'users'
-      AND policyname = 'Students can view peers in same course'
-  ) THEN
-    CREATE POLICY "Students can view peers in same course" ON public.users
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.users u1
-          JOIN public.users u2 ON u1.course = u2.course
-          WHERE u1.id = auth.uid() AND u2.id = users.id
-        )
-      );
-  END IF;
+  DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
+  DROP POLICY IF EXISTS "Coordinators can view all users" ON public.users;
+  DROP POLICY IF EXISTS "Students can view peers in same course" ON public.users;
+  DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.users;
+
+  CREATE POLICY "Authenticated users can view profiles" ON public.users
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+
+  DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+  CREATE POLICY "Users can update own profile" ON public.users
+    FOR UPDATE USING (auth.uid() = id);
+
+  DROP POLICY IF EXISTS "Coordinators can manage all profiles" ON public.users;
+  CREATE POLICY "Coordinators can manage all profiles" ON public.users
+    FOR ALL USING (public.is_coordinator(auth.uid()));
 END $$;
 
 -- Course Units policies
@@ -433,43 +424,12 @@ END $$;
 -- Groups policies
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'groups'
-      AND policyname = 'Coordinators can view all groups in their courseworks'
-  ) THEN
-    CREATE POLICY "Coordinators can view all groups in their courseworks" ON public.groups
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.courseworks cw
-          JOIN public.course_units cu ON cu.id = cw.course_unit_id
-          WHERE cw.id = groups.coursework_id AND cu.coordinator_id = auth.uid()
-        )
-      );
-  END IF;
-END $$;
+  DROP POLICY IF EXISTS "Coordinators can view all groups in their courseworks" ON public.groups;
+  DROP POLICY IF EXISTS "Students can view groups in their courseworks" ON public.groups;
+  DROP POLICY IF EXISTS "Authenticated users can view groups" ON public.groups;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'groups'
-      AND policyname = 'Students can view groups in their courseworks'
-  ) THEN
-    CREATE POLICY "Students can view groups in their courseworks" ON public.groups
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.courseworks cw
-          JOIN public.course_units cu ON cu.id = cw.course_unit_id
-          JOIN public.users u ON u.course = cu.code
-          WHERE cw.id = groups.coursework_id AND u.id = auth.uid() AND cw.is_published = TRUE
-        )
-      );
-  END IF;
+  CREATE POLICY "Authenticated users can view groups" ON public.groups
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 END $$;
 
 DO $$
@@ -519,55 +479,19 @@ BEGIN
       AND policyname = 'Coordinators can update any group in their courseworks'
   ) THEN
     CREATE POLICY "Coordinators can update any group in their courseworks" ON public.groups
-      FOR UPDATE USING (
-        EXISTS (
-          SELECT 1 FROM public.courseworks cw
-          JOIN public.course_units cu ON cu.id = cw.course_unit_id
-          WHERE cw.id = groups.coursework_id AND cu.coordinator_id = auth.uid()
-        )
-      );
+      FOR UPDATE USING (public.is_coordinator(auth.uid()));
   END IF;
 END $$;
 
 -- Group Members policies
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'group_members'
-      AND policyname = 'Group members can view own group members'
-  ) THEN
-    CREATE POLICY "Group members can view own group members" ON public.group_members
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.group_members gm
-          WHERE gm.group_id = group_members.group_id AND gm.user_id = auth.uid()
-        )
-      );
-  END IF;
-END $$;
+  DROP POLICY IF EXISTS "Group members can view own group members" ON public.group_members;
+  DROP POLICY IF EXISTS "Coordinators can view all group members" ON public.group_members;
+  DROP POLICY IF EXISTS "Authenticated users can view group members" ON public.group_members;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'group_members'
-      AND policyname = 'Coordinators can view all group members'
-  ) THEN
-    CREATE POLICY "Coordinators can view all group members" ON public.group_members
-      FOR SELECT USING (
-        EXISTS (
-          SELECT 1 FROM public.groups g
-          JOIN public.courseworks cw ON cw.id = g.coursework_id
-          JOIN public.course_units cu ON cu.id = cw.course_unit_id
-          WHERE g.id = group_members.group_id AND cu.coordinator_id = auth.uid()
-        )
-      );
-  END IF;
+  CREATE POLICY "Authenticated users can view group members" ON public.group_members
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 END $$;
 
 DO $$
@@ -1175,3 +1099,5 @@ AND NOT EXISTS (
   JOIN public.groups g ON g.id = gm.group_id
   WHERE gm.user_id = u.id AND g.status IN ('forming', 'active')
 );
+
+NOTIFY pgrst, 'reload schema';

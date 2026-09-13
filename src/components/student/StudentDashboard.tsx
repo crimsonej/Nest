@@ -186,6 +186,11 @@ export function StudentDashboard() {
             .eq('is_active', true),
         ])
 
+        const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error || cwRes.error || allUnitsRes.error
+        if (queryError) {
+          throw queryError
+        }
+
         const groups = groupsRes.data || []
         const tasks = tasksRes.data || []
         const enrolledIds = (enrollmentsRes.data || []).map((e: any) => e.course_unit_id)

@@ -126,9 +126,12 @@ export function StudentGroups() {
         fetchMyMemberships(),
       ])
 
+      if (groupsResponse.error) throw groupsResponse.error
+
       setGroups(groupsResponse.data || [])
     } catch (error) {
       console.error('Error fetching groups:', error)
+      setJoinMessage(error instanceof Error ? error.message : 'Unable to load group records.')
     } finally {
       setLoading(false)
     }
