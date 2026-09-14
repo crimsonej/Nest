@@ -2,14 +2,12 @@
 
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { Bell, User, LogOut, Moon, Sun, ChevronDown, Sparkles, MapPin, Radio } from 'lucide-react'
+import { User, LogOut, ChevronDown, Sparkles, MapPin } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '../ui/Button'
 import ThemeToggle from './ThemeToggle'
 
 export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
   const { user, signOut } = useAuth()
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   return (
@@ -32,16 +30,6 @@ export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <ThemeToggle />
-
-          <button
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
-            aria-label="Notifications"
-            aria-expanded={notificationsOpen}
-          >
-            <Bell className="h-5 w-5 text-text-secondary" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-danger" />
-          </button>
 
           <div className="relative">
             <button

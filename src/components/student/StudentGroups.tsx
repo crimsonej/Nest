@@ -262,6 +262,13 @@ export function StudentGroups() {
     setJoinMessage(`Randomizer paired you with "${randomGroup.name}"!`)
   }
 
+  const buildWhatsAppLink = (phone?: string) => {
+    if (!phone) return '#'
+    const digits = phone.replace(/\D/g, '')
+    if (!digits) return '#'
+    return `https://wa.me/${digits}`
+  }
+
   const onSubmit = async (values: any) => {
     setCreating(true)
     setJoinMessage('')
@@ -270,16 +277,31 @@ export function StudentGroups() {
         throw new Error('You need to be signed in before creating a group.')
       }
 
-      const existingCourseworkGroups = myCourseworkGroups[values.courseworkId] || []
-      if (existingCourseworkGroups.length > 0) {
-        throw new Error('You are already in a group for this coursework. One group per coursework is allowed.')
+      const trimmedName = String(values.name || '').trim()
+      if (!trimmedName) {
+        throw new Error('Group name is required.')
+      }
+
+      const { data: existingGroup, error: duplicateCheckError } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('coursework_id', values.courseworkId)
+        .ilike('name', trimmedName)
+        .maybeSingle()
+
+      if (duplicateCheckError) {
+        throw new Error(duplicateCheckError.message || 'Unable to verify group name uniqueness.')
+      }
+
+      if (existingGroup) {
+        throw new Error('A group with that name already exists for this coursework. Please choose another name.')
       }
 
       const { data: group, error } = await supabase
         .from('groups')
         .insert({
           coursework_id: values.courseworkId,
-          name: values.name,
+          name: trimmedName,
           description: values.description,
           leader_id: user.id,
           is_private: values.isPrivate,
@@ -311,13 +333,6 @@ export function StudentGroups() {
   }
 
   const handleJoin = async (groupId: string) => {
-    const groupObj = groups.find((g) => g.id === groupId)
-    const cwId = groupObj?.coursework_id
-    if (cwId && myCourseworkGroups[cwId]?.length) {
-      setJoinMessage('You already belong to a group in this coursework. One group per coursework is allowed.')
-      return
-    }
-
     const { error } = await supabase.from('group_members').insert({
       group_id: groupId,
       user_id: user?.id,
@@ -333,13 +348,6 @@ export function StudentGroups() {
   }
 
   const handleRequestJoin = async (groupId: string) => {
-    const groupObj = groups.find((g) => g.id === groupId)
-    const cwId = groupObj?.coursework_id
-    if (cwId && myCourseworkGroups[cwId]?.length) {
-      setJoinMessage('You already belong to a group in this coursework, so this request is blocked.')
-      return
-    }
-
     const { error } = await supabase.from('group_join_requests').insert({
       group_id: groupId,
       user_id: user?.id,
@@ -587,12 +595,31 @@ export function StudentGroups() {
                       </div>
 
                       <div className="mt-3 space-y-1.5 max-h-32 overflow-y-auto">
-                        {members.map((m) => (
-                          <div key={m.id} className="flex items-center justify-between text-[11px] rounded-lg border border-border/60 bg-surface-hover px-2.5 py-1">
-                            <span className="font-medium text-text-primary truncate">{m.user?.full_name || 'Student'}</span>
-                            <span className="text-text-muted text-[10px]">{m.user?.student_registration_number || ''}</span>
-                          </div>
-                        ))}
+                        {members.map((m) => {
+                          const canSeePhone = myGroupIds.has(group.id) && !!m.user?.whatsapp_phone
+                          return (
+                            <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] rounded-lg border border-border/60 bg-surface-hover px-2.5 py-1">
+                              <div className="min-w-0">
+                                <span className="block truncate font-medium text-text-primary">{m.user?.full_name || 'Student'}</span>
+                                <span className="text-text-muted text-[10px]">{m.user?.student_registration_number || ''}</span>
+                              </div>
+                              {canSeePhone ? (
+                                <a
+                                  href={buildWhatsAppLink(m.user.whatsapp_phone)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-1 font-medium text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
+                                  title="Open WhatsApp"
+                                >
+                                  <MessageSquare className="h-3 w-3" />
+                                  WhatsApp
+                                </a>
+                              ) : (
+                                <span className="text-[10px] text-text-muted">Private</span>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
 
                       {isMember && whatsappLink && (
