@@ -2,7 +2,8 @@
 
 import { ReactNode } from 'react'
 import { motion, type Variants } from 'framer-motion'
-import { ArrowUpRight, Check, CircleUserRound, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowUpRight, Check, CircleUserRound } from 'lucide-react'
 
 const featurePills = ['Organize units', 'Build groups', 'Track progress']
 
@@ -60,11 +61,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-3"
             >
               <motion.div
-                whileHover={{ rotate: 15, scale: 1.1 }}
+                whileHover={{ scale: 1.08 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-2xl shadow-black/30"
               >
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Image src="/logo.png" alt="NEST Logo" width={48} height={48} className="rounded-2xl shadow-2xl shadow-black/30" />
               </motion.div>
               <span className="text-2xl font-black tracking-[0.22em]">
                 NEST
@@ -148,9 +148,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       >
         {/* Mobile logo mark */}
         <div className="auth-mobile-mark absolute left-5 top-5 flex items-center gap-3 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/30">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <Image src="/logo.png" alt="NEST Logo" width={40} height={40} className="rounded-2xl shadow-md" />
           <span className="text-base font-black tracking-[0.22em] text-text-primary">
             NEST
           </span>
