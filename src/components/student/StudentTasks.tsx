@@ -8,7 +8,6 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 import { formatDate } from '@/lib/utils'
 
 function daysUntil(date: string) {
@@ -21,11 +20,6 @@ export function StudentTasks() {
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dataVersion, setDataVersion] = useState(0)
-
-  useEffect(() => {
-    if (!isLocalDataMode()) return
-    return subscribeLocalData(() => setDataVersion((version) => version + 1))
-  }, [])
 
   useEffect(() => {
     async function loadTasks() {

@@ -10,7 +10,6 @@ import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 interface MetricCardProps {
   title: string
@@ -182,11 +181,6 @@ export function StudentDashboard() {
   const [myCourseUnitIds, setMyCourseUnitIds] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [dataVersion, setDataVersion] = useState(0)
-
-  useEffect(() => {
-    if (!isLocalDataMode()) return
-    return subscribeLocalData(() => setDataVersion((version) => version + 1))
-  }, [])
 
   useEffect(() => {
     async function fetchData() {

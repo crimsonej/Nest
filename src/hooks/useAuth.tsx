@@ -4,8 +4,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { createClient } from '@/lib/supabase/client'
 import type { User, UserRole } from '@/types'
 
-const PREVIEW_PROFILE_KEY = 'nest-preview-profile'
-
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -49,37 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profile) {
           setUser(profile)
         } else {
-          const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
-          if (savedProfile) {
-            setUser(JSON.parse(savedProfile) as User)
-          } else {
-            setUser({
-              id: authUser.id,
-              email: authUser.email || '',
-              full_name: (authUser.user_metadata?.full_name as string) || 'User Profile',
-              role: (authUser.user_metadata?.role as UserRole) || 'student',
-              status: (authUser.user_metadata?.status as User['status']) || 'normal',
-              created_at: authUser.created_at,
-              updated_at: authUser.updated_at || new Date().toISOString(),
-            })
-          }
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            full_name: (authUser.user_metadata?.full_name as string) || 'User Profile',
+            role: (authUser.user_metadata?.role as UserRole) || 'student',
+            status: (authUser.user_metadata?.status as User['status']) || 'normal',
+            created_at: authUser.created_at,
+            updated_at: authUser.updated_at || new Date().toISOString(),
+          })
         }
-      } else {
-        const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
-        if (savedProfile) {
-          setUser(JSON.parse(savedProfile) as User)
-        } else {
-          setUser(null)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error)
-      const savedProfile = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_PROFILE_KEY) : null
-      if (savedProfile) {
-        setUser(JSON.parse(savedProfile) as User)
       } else {
         setUser(null)
       }
+    } catch (error) {
+      console.error('Error fetching user:', error)
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -104,19 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore auth signout error
     }
     if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(PREVIEW_PROFILE_KEY)
-      window.localStorage.removeItem('nest-local-user-id')
-      document.cookie = 'nest-preview-user-id=; path=/; max-age=0'
-      document.cookie = 'nest-preview-role=; path=/; max-age=0'
-      document.cookie = 'nest-preview-status=; path=/; max-age=0'
       setUser(null)
       window.location.href = '/auth/login'
     }
   }
 
   const setPreviewProfile = (profile: User) => {
-    // Don't call signOut here — it disrupts navigation and session refresh
-    window.localStorage.setItem(PREVIEW_PROFILE_KEY, JSON.stringify(profile))
     setUser(profile)
   }
 

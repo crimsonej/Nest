@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Users, Shield, User, ChevronUp, ChevronDown, Check, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { isLocalDataMode } from '@/lib/local-data'
 import type { User as UserType } from '@/types'
 
 export function DevProfileSwitcher() {
@@ -37,26 +36,14 @@ export function DevProfileSwitcher() {
       // Clear previous user session & cookies
       try { await supabase.auth.signOut() } catch {}
 
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('nest-preview-profile', JSON.stringify(targetUser))
-        window.localStorage.setItem('nest-local-user-id', targetUser.id)
-        document.cookie = `nest-preview-user-id=${targetUser.id}; path=/; max-age=86400`
-        document.cookie = `nest-preview-role=${targetUser.role}; path=/; max-age=86400`
-        document.cookie = `nest-preview-status=${targetUser.status || 'normal'}; path=/; max-age=86400`
-      }
-
-      if (isLocalDataMode()) {
-        await supabase.auth.signInWithPassword({ email: targetUser.email, password: 'local-demo' })
-      } else {
-        const isCoordRole = targetUser.role === 'coordinator' || targetUser.status === 'coordinator'
-        const password = isCoordRole ? 'NestCoordinator123!' : 'NestStudent123!'
-        const { error } = await supabase.auth.signInWithPassword({
-          email: targetUser.email,
-          password,
-        })
-        if (error) {
-          setPreviewProfile(targetUser)
-        }
+      const isCoordRole = targetUser.role === 'coordinator' || targetUser.status === 'coordinator'
+      const password = isCoordRole ? 'NestCoordinator123!' : 'NestStudent123!'
+      const { error } = await supabase.auth.signInWithPassword({
+        email: targetUser.email,
+        password,
+      })
+      if (error) {
+        setPreviewProfile(targetUser)
       }
 
       await refreshUser()

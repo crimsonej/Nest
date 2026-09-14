@@ -14,7 +14,6 @@ import { groupCreationSchema } from '@/lib/validators'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DataTable } from '../ui/DataTable'
-import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 export function StudentGroups() {
   const { user } = useAuth()
@@ -62,11 +61,6 @@ export function StudentGroups() {
       maxMembers: 5,
     },
   })
-
-  useEffect(() => {
-    if (!isLocalDataMode()) return
-    return subscribeLocalData(() => setDataVersion((v) => v + 1))
-  }, [])
 
   useEffect(() => {
     fetchData()

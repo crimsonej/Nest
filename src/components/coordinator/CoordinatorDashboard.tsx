@@ -10,7 +10,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
-import { isLocalDataMode, subscribeLocalData } from '@/lib/local-data'
 
 interface MetricCardProps {
   title: string
@@ -84,11 +83,6 @@ export function CoordinatorDashboard() {
   const [recentCourseworks, setRecentCourseworks] = useState<any[]>([])
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([])
   const [dataVersion, setDataVersion] = useState(0)
-
-  useEffect(() => {
-    if (!isLocalDataMode()) return
-    return subscribeLocalData(() => setDataVersion((version) => version + 1))
-  }, [])
 
   useEffect(() => {
     fetchMetrics()

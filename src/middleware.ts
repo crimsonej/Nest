@@ -44,37 +44,24 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Check for preview mode cookies (set by login page when Supabase Auth is not yet seeded)
-  const previewUserId = request.cookies.get('nest-preview-user-id')?.value
-  const previewRole = request.cookies.get('nest-preview-role')?.value
-  const previewStatus = request.cookies.get('nest-preview-status')?.value
-
-  // If we have a valid Supabase Auth session OR a preview cookie, allow access
+  // Require a live Supabase session for app access.
   const hasSession = !!user
-  const hasPreviewSession = !!previewUserId && !!previewRole
 
-  if (hasSession || hasPreviewSession) {
-    // Determine effective role & status using DB profile, auth user metadata, or preview cookies
-    let userRole = previewRole
-    let userStatus = previewStatus
+  if (hasSession) {
+    let userRole = user.user_metadata?.role
+    let userStatus = user.user_metadata?.status
 
-    if (user) {
-      userRole = user.user_metadata?.role || previewRole
-      userStatus = user.user_metadata?.status || previewStatus
+    try {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role, status')
+        .eq('id', user.id)
+        .maybeSingle()
 
-      // Try fetching exact DB role if available
-      try {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role, status')
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (profile?.role) userRole = profile.role
-        if ((profile as any)?.status) userStatus = (profile as any).status
-      } catch (err) {
-        // Ignore DB read errors in middleware and rely on auth metadata/cookie fallback
-      }
+      if (profile?.role) userRole = profile.role
+      if ((profile as any)?.status) userStatus = (profile as any).status
+    } catch (err) {
+      // Ignore DB read errors and rely on the authenticated session metadata.
     }
 
     const isCoordinatorRole =

@@ -4,30 +4,40 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const seededAccounts = {
-  student: {
-    email: 'student1@nest.edu',
-    password: 'NestStudent123!',
-  },
-  coordinator: {
-    email: 'coordinator@nest.edu',
-    password: 'NestCoordinator123!',
-  },
+const defaultPasswords = {
+  student: 'NestStudent123!',
+  coordinator: 'NestCoordinator123!',
 } as const
 
-function getAccount(role: keyof typeof seededAccounts) {
-  const fallback = seededAccounts[role]
+async function getAccount(role: 'student' | 'coordinator') {
+  const supabase = await createClient()
+  const { data: profile, error } = await supabase
+    .from('users')
+    .select('email')
+    .eq('role', role)
+    .order('full_name', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  const dbEmail = profile?.email || (role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_EMAIL : process.env.NEST_AUTO_LOGIN_EMAIL)
+  const fallbackEmail = dbEmail || (role === 'coordinator' ? 'coordinator@nest.edu' : 'student 1@nest.edu')
+  const password = (role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_PASSWORD : process.env.NEST_AUTO_LOGIN_PASSWORD) || defaultPasswords[role]
+
+  if (error && !dbEmail) {
+    throw error
+  }
+
   return {
-    email: role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_EMAIL || fallback.email : process.env.NEST_AUTO_LOGIN_EMAIL || fallback.email,
-    password: role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_PASSWORD || fallback.password : process.env.NEST_AUTO_LOGIN_PASSWORD || fallback.password,
+    email: fallbackEmail,
+    password,
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({})) as { role?: keyof typeof seededAccounts }
+    const body = await request.json().catch(() => ({})) as { role?: 'student' | 'coordinator' }
     const role = body.role === 'coordinator' ? 'coordinator' : 'student'
-    const account = getAccount(role)
+    const account = await getAccount(role)
     const supabase = await createClient()
     const { data, error } = await supabase.auth.signInWithPassword(account)
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { getLocalState, isLocalDataMode, validateRegNumber } from '@/lib/local-data'
+import { validateRegNumber } from '@/lib/local-data'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -145,20 +145,18 @@ export async function POST(request: Request) {
     const { action, prompt, provider, apiKey, model, rows } = body
     let authenticatedCoordinatorId: string | null = null
 
-    if (!isLocalDataMode()) {
-      const authClient = await createClient()
-      const { data: { user: coordinator } } = await authClient.auth.getUser()
-      if (!coordinator) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
-      const { data: coordinatorProfile } = await authClient
-        .from('users')
-        .select('id, role')
-        .eq('id', coordinator.id)
-        .single()
-      if (!coordinatorProfile || !['coordinator', 'lecturer'].includes(coordinatorProfile.role)) {
-        return NextResponse.json({ error: 'Coordinator access required.' }, { status: 403 })
-      }
-      authenticatedCoordinatorId = coordinatorProfile.id
+    const authClient = await createClient()
+    const { data: { user: coordinator } } = await authClient.auth.getUser()
+    if (!coordinator) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+    const { data: coordinatorProfile } = await authClient
+      .from('users')
+      .select('id, role')
+      .eq('id', coordinator.id)
+      .single()
+    if (!coordinatorProfile || !['coordinator', 'lecturer'].includes(coordinatorProfile.role)) {
+      return NextResponse.json({ error: 'Coordinator access required.' }, { status: 403 })
     }
+    authenticatedCoordinatorId = coordinatorProfile.id
 
     if (action === 'models') {
       if (!apiKey || !provider) return NextResponse.json({ error: 'Provider and API key are required.' }, { status: 400 })
@@ -240,20 +238,12 @@ export async function POST(request: Request) {
       let existingEmails = new Set<string>()
       let existingRegs = new Set<string>()
 
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        state.users.forEach((u) => {
-          if (u.email) existingEmails.add(u.email.toLowerCase())
-          if (u.student_registration_number) existingRegs.add(u.student_registration_number.toLowerCase())
-        })
-      } else {
-        const supabase = await createClient()
-        const { data: users } = await supabase.from('users').select('email, student_registration_number')
-        ;(users || []).forEach((u: any) => {
-          if (u.email) existingEmails.add(u.email.toLowerCase())
-          if (u.student_registration_number) existingRegs.add(u.student_registration_number.toLowerCase())
-        })
-      }
+      const supabase = await createClient()
+      const { data: users } = await supabase.from('users').select('email, student_registration_number')
+      ;(users || []).forEach((u: any) => {
+        if (u.email) existingEmails.add(u.email.toLowerCase())
+        if (u.student_registration_number) existingRegs.add(u.student_registration_number.toLowerCase())
+      })
 
       const verifiedRows = parsedRows.map((r) => {
         const isDuplicateEmail = r.email ? existingEmails.has(r.email.toLowerCase()) : false
@@ -306,106 +296,73 @@ export async function POST(request: Request) {
       const now = new Date().toISOString()
       const inserted: any[] = []
 
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        validRows.forEach((r: any, idx: number) => {
-          const newUser = {
-            id: `student-ai-${Date.now()}-${idx}`,
-            email: r.email,
-            full_name: r.full_name,
-            role: 'student',
-            gender: r.gender,
-            university: 'Ndejje University',
-            student_registration_number: r.student_registration_number,
-            whatsapp_phone: `+256700${Math.floor(100000 + Math.random() * 900000)}`,
-            faculty: 'Faculty of Computing',
-            course: 'BSc Computer Science',
-            status: 'normal',
-            created_at: now,
-            updated_at: now,
-          }
-          state.users.push(newUser)
-          inserted.push(newUser)
-        })
+      const supabase = createAdminClient()
+      const existingEmails = new Set<string>()
+      const existingRegs = new Set<string>()
+      const { data: existingProfiles, error: existingProfilesError } = await supabase
+        .from('users')
+        .select('email, student_registration_number')
+      if (existingProfilesError) throw existingProfilesError
+      for (const profile of existingProfiles || []) {
+        if (profile.email) existingEmails.add(profile.email.toLowerCase())
+        if (profile.student_registration_number) existingRegs.add(profile.student_registration_number.toLowerCase())
+      }
 
-        state.audit_logs.push({
-          id: `audit-${Date.now()}`,
-          user_id: 'coordinator-demo-1',
+      for (const row of validRows) {
+        const email = row.email.trim().toLowerCase()
+        const registrationNumber = row.student_registration_number.trim().toUpperCase()
+        if (existingEmails.has(email) || existingRegs.has(registrationNumber)) continue
+
+        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        if (authUsersError) throw authUsersError
+        let authUser = authUsers.users.find((candidate) => candidate.email?.toLowerCase() === email)
+
+        if (!authUser) {
+          const created = await supabase.auth.admin.createUser({
+            email,
+            password: `${crypto.randomUUID()}Aa1!`,
+            email_confirm: false,
+            user_metadata: { full_name: row.full_name, role: 'student', status: 'normal' },
+          })
+          if (created.error || !created.data.user) throw created.error || new Error('Unable to create Auth user.')
+          authUser = created.data.user
+        }
+
+        const profilePayload = {
+          id: authUser.id,
+          email,
+          full_name: row.full_name.trim(),
+          role: 'student',
+          gender: row.gender,
+          university: row.university || 'Ndejje University',
+          student_registration_number: registrationNumber,
+          faculty: row.faculty || 'Faculty of Computing',
+          course: row.course || 'BSc Computer Science',
+          status: 'normal',
+        }
+        const { data: existingProfile } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', authUser.id)
+          .maybeSingle()
+        const { data: profile, error: profileError } = existingProfile
+          ? await supabase.from('users').update(profilePayload).eq('id', authUser.id).select().single()
+          : await supabase.from('users').insert(profilePayload).select().single()
+        if (profileError) throw profileError
+        inserted.push(profile)
+        existingEmails.add(email)
+        existingRegs.add(registrationNumber.toLowerCase())
+      }
+
+      if (inserted.length > 0) {
+        const auditResult = await supabase.from('audit_logs').insert({
+          user_id: authenticatedCoordinatorId,
           action: 'CRIMSON_AI_BULK_INSERT',
           entity_type: 'users',
-          entity_id: inserted[0]?.id,
+          entity_id: inserted[0].id,
           new_data: { count: inserted.length, records: inserted },
-          created_at: now,
         })
-      } else {
-        const supabase = createAdminClient()
-        const existingEmails = new Set<string>()
-        const existingRegs = new Set<string>()
-        const { data: existingProfiles, error: existingProfilesError } = await supabase
-          .from('users')
-          .select('email, student_registration_number')
-        if (existingProfilesError) throw existingProfilesError
-        for (const profile of existingProfiles || []) {
-          if (profile.email) existingEmails.add(profile.email.toLowerCase())
-          if (profile.student_registration_number) existingRegs.add(profile.student_registration_number.toLowerCase())
-        }
-
-        for (const row of validRows) {
-          const email = row.email.trim().toLowerCase()
-          const registrationNumber = row.student_registration_number.trim().toUpperCase()
-          if (existingEmails.has(email) || existingRegs.has(registrationNumber)) continue
-
-          const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
-          if (authUsersError) throw authUsersError
-          let authUser = authUsers.users.find((candidate) => candidate.email?.toLowerCase() === email)
-
-          if (!authUser) {
-            const created = await supabase.auth.admin.createUser({
-              email,
-              password: `${crypto.randomUUID()}Aa1!`,
-              email_confirm: false,
-              user_metadata: { full_name: row.full_name, role: 'student', status: 'normal' },
-            })
-            if (created.error || !created.data.user) throw created.error || new Error('Unable to create Auth user.')
-            authUser = created.data.user
-          }
-
-          const profilePayload = {
-            id: authUser.id,
-            email,
-            full_name: row.full_name.trim(),
-            role: 'student',
-            gender: row.gender,
-            university: row.university || 'Ndejje University',
-            student_registration_number: registrationNumber,
-            faculty: row.faculty || 'Faculty of Computing',
-            course: row.course || 'BSc Computer Science',
-            status: 'normal',
-          }
-          const { data: existingProfile } = await supabase
-            .from('users')
-            .select('id')
-            .eq('id', authUser.id)
-            .maybeSingle()
-          const { data: profile, error: profileError } = existingProfile
-            ? await supabase.from('users').update(profilePayload).eq('id', authUser.id).select().single()
-            : await supabase.from('users').insert(profilePayload).select().single()
-          if (profileError) throw profileError
-          inserted.push(profile)
-          existingEmails.add(email)
-          existingRegs.add(registrationNumber.toLowerCase())
-        }
-
-        if (inserted.length > 0) {
-          const auditResult = await supabase.from('audit_logs').insert({
-            user_id: authenticatedCoordinatorId,
-            action: 'CRIMSON_AI_BULK_INSERT',
-            entity_type: 'users',
-            entity_id: inserted[0].id,
-            new_data: { count: inserted.length, records: inserted },
-          })
-          if (auditResult.error) throw auditResult.error
-        }
+        if (auditResult.error) throw auditResult.error
       }
 
       return NextResponse.json({

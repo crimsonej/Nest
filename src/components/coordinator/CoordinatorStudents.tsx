@@ -37,7 +37,7 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { DataTable } from '../ui/DataTable'
 import { createClient } from '@/lib/supabase/client'
-import { isLocalDataMode, getLocalState, subscribeLocalData, validateRegNumber } from '@/lib/local-data'
+import { validateRegNumber } from '@/lib/local-data'
 import { cn, formatNumber, getInitials, parseCSV } from '@/lib/utils'
 
 export function CoordinatorStudents() {
@@ -93,44 +93,28 @@ export function CoordinatorStudents() {
   const [formError, setFormError] = useState('')
 
   useEffect(() => {
-    if (!isLocalDataMode()) return
-    return subscribeLocalData(() => setDataVersion((v) => v + 1))
-  }, [])
-
-  useEffect(() => {
     fetchData()
   }, [dataVersion])
 
   async function fetchData() {
     setLoading(true)
     try {
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        const allStudents = (state.users || []).filter(
-          (u) => u.role === 'student' || u.status === 'coordinator' || u.status === 'selected_coordinator'
-        )
-        setStudents(allStudents)
-        setCourseUnits(state.course_units || [])
-        setGroupMembers(state.group_members || [])
-        setSelectedCoordinators(state.selected_coordinators || [])
-      } else {
-        const [usersRes, unitsRes, membersRes, scRes] = await Promise.all([
-          supabase.from('users').select('*').order('full_name', { ascending: true }),
-          supabase.from('course_units').select('*').eq('is_active', true),
-          supabase.from('group_members').select('*, group:groups(id, name, coursework:courseworks(course_unit_id))'),
-          supabase.from('selected_coordinators').select('*'),
-        ])
+      const [usersRes, unitsRes, membersRes, scRes] = await Promise.all([
+        supabase.from('users').select('*').order('full_name', { ascending: true }),
+        supabase.from('course_units').select('*').eq('is_active', true),
+        supabase.from('group_members').select('*, group:groups(id, name, coursework:courseworks(course_unit_id))'),
+        supabase.from('selected_coordinators').select('*'),
+      ])
 
-        if (usersRes.data) {
-          const studentUsers = usersRes.data.filter(
-            (u: any) => u.role === 'student' || u.status === 'coordinator' || u.status === 'selected_coordinator'
-          )
-          setStudents(studentUsers)
-        }
-        if (unitsRes.data) setCourseUnits(unitsRes.data)
-        if (membersRes.data) setGroupMembers(membersRes.data)
-        if (scRes.data) setSelectedCoordinators(scRes.data)
+      if (usersRes.data) {
+        const studentUsers = usersRes.data.filter(
+          (u: any) => u.role === 'student' || u.status === 'coordinator' || u.status === 'selected_coordinator'
+        )
+        setStudents(studentUsers)
       }
+      if (unitsRes.data) setCourseUnits(unitsRes.data)
+      if (membersRes.data) setGroupMembers(membersRes.data)
+      if (scRes.data) setSelectedCoordinators(scRes.data)
     } catch (err) {
       console.error('Error loading student data:', err)
     } finally {
@@ -264,55 +248,45 @@ export function CoordinatorStudents() {
 
     try {
       if (editingStudent) {
-        // EDIT MODE
-        if (isLocalDataMode()) {
-          const state = getLocalState()
-          const idx = state.users.findIndex((u) => u.id === editingStudent.id)
-          if (idx >= 0) {
-            state.users[idx] = {
-              ...state.users[idx],
-              full_name: formData.full_name,
-              email: formData.email,
-              student_registration_number: formData.student_registration_number,
-              gender: formData.gender,
-              whatsapp_phone: formData.whatsapp_phone,
-              course: formData.course,
-              faculty: formData.faculty,
-              updated_at: new Date().toISOString(),
-            }
-            if (typeof window !== 'undefined') {
-              window.localStorage.setItem('nest-local-state-v2', JSON.stringify(state))
-              window.localStorage.setItem('nest-local-data-change', `users:${Date.now()}`)
-            }
-          }
-          setStudents((prev) =>
-            prev.map((s) => (s.id === editingStudent.id ? { ...s, ...formData } : s))
-          )
-        } else {
-          const { error } = await supabase
-            .from('users')
-            .update({
-              full_name: formData.full_name,
-              email: formData.email,
-              student_registration_number: formData.student_registration_number,
-              gender: formData.gender,
-              whatsapp_phone: formData.whatsapp_phone,
-              course: formData.course,
-              faculty: formData.faculty,
-            })
-            .eq('id', editingStudent.id)
-          if (error) throw error
-          setStudents((prev) =>
-            prev.map((s) => (s.id === editingStudent.id ? { ...s, ...formData } : s))
-          )
-        }
+        const { error } = await supabase
+          .from('users')
+          .update({
+            full_name: formData.full_name,
+            email: formData.email,
+            student_registration_number: formData.student_registration_number,
+            gender: formData.gender,
+            whatsapp_phone: formData.whatsapp_phone,
+            course: formData.course,
+            faculty: formData.faculty,
+          })
+          .eq('id', editingStudent.id)
+        if (error) throw error
+        setStudents((prev) =>
+          prev.map((s) => (s.id === editingStudent.id ? { ...s, ...formData } : s))
+        )
         setEditingStudent(null)
       } else {
-        // ADD NEW MODE
-        if (isLocalDataMode()) {
-          const state = getLocalState()
-          const newStudent = {
-            id: `student-added-${Date.now()}`,
+        const generatedPassword = `${crypto.randomUUID().slice(0, 12)}Aa!`
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: generatedPassword,
+          options: {
+            data: {
+              full_name: formData.full_name,
+              role: 'student',
+              gender: formData.gender,
+              university: formData.university,
+            },
+          },
+        })
+
+        if (authError) throw authError
+        if (!authData.user) throw new Error('Unable to create the student authentication record.')
+
+        const { data, error } = await supabase
+          .from('users')
+          .upsert({
+            id: authData.user.id,
             email: formData.email,
             full_name: formData.full_name,
             role: 'student',
@@ -323,54 +297,12 @@ export function CoordinatorStudents() {
             faculty: formData.faculty,
             course: formData.course,
             status: 'normal',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-          state.users.push(newStudent)
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('nest-local-state-v2', JSON.stringify(state))
-            window.localStorage.setItem('nest-local-data-change', `users:${Date.now()}`)
-          }
-          setStudents((prev) => [newStudent, ...prev])
-        } else {
-          const generatedPassword = `${crypto.randomUUID().slice(0, 12)}Aa!`
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: formData.email,
-            password: generatedPassword,
-            options: {
-              data: {
-                full_name: formData.full_name,
-                role: 'student',
-                gender: formData.gender,
-                university: formData.university,
-              },
-            },
-          })
+          }, { onConflict: 'id' })
+          .select()
+          .single()
 
-          if (authError) throw authError
-          if (!authData.user) throw new Error('Unable to create the student authentication record.')
-
-          const { data, error } = await supabase
-            .from('users')
-            .upsert({
-              id: authData.user.id,
-              email: formData.email,
-              full_name: formData.full_name,
-              role: 'student',
-              gender: formData.gender,
-              university: formData.university,
-              student_registration_number: formData.student_registration_number,
-              whatsapp_phone: formData.whatsapp_phone,
-              faculty: formData.faculty,
-              course: formData.course,
-              status: 'normal',
-            }, { onConflict: 'id' })
-            .select()
-            .single()
-
-          if (error) throw error
-          if (data) setStudents((prev) => [data, ...prev])
-        }
+        if (error) throw error
+        if (data) setStudents((prev) => [data, ...prev])
         setIsAddModalOpen(false)
       }
     } catch (err: any) {
@@ -382,19 +314,7 @@ export function CoordinatorStudents() {
     if (!deletingStudent) return
 
     try {
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        state.users = state.users.filter((u) => u.id !== deletingStudent.id)
-        state.group_members = state.group_members.filter((gm) => gm.user_id !== deletingStudent.id)
-        state.selected_coordinators = (state.selected_coordinators || []).filter((sc) => sc.user_id !== deletingStudent.id)
-
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nest-local-state-v2', JSON.stringify(state))
-          window.localStorage.setItem('nest-local-data-change', `users:${Date.now()}`)
-        }
-      } else {
-        await supabase.from('users').delete().eq('id', deletingStudent.id)
-      }
+      await supabase.from('users').delete().eq('id', deletingStudent.id)
 
       setStudents((prev) => prev.filter((s) => s.id !== deletingStudent.id))
       setDeletingStudent(null)
@@ -418,50 +338,21 @@ export function CoordinatorStudents() {
       const isSCActive = scCourseUnitIds.length > 0
       const newStatus = isSCActive ? 'selected_coordinator' : 'normal'
 
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        // Update user status
-        const idx = state.users.findIndex((u) => u.id === scStudent.id)
-        if (idx >= 0) {
-          state.users[idx].status = newStatus
-          state.users[idx].selected_coordinator = isSCActive
-        }
+      await supabase.from('users').update({
+        status: newStatus,
+        selected_coordinator: isSCActive,
+      }).eq('id', scStudent.id)
 
-        // Rebuild selected_coordinators entries for this user
-        state.selected_coordinators = (state.selected_coordinators || []).filter((sc) => sc.user_id !== scStudent.id)
-        scCourseUnitIds.forEach((cId) => {
-          state.selected_coordinators.push({
-            id: `sc-${scStudent.id}-${cId}`,
-            user_id: scStudent.id,
-            course_unit_id: cId,
-            assigned_by: 'coordinator-demo-1',
-            created_at: new Date().toISOString(),
-          })
-        })
-
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nest-local-state-v2', JSON.stringify(state))
-          window.localStorage.setItem('nest-local-data-change', `users:${Date.now()}`)
-        }
-
-        setSelectedCoordinators(state.selected_coordinators)
+      await supabase.from('selected_coordinators').delete().eq('user_id', scStudent.id)
+      if (scCourseUnitIds.length > 0) {
+        const scPayload = scCourseUnitIds.map((cId) => ({
+          user_id: scStudent.id,
+          course_unit_id: cId,
+        }))
+        const { data } = await supabase.from('selected_coordinators').insert(scPayload).select()
+        if (data) setSelectedCoordinators((prev) => [...prev.filter((sc) => sc.user_id !== scStudent.id), ...data])
       } else {
-        await supabase.from('users').update({
-          status: newStatus,
-          selected_coordinator: isSCActive,
-        }).eq('id', scStudent.id)
-
-        await supabase.from('selected_coordinators').delete().eq('user_id', scStudent.id)
-        if (scCourseUnitIds.length > 0) {
-          const scPayload = scCourseUnitIds.map((cId) => ({
-            user_id: scStudent.id,
-            course_unit_id: cId,
-          }))
-          const { data } = await supabase.from('selected_coordinators').insert(scPayload).select()
-          if (data) setSelectedCoordinators((prev) => [...prev.filter((sc) => sc.user_id !== scStudent.id), ...data])
-        } else {
-          setSelectedCoordinators((prev) => prev.filter((sc) => sc.user_id !== scStudent.id))
-        }
+        setSelectedCoordinators((prev) => prev.filter((sc) => sc.user_id !== scStudent.id))
       }
 
       setStudents((prev) =>
@@ -582,18 +473,8 @@ export function CoordinatorStudents() {
         updated_at: new Date().toISOString(),
       }))
 
-      if (isLocalDataMode()) {
-        const state = getLocalState()
-        state.users.push(...newUsersPayload)
-
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nest-local-state-v2', JSON.stringify(state))
-          window.localStorage.setItem('nest-local-data-change', `users:${Date.now()}`)
-        }
-      } else {
-        const { error } = await supabase.from('users').insert(newUsersPayload)
-        if (error) throw error
-      }
+      const { error } = await supabase.from('users').insert(newUsersPayload)
+      if (error) throw error
 
       setStudents((prev) => [...newUsersPayload, ...prev])
       setImportNotice(`Successfully imported ${validNewRows.length} new student records to the database!`)

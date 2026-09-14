@@ -7,7 +7,6 @@ import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { createClient } from '@/lib/supabase/client'
-import { isLocalDataMode } from '@/lib/local-data'
 import { useAuth } from '@/hooks/useAuth'
 import type { User as UserType } from '@/types'
 
@@ -60,37 +59,22 @@ function LoginForm() {
     setError('')
 
     try {
-      // Clear any stale auth tokens from prior dev sessions
       await supabase.auth.signOut().catch(() => {})
 
-      if (isLocalDataMode()) {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nest-local-user-id', selectedAccount.id)
-          window.localStorage.setItem('nest-preview-profile', JSON.stringify(selectedAccount))
-        }
-      } else {
-        // Try Supabase auth with role-based password
-        const pass = selectedAccount.role === 'coordinator' ? 'NestCoordinator123!' : 'NestStudent123!'
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: selectedAccount.email,
-          password: pass,
-        })
+      const pass = selectedAccount.role === 'coordinator' ? 'NestCoordinator123!' : 'NestStudent123!'
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: selectedAccount.email,
+        password: pass,
+      })
 
-        if (signInError) {
-          console.warn('Supabase auth failed, using preview mode:', signInError.message)
-          setAuthMode('preview')
-        } else {
-          setAuthMode('auth')
-        }
+      if (signInError) {
+        console.warn('Supabase auth failed for the selected account:', signInError.message)
+        setAuthMode('preview')
+      } else {
+        setAuthMode('auth')
       }
 
-      // Set preview profile in localStorage and context
       setPreviewProfile(selectedAccount)
-
-      // Set cookies so middleware can identify the user server-side
-      document.cookie = `nest-preview-user-id=${selectedAccount.id}; path=/; max-age=86400; SameSite=Lax`
-      document.cookie = `nest-preview-role=${selectedAccount.role}; path=/; max-age=86400; SameSite=Lax`
-      document.cookie = `nest-preview-status=${selectedAccount.status}; path=/; max-age=86400; SameSite=Lax`
 
       const redirect = searchParams.get('redirect')
       const isCoord = selectedAccount.role === 'coordinator' || selectedAccount.status === 'coordinator' || selectedAccount.status === 'selected_coordinator'
