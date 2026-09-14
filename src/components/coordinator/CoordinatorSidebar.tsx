@@ -4,12 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Sparkles, Bot } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Sparkles, Bot, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '../ui/Button'
 
 const navigation = [
   { name: 'Overview', href: '/coordinator/dashboard', icon: LayoutDashboard },
+  { name: 'Students', href: '/coordinator/students', icon: GraduationCap },
   { name: 'Group Monitor', href: '/coordinator/groups', icon: Users },
   { name: 'Coursework Manager', href: '/coordinator/coursework', icon: BookOpen },
   { name: 'AI Entry (Crimson)', href: '/coordinator/ai-entry', icon: Bot },

@@ -19,9 +19,10 @@ interface MetricCardProps {
   changeType?: 'increase' | 'decrease' | 'neutral'
   icon: React.ReactNode
   color: 'primary' | 'success' | 'warning' | 'danger'
+  href?: string
 }
 
-function MetricCard({ title, value, change, changeType = 'neutral', icon, color }: MetricCardProps) {
+function MetricCard({ title, value, change, changeType = 'neutral', icon, color, href }: MetricCardProps) {
   const colorClasses = {
     primary: 'bg-primary/10 text-primary',
     success: 'bg-success/10 text-success',
@@ -29,8 +30,8 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
     danger: 'bg-danger/10 text-danger',
   }
 
-  return (
-    <Card>
+  const content = (
+    <Card className={cn(href && 'transition-all hover:border-primary/40 hover:shadow-md cursor-pointer')}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div>
@@ -57,6 +58,12 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color 
       </CardContent>
     </Card>
   )
+
+  if (href) {
+    return <Link href={href}>{content}</Link>
+  }
+
+  return content
 }
 
 export function CoordinatorDashboard() {
@@ -248,6 +255,7 @@ export function CoordinatorDashboard() {
           value={formatNumber(metrics.totalStudents)}
           icon={<Users className="h-6 w-6" />}
           color="success"
+          href="/coordinator/students"
         />
         <MetricCard
           title="Active Groups"
@@ -266,6 +274,7 @@ export function CoordinatorDashboard() {
           value={formatNumber(metrics.unassignedStudents)}
           icon={<AlertCircle className="h-6 w-6" />}
           color="danger"
+          href="/coordinator/students?status=orphan"
         />
         <MetricCard
           title="Pending Requests"

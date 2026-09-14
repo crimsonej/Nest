@@ -7,6 +7,7 @@ export type LocalTableName =
   | 'group_join_requests'
   | 'tasks'
   | 'student_course_units'
+  | 'selected_coordinators'
   | 'universities'
   | 'faculties'
   | 'courses'
@@ -418,6 +419,7 @@ export function getLocalState() {
       group_join_requests: [],
       tasks: seedTasks,
       student_course_units: seedStudentCourseUnits,
+      selected_coordinators: [],
       faculties: seedFaculties,
       courses: seedCourses,
       audit_logs: [],
