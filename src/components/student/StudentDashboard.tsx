@@ -81,49 +81,84 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
   if (!timeLeft) return null
 
   const isExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0
+  const segments = [
+    { label: 'Days', value: timeLeft.days },
+    { label: 'Hours', value: timeLeft.hours },
+    { label: 'Minutes', value: timeLeft.minutes },
+    { label: 'Seconds', value: timeLeft.seconds },
+  ]
 
   return (
-    <Card className="border-primary/30 bg-primary/5">
-      <CardContent className="p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+    <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/8 via-primary/5 to-transparent shadow-[0_20px_45px_-28px_rgba(30,107,91,0.65)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(74,222,128,0.18),_transparent_38%)]" />
+      <CardContent className="relative p-5 sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="max-w-xl">
             <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-danger animate-ping" />
-              <p className="text-xs font-bold uppercase tracking-wider text-primary">Nearest Deadline Countdown</p>
+              <span className="flex h-2.5 w-2.5 rounded-full bg-danger shadow-[0_0_18px_rgba(239,68,68,0.8)] animate-pulse" />
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Next deadline</p>
             </div>
-            <h3 className="mt-1 text-lg font-bold text-text-primary">{title}</h3>
-            <p className="text-xs text-text-muted">Due Date: {new Date(lockAt).toLocaleString()}</p>
+            <h3 className="mt-2 text-xl font-bold text-text-primary sm:text-2xl">{title}</h3>
+            <p className="mt-1 text-sm text-text-muted">
+              Due {new Date(lockAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+            </p>
           </div>
 
           {isExpired ? (
-            <div className="rounded-xl bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
-              Deadline Expired
+            <div className="inline-flex items-center self-start rounded-xl border border-danger/20 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
+              Deadline expired
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
-                <span className="text-xl font-bold text-text-primary">{timeLeft.days}</span>
-                <span className="text-[10px] uppercase text-text-muted">Days</span>
-              </div>
-              <span className="text-xl font-bold text-text-muted">:</span>
-              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
-                <span className="text-xl font-bold text-text-primary">{String(timeLeft.hours).padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase text-text-muted">Hrs</span>
-              </div>
-              <span className="text-xl font-bold text-text-muted">:</span>
-              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
-                <span className="text-xl font-bold text-text-primary">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase text-text-muted">Min</span>
-              </div>
-              <span className="text-xl font-bold text-text-muted">:</span>
-              <div className="flex flex-col items-center rounded-xl bg-surface p-2.5 shadow-sm min-w-[55px]">
-                <span className="text-xl font-bold text-primary">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase text-text-muted">Sec</span>
-              </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+              {segments.map((segment) => (
+                <div
+                  key={segment.label}
+                  className="group flex min-w-[84px] flex-col items-center rounded-2xl border border-border/70 bg-surface/90 px-3 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
+                >
+                  <span
+                    key={`${segment.label}-${segment.value}`}
+                    className="countdown-number text-2xl font-black tracking-tight text-text-primary sm:text-3xl"
+                    style={{
+                      animation: 'countdownFlip 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                      textShadow: '0 0 18px rgba(42, 162, 117, 0.18)',
+                    }}
+                  >
+                    {String(segment.value).padStart(2, '0')}
+                  </span>
+                  <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                    {segment.label}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </CardContent>
+      <style jsx>{`
+        .countdown-number {
+          display: inline-block;
+          transform-origin: center bottom;
+          will-change: transform, opacity, filter;
+        }
+
+        @keyframes countdownFlip {
+          0% {
+            transform: rotateX(92deg) scaleY(0.9);
+            opacity: 0.2;
+            filter: blur(2px);
+          }
+          45% {
+            transform: rotateX(-18deg) scaleY(1.06);
+            opacity: 0.8;
+            filter: blur(0.5px);
+          }
+          100% {
+            transform: rotateX(0deg) scaleY(1);
+            opacity: 1;
+            filter: blur(0);
+          }
+        }
+      `}</style>
     </Card>
   )
 }

@@ -274,7 +274,7 @@ const seedGroups = [
       title: 'Week 1 Programming Lab',
       course_unit: { code: 'CS101', name: 'Introduction to Programming' },
     },
-    leader: { full_name: 'Aisha Nakato' },
+    leader: { full_name: 'Aisha Nakato', whatsapp_phone: '+256700123456' },
     members: [{ count: 2 }],
   },
 ]

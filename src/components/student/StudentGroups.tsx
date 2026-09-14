@@ -47,6 +47,7 @@ export function StudentGroups() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [joinModalOpen, setJoinModalOpen] = useState(false)
+  const [addMembersModalOpen, setAddMembersModalOpen] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   const [joinMessage, setJoinMessage] = useState('')
   const [dataVersion, setDataVersion] = useState(0)
@@ -85,10 +86,10 @@ export function StudentGroups() {
             course_unit_id,
             course_unit:course_units(code, name, whatsapp_group_link)
           ),
-          leader:users!groups_leader_id_fkey(id, full_name, email),
+          leader:users!groups_leader_id_fkey(id, full_name, email, whatsapp_phone),
           members:group_members(count)
         `).in('status', ['forming', 'active', 'locked']).order('created_at', { ascending: false }),
-        supabase.from('group_members').select('*, user:users(id, full_name, email, student_registration_number)'),
+        supabase.from('group_members').select('*, user:users(id, full_name, email, student_registration_number, whatsapp_phone)'),
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('student_course_units').select('*').eq('status', 'active'),
         supabase.from('selected_coordinators').select('*'),
@@ -269,6 +270,9 @@ export function StudentGroups() {
     return `https://wa.me/${digits}`
   }
 
+  const getGroupMemberCount = (groupId: string) =>
+    groupMembers.filter((member) => member.group_id === groupId).length
+
   const onSubmit = async (values: any) => {
     setCreating(true)
     setJoinMessage('')
@@ -333,30 +337,140 @@ export function StudentGroups() {
   }
 
   const handleJoin = async (groupId: string) => {
-    const { error } = await supabase.from('group_members').insert({
+    if (!user?.id) {
+      setJoinMessage('You need to sign in before requesting to join a group.')
+      return
+    }
+
+    const targetGroup = groups.find((group) => group.id === groupId)
+    const targetCourseUnitId = targetGroup?.coursework?.course_unit_id
+
+    if (!targetGroup || !targetCourseUnitId) {
+      setJoinMessage('This group could not be resolved for the selected course unit.')
+      return
+    }
+
+    const existingMembership = groupMembers.find(
+      (member) =>
+        member.user_id === user.id &&
+        groups.some(
+          (group) =>
+            group.id === member.group_id &&
+            group.coursework?.course_unit_id === targetCourseUnitId &&
+            group.id !== groupId
+        )
+    )
+
+    if (existingMembership) {
+      setJoinMessage('You are already in another group for this course unit. One group per course unit is allowed.')
+      return
+    }
+
+    const currentCount = getGroupMemberCount(groupId)
+    if (targetGroup.max_members && currentCount >= targetGroup.max_members) {
+      setJoinMessage('This group has reached its maximum capacity.')
+      return
+    }
+
+    const { error } = await supabase.from('group_join_requests').insert({
       group_id: groupId,
-      user_id: user?.id,
-      role: 'member',
+      user_id: user.id,
+      status: 'pending',
     })
     if (!error) {
-      await fetchData()
       setJoinModalOpen(false)
-      setJoinMessage('')
+      setJoinMessage('Your request has been sent to the group leader for approval.')
     } else {
-      setJoinMessage(error.message || 'Unable to join this group.')
+      setJoinMessage(error.message || 'Unable to request group access.')
     }
   }
 
   const handleRequestJoin = async (groupId: string) => {
-    const { error } = await supabase.from('group_join_requests').insert({
+    await handleJoin(groupId)
+  }
+
+  const eligibleStudentsForGroup = (groupId: string) => {
+    const group = groups.find((item) => item.id === groupId)
+    if (!group || !group.coursework?.course_unit_id) return []
+
+    const targetCourseUnitId = group.coursework.course_unit_id
+    const alreadyInThisGroup = new Set(
+      groupMembers.filter((member) => member.group_id === groupId).map((member) => member.user_id)
+    )
+    const alreadyAssignedInCourse = new Set(
+      groupMembers
+        .filter((member) => {
+          const memberGroup = groups.find((item) => item.id === member.group_id)
+          return memberGroup?.coursework?.course_unit_id === targetCourseUnitId && member.group_id !== groupId
+        })
+        .map((member) => member.user_id)
+    )
+
+    return students
+      .filter((student) => {
+        if (student.id === user?.id) return false
+        if (student.role !== 'student' && student.status !== 'normal' && student.status !== 'selected_coordinator') return false
+        if (alreadyInThisGroup.has(student.id)) return false
+        if (alreadyAssignedInCourse.has(student.id)) return false
+
+        const enrolled = studentEnrollments.some(
+          (enrollment) =>
+            enrollment.user_id === student.id &&
+            enrollment.course_unit_id === targetCourseUnitId &&
+            enrollment.status === 'active'
+        )
+        return enrolled
+      })
+      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+  }
+
+  const handleAddStudentToGroup = async (studentId: string, groupId: string) => {
+    const group = groups.find((item) => item.id === groupId)
+    if (!group) return
+
+    const currentCount = getGroupMemberCount(groupId)
+    if (group.max_members && currentCount >= group.max_members) {
+      setJoinMessage('This group has reached its maximum capacity.')
+      return
+    }
+
+    const alreadyAssigned = groupMembers.some(
+      (member) => member.group_id === groupId && member.user_id === studentId
+    )
+    if (alreadyAssigned) {
+      setJoinMessage('This student is already in the group.')
+      return
+    }
+
+    const targetCourseUnitId = group.coursework?.course_unit_id
+    const hasOtherGroupInCourse = groupMembers.some(
+      (member) =>
+        member.user_id === studentId &&
+        groups.some(
+          (item) =>
+            item.id === member.group_id &&
+            item.coursework?.course_unit_id === targetCourseUnitId &&
+            item.id !== groupId
+        )
+    )
+
+    if (hasOtherGroupInCourse) {
+      setJoinMessage('This student already belongs to another group in this course unit.')
+      return
+    }
+
+    const { error } = await supabase.from('group_members').insert({
       group_id: groupId,
-      user_id: user?.id,
+      user_id: studentId,
+      role: 'member',
     })
+
     if (!error) {
-      setJoinModalOpen(false)
-      setJoinMessage('')
+      await fetchData()
+      setAddMembersModalOpen(false)
+      setJoinMessage('Student added to the group.')
     } else {
-      setJoinMessage(error.message || 'Unable to request group access.')
+      setJoinMessage(error.message || 'Unable to add this student to the group.')
     }
   }
 
@@ -462,8 +576,8 @@ export function StudentGroups() {
         if (isMember) return <Badge variant="success">Joined Member</Badge>
         if (isFull) return <Badge variant="secondary">Full</Badge>
         return (
-          <Button size="sm" variant={row.is_private ? 'outline' : 'primary'} onClick={() => { setSelectedGroup(row); setJoinModalOpen(true); }}>
-            {row.is_private ? 'Request Access' : 'Join Group'}
+          <Button size="sm" variant="outline" onClick={() => { setSelectedGroup(row); setJoinModalOpen(true); }}>
+            Request Invite
           </Button>
         )
       },
@@ -520,7 +634,7 @@ export function StudentGroups() {
             </Button>
             <Button size="sm" onClick={() => setCreateModalOpen(true)}>
               <Plus className="h-4 w-4 mr-1.5" />
-              New Group
+              Create Group
             </Button>
           </div>
         </div>
@@ -551,11 +665,7 @@ export function StudentGroups() {
             <Card>
               <CardContent className="p-8 text-center text-text-muted">
                 <p className="font-semibold text-text-primary">No groups formed yet for {selectedCourseSummary.code}.</p>
-                <p className="text-xs mt-1">Be the first student to form a project group!</p>
-                <Button size="sm" className="mt-4" onClick={() => setCreateModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Form New Group
-                </Button>
+                <p className="text-xs mt-1">Students will form and register groups within this course unit once the assignment is open.</p>
               </CardContent>
             </Card>
           ) : (
@@ -566,7 +676,9 @@ export function StudentGroups() {
                 const isLeader = group.leader_id === user?.id
                 const memberCount = members.length
                 const isFull = memberCount >= group.max_members
+                const leaderWhatsApp = buildWhatsAppLink(group.leader?.whatsapp_phone)
                 const whatsappLink = group.whatsapp_group_link || group.coursework?.course_unit?.whatsapp_group_link
+                const canSeeMemberDetails = isMember || isLeader
 
                 return (
                   <Card key={group.id} className="flex flex-col justify-between p-5 hover:border-primary/40 transition-all">
@@ -581,53 +693,75 @@ export function StudentGroups() {
                       </div>
 
                       <h3 className="text-lg font-bold text-text-primary">{group.name}</h3>
-                      <p className="text-xs text-text-muted mt-1">
+                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-primary">
                         {group.coursework?.title || selectedCourseSummary.code}
                       </p>
 
-                      <p className="mt-3 text-xs text-text-secondary line-clamp-2">
-                        {group.description || 'Collaborative student group for coursework assignments.'}
-                      </p>
-
-                      <div className="mt-4 flex items-center justify-between text-xs text-text-muted border-t border-border/50 pt-3">
-                        <span>Members: <strong className="text-text-primary font-bold">{memberCount} / {group.max_members}</strong></span>
-                        <span>Leader: <strong className="text-text-primary font-semibold">{group.leader?.full_name || 'Student Leader'}</strong></span>
+                      <div className="mt-4 rounded-xl border border-border/70 bg-surface-hover/80 p-3">
+                        <div className="flex items-center justify-between gap-3 text-xs text-text-secondary">
+                          <span>Members</span>
+                          <strong className="text-text-primary font-bold">{memberCount} / {group.max_members}</strong>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-3 text-xs text-text-secondary">
+                          <span>Leader</span>
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="font-semibold text-text-primary">{group.leader?.full_name || 'Student Leader'}</span>
+                            {leaderWhatsApp !== '#' && (
+                              <a
+                                href={leaderWhatsApp}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 font-medium text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
+                                title="Contact group leader on WhatsApp"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                                Contact
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="mt-3 space-y-1.5 max-h-32 overflow-y-auto">
-                        {members.map((m) => {
-                          const canSeePhone = myGroupIds.has(group.id) && !!m.user?.whatsapp_phone
-                          return (
-                            <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] rounded-lg border border-border/60 bg-surface-hover px-2.5 py-1">
-                              <div className="min-w-0">
-                                <span className="block truncate font-medium text-text-primary">{m.user?.full_name || 'Student'}</span>
-                                <span className="text-text-muted text-[10px]">{m.user?.student_registration_number || ''}</span>
+                      {!canSeeMemberDetails ? (
+                        <div className="mt-4 rounded-lg border border-dashed border-border bg-surface-hover/60 px-3 py-2 text-[11px] text-text-muted">
+                          Members and private contact details are only visible to students already in this group.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                          {members.map((m) => {
+                            const canSeePhone = !!m.user?.whatsapp_phone
+                            return (
+                              <div key={m.id} className="flex items-center justify-between gap-2 text-[11px] rounded-lg border border-border/60 bg-surface-hover px-2.5 py-1">
+                                <div className="min-w-0">
+                                  <span className="block truncate font-medium text-text-primary">{m.user?.full_name || 'Student'}</span>
+                                  <span className="text-text-muted text-[10px]">{m.user?.student_registration_number || 'Registered student'}</span>
+                                </div>
+                                {canSeePhone ? (
+                                  <a
+                                    href={buildWhatsAppLink(m.user.whatsapp_phone)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-1 font-medium text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
+                                    title="Open WhatsApp"
+                                  >
+                                    <MessageSquare className="h-3 w-3" />
+                                    WhatsApp
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-text-muted">No contact</span>
+                                )}
                               </div>
-                              {canSeePhone ? (
-                                <a
-                                  href={buildWhatsAppLink(m.user.whatsapp_phone)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-1 font-medium text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
-                                  title="Open WhatsApp"
-                                >
-                                  <MessageSquare className="h-3 w-3" />
-                                  WhatsApp
-                                </a>
-                              ) : (
-                                <span className="text-[10px] text-text-muted">Private</span>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                        </div>
+                      )}
 
                       {isMember && whatsappLink && (
                         <a
                           href={whatsappLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                          className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
                           Open WhatsApp Group
@@ -637,20 +771,29 @@ export function StudentGroups() {
 
                     <div className="mt-5 border-t border-border pt-3">
                       {isLeader ? (
-                        <Badge variant="primary" className="w-full justify-center py-2">You are Group Leader</Badge>
+                        <div className="space-y-2">
+                          <Badge variant="primary" className="w-full justify-center py-2">You are Group Leader</Badge>
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedGroup(group)
+                              setAddMembersModalOpen(true)
+                            }}
+                            disabled={isFull}
+                          >
+                            {isFull ? 'Group Full' : 'Add Members'}
+                          </Button>
+                        </div>
                       ) : isMember ? (
                         <Badge variant="success" className="w-full justify-center py-2">Joined Member</Badge>
                       ) : isFull ? (
                         <Badge variant="secondary" className="w-full justify-center py-2">Capacity Reached</Badge>
                       ) : (
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          variant={group.is_private ? 'outline' : 'primary'}
-                          onClick={() => { setSelectedGroup(group); setJoinModalOpen(true); }}
-                        >
-                          {group.is_private ? 'Request Access' : 'Join Group'}
-                        </Button>
+                        <div className="rounded-lg border border-dashed border-border bg-surface-hover/60 px-3 py-2 text-center text-[11px] font-medium text-text-muted">
+                          Leader-managed group
+                        </div>
                       )}
                     </div>
                   </Card>
@@ -824,16 +967,49 @@ export function StudentGroups() {
         </Modal>
 
         {/* Join Group Modal */}
-        <Modal isOpen={joinModalOpen} onClose={() => setJoinModalOpen(false)} title={selectedGroup?.is_private ? 'Request to Join' : 'Join Group'} size="sm">
+        <Modal isOpen={joinModalOpen} onClose={() => setJoinModalOpen(false)} title="Group is Leader-Managed" size="sm">
           <div className="space-y-4">
             <p className="text-sm text-text-primary">
-              Are you sure you want to {selectedGroup?.is_private ? 'request to join' : 'join'} <strong>{selectedGroup?.name}</strong>?
+              This group is created and managed by the group leader. Students are added by the leader after the group is formed.
             </p>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setJoinModalOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={() => selectedGroup?.is_private ? handleRequestJoin(selectedGroup.id) : handleJoin(selectedGroup.id)}>
-                Confirm
-              </Button>
+              <Button variant="outline" onClick={() => setJoinModalOpen(false)}>Close</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal isOpen={addMembersModalOpen} onClose={() => setAddMembersModalOpen(false)} title={`Add Members to ${selectedGroup?.name || 'Group'}`} size="lg">
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              Add students from this course unit to your group, up to the group limit set for the assignment.
+            </p>
+
+            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+              {selectedGroup && eligibleStudentsForGroup(selectedGroup.id).length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-surface-hover/60 p-5 text-center text-sm text-text-muted">
+                  No eligible students are available to add right now.
+                </div>
+              ) : (
+                selectedGroup && eligibleStudentsForGroup(selectedGroup.id).map((student) => (
+                  <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
+                    <div>
+                      <p className="font-medium text-text-primary">{student.full_name}</p>
+                      <p className="text-xs text-text-muted">{student.student_registration_number || student.email}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleAddStudentToGroup(student.id, selectedGroup.id)}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setAddMembersModalOpen(false)}>Done</Button>
             </div>
           </div>
         </Modal>
@@ -848,16 +1024,12 @@ export function StudentGroups() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Groups</h1>
-          <p className="text-text-secondary">Select a course unit to view groups, form teams, or find study partners.</p>
+          <p className="text-text-secondary">Select a course unit to view the available groups and team setup for each assignment.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={fetchData} loading={loading}>
             <RefreshCw className="h-4 w-4 mr-1.5" />
             Refresh
-          </Button>
-          <Button onClick={() => setCreateModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            New Group
           </Button>
         </div>
       </div>
@@ -1049,16 +1221,49 @@ export function StudentGroups() {
       </Modal>
 
       {/* Join Group Modal */}
-      <Modal isOpen={joinModalOpen} onClose={() => setJoinModalOpen(false)} title={selectedGroup?.is_private ? 'Request to Join' : 'Join Group'} size="sm">
+      <Modal isOpen={joinModalOpen} onClose={() => setJoinModalOpen(false)} title="Group is Leader-Managed" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-text-primary">
-            Are you sure you want to {selectedGroup?.is_private ? 'request to join' : 'join'} <strong>{selectedGroup?.name}</strong>?
+            This group is created and managed by the group leader. Students are added by the leader after the group is formed.
           </p>
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setJoinModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => selectedGroup?.is_private ? handleRequestJoin(selectedGroup.id) : handleJoin(selectedGroup.id)}>
-              Confirm
-            </Button>
+            <Button variant="outline" onClick={() => setJoinModalOpen(false)}>Close</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={addMembersModalOpen} onClose={() => setAddMembersModalOpen(false)} title={`Add Members to ${selectedGroup?.name || 'Group'}`} size="lg">
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Add students from this course unit to your group, up to the configured group size for the assignment.
+          </p>
+
+          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+            {selectedGroup && eligibleStudentsForGroup(selectedGroup.id).length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-surface-hover/60 p-5 text-center text-sm text-text-muted">
+                No eligible students are available to add right now.
+              </div>
+            ) : (
+              selectedGroup && eligibleStudentsForGroup(selectedGroup.id).map((student) => (
+                <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
+                  <div>
+                    <p className="font-medium text-text-primary">{student.full_name}</p>
+                    <p className="text-xs text-text-muted">{student.student_registration_number || student.email}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => handleAddStudentToGroup(student.id, selectedGroup.id)}
+                  >
+                    Add
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setAddMembersModalOpen(false)}>Done</Button>
           </div>
         </div>
       </Modal>
