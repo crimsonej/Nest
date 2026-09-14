@@ -117,18 +117,36 @@ export default function StudentSettingsPage() {
           .eq('course_unit_id', unitId)
 
         if (error) throw error
+
+        setEnrolledUnitIds((current) => current.filter((id) => id !== unitId))
+        return
+      }
+
+      const { data: existingEnrollment, error: lookupError } = await supabase
+        .from('student_course_units')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('course_unit_id', unitId)
+        .maybeSingle()
+
+      if (lookupError) throw lookupError
+
+      if (existingEnrollment) {
+        const { error } = await supabase
+          .from('student_course_units')
+          .update({ status: 'active' })
+          .eq('id', existingEnrollment.id)
+
+        if (error) throw error
       } else {
-        const { error } = await supabase.from('student_course_units').upsert(
-          { user_id: userId, course_unit_id: unitId, status: 'active' },
-          { onConflict: 'user_id,course_unit_id' }
-        )
+        const { error } = await supabase
+          .from('student_course_units')
+          .insert({ user_id: userId, course_unit_id: unitId, status: 'active' })
 
         if (error) throw error
       }
 
-      setEnrolledUnitIds((current) =>
-        isEnrolled ? current.filter((id) => id !== unitId) : [...current, unitId]
-      )
+      setEnrolledUnitIds((current) => Array.from(new Set([...current, unitId])))
     } catch (error) {
       console.error('Error updating course unit enrollment:', error)
     } finally {
@@ -249,13 +267,13 @@ export default function StudentSettingsPage() {
                     </div>
 
                     <Button
-                      variant={isEnrolled ? 'outline' : 'primary'}
+                      variant={isEnrolled ? 'danger' : 'primary'}
                       size="sm"
                       onClick={() => toggleCourseUnitEnrollment(unit.id)}
                       loading={updatingCourseUnits}
                       disabled={updatingCourseUnits}
                     >
-                      {isEnrolled ? 'Remove' : 'Add'}
+                      {isEnrolled ? 'Delete' : 'Add'}
                     </Button>
                   </div>
                 )
