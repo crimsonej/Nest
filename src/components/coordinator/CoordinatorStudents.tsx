@@ -457,27 +457,17 @@ export function CoordinatorStudents() {
     }
 
     try {
-      const newUsersPayload = validNewRows.map((r) => ({
-        id: `student-import-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        email: r.email,
-        full_name: r.full_name,
-        role: 'student',
-        gender: r.gender,
-        university: r.university,
-        student_registration_number: r.student_registration_number,
-        whatsapp_phone: r.whatsapp_phone,
-        faculty: r.faculty,
-        course: r.course,
-        status: 'normal',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }))
+      const response = await fetch('/api/coordinator/students/import', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ rows: validNewRows }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Unable to import student records.')
 
-      const { error } = await supabase.from('users').insert(newUsersPayload)
-      if (error) throw error
-
-      setStudents((prev) => [...newUsersPayload, ...prev])
-      setImportNotice(`Successfully imported ${validNewRows.length} new student records to the database!`)
+      if (result.inserted?.length) setStudents((prev) => [...result.inserted, ...prev])
+      const errorSummary = result.errors?.length ? ` ${result.errors.length} rows failed validation.` : ''
+      setImportNotice(`Successfully imported ${result.committedCount || 0} student records to the database.${errorSummary}`)
       setStagingRows([])
       setStagingSummary({ total: 0, validNew: 0, duplicates: 0, invalid: 0 })
       setTimeout(() => setIsImportModalOpen(false), 1500)

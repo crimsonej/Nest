@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import * as XLSX from 'xlsx'
 import { Bot, KeyRound, Sparkles, Send, ShieldCheck, CheckCircle2, AlertTriangle, FileSpreadsheet, RefreshCw, Wifi, Cpu, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -8,6 +9,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Badge } from '@/components/ui/Badge'
 import { DataTable } from '@/components/ui/DataTable'
+import { useEffect } from 'react'
 
 const providers = [
   { value: 'gemini', label: 'Google Gemini (Default)' },
@@ -38,7 +40,7 @@ export default function AICoordinatorEntryPage() {
   const [models, setModels] = useState<ModelOption[]>([])
   const [model, setModel] = useState('')
   const [discovering, setDiscovering] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState('No provider connected')
+  const [connectionStatus, setConnectionStatus] = useState('Server Gemini ready')
   const [connectionError, setConnectionError] = useState('')
   const [inputText, setInputText] = useState('')
   const [messages, setMessages] = useState<Message[]>([
@@ -54,6 +56,36 @@ export default function AICoordinatorEntryPage() {
   const [summary, setSummary] = useState({ totalDetected: 0, newRecords: 0, duplicates: 0 })
   const [commitStatus, setCommitStatus] = useState('')
   const [committing, setCommitting] = useState(false)
+  const [fileStatus, setFileStatus] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let active = true
+
+    async function checkConfiguredProvider() {
+      try {
+        const response = await fetch('/api/coordinator/ai-entry', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'configured', provider: 'gemini' }),
+        })
+        const data = await response.json()
+        if (!active) return
+        if (response.ok && data.models?.length) {
+          setModels(data.models)
+          setModel('gemini-2.5-flash')
+          setConnectionStatus(`Gemini ready · ${data.models.length} models available`)
+        } else if (!response.ok) {
+          setConnectionStatus('Enter a provider key to connect')
+        }
+      } catch {
+        if (active) setConnectionStatus('Enter a provider key to connect')
+      }
+    }
+
+    checkConfiguredProvider()
+    return () => { active = false }
+  }, [])
 
   async function handleDiscoverModels() {
     if (!apiKey.trim()) {
@@ -137,6 +169,37 @@ export default function AICoordinatorEntryPage() {
     }
   }
 
+  async function handleSpreadsheetUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setFileStatus(`Reading ${file.name}...`)
+    setConnectionError('')
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' })
+      const firstSheetName = workbook.SheetNames[0]
+      if (!firstSheetName) throw new Error('The workbook does not contain a worksheet.')
+
+      const worksheet = workbook.Sheets[firstSheetName]
+      const csv = XLSX.utils.sheet_to_csv(worksheet, { blankrows: false })
+      const rows = csv.split(/\r?\n/).filter((row) => row.trim())
+      const maxRows = 1001
+      const limitedCsv = rows.slice(0, maxRows).join('\n')
+
+      if (rows.length > maxRows) {
+        setFileStatus(`Loaded ${file.name}. First 1,000 data rows are ready; the rest were held back for a safe batch.`)
+      } else {
+        setFileStatus(`Loaded ${file.name}: ${Math.max(0, rows.length - 1)} data rows from “${firstSheetName}”.`)
+      }
+      setInputText(limitedCsv)
+    } catch (error) {
+      setFileStatus('Unable to read this spreadsheet.')
+      setConnectionError(error instanceof Error ? error.message : 'Use a valid CSV or Excel workbook.')
+    }
+  }
+
   async function handleCommit() {
     setCommitting(true)
     setCommitStatus('')
@@ -192,30 +255,42 @@ export default function AICoordinatorEntryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-primary/15 bg-primary/[0.04] p-6">
+      <div className="relative overflow-hidden rounded-3xl border border-primary/15 bg-primary/[0.04] p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Faculty Intelligence Engine</p>
             <h1 className="mt-1 text-3xl font-bold text-text-primary">Crimson AI Entry Agent</h1>
             <p className="text-xs text-text-muted mt-1">Ndejje University - Kampala Campus Data Management</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-surface px-4 py-2 text-xs font-semibold text-primary shadow-sm">
-            <Bot className="h-4 w-4" />
-            Faculty Coordinator Access Granted
+          <div className="relative flex items-center gap-2 rounded-full border border-primary/20 bg-surface px-4 py-2 text-xs font-semibold text-primary shadow-sm">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:hidden" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+            </span>
+            Gemini workspace ready
           </div>
+        </div>
+        <div className="relative mt-6 grid gap-2 text-xs sm:grid-cols-3">
+          {['Prepare data', 'Review preview', 'Approve changes'].map((step, index) => (
+            <div key={step} className="flex items-center gap-2 rounded-xl border border-primary/10 bg-surface/70 px-3 py-2 text-text-secondary">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-white">{index + 1}</span>
+              <span>{step}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md space-y-4">
             <div className="flex items-center gap-3 border-b border-border pb-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="text-base font-semibold text-text-primary">AI Provider & Credentials</h2>
-                <p className="text-xs text-text-muted">Configure API provider key for Crimson agent</p>
+                <p className="text-xs text-text-muted">Use the server-configured Gemini connection or bring a provider key for this session.</p>
               </div>
             </div>
 
@@ -262,7 +337,7 @@ export default function AICoordinatorEntryPage() {
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ${connectionError ? 'bg-danger-light text-danger' : models.length ? 'bg-success-light text-success' : 'bg-surface-hover text-text-muted'}`}>
-                {models.length ? <Wifi className="h-3.5 w-3.5" /> : <Cpu className="h-3.5 w-3.5" />}
+                {models.length ? <Wifi className="h-3.5 w-3.5 animate-pulse motion-reduce:animate-none" /> : <Cpu className="h-3.5 w-3.5" />}
                 {connectionStatus}
               </span>
               <span className="inline-flex items-center gap-1 text-text-muted"><LockKeyhole className="h-3.5 w-3.5" />Key is never saved by NEST</span>
@@ -270,7 +345,7 @@ export default function AICoordinatorEntryPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2.5">
                 <Bot className="h-5 w-5 text-primary" />
@@ -283,7 +358,7 @@ export default function AICoordinatorEntryPage() {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 p-3.5 rounded-2xl text-sm ${
+                  className={`flex animate-in fade-in-50 slide-in-from-bottom-2 gap-3 p-3.5 rounded-2xl text-sm motion-reduce:animate-none ${
                     msg.sender === 'user'
                       ? 'bg-primary/10 border border-primary/20 ml-8'
                       : 'bg-surface-hover/80 border border-border mr-8'
@@ -313,12 +388,28 @@ export default function AICoordinatorEntryPage() {
               <Textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Paste CSV rows, student names & reg numbers (e.g. 26/2/299/D/2299), or ask Crimson to generate a report..."
+                placeholder="Paste CSV rows, or load a spreadsheet for Crimson to validate..."
                 className="min-h-[90px]"
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.txt,.xlsx,.xls"
+                    onChange={handleSpreadsheetUpload}
+                    className="sr-only"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={loading}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 mr-1" />
+                    Load spreadsheet
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -334,6 +425,7 @@ export default function AICoordinatorEntryPage() {
                   {model ? 'Ask Crimson & preview' : 'Parse & preview'}
                 </Button>
               </div>
+              {fileStatus && <p className="text-xs text-text-muted" role="status">{fileStatus}</p>}
             </div>
           </div>
         </div>
@@ -378,7 +470,7 @@ export default function AICoordinatorEntryPage() {
       </div>
 
       {previewRows.length > 0 && (
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4 animate-in fade-in-50">
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm space-y-4 animate-in fade-in-50 slide-in-from-bottom-2 motion-reduce:animate-none">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
             <div>
               <h2 className="text-lg font-semibold text-text-primary">Staging Preview & Validation Roster</h2>

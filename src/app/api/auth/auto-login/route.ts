@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -10,22 +11,22 @@ const defaultPasswords = {
 } as const
 
 async function getAccount(role: 'student' | 'coordinator') {
-  const supabase = await createClient()
-  const { data: profile, error } = await supabase
-    .from('users')
-    .select('email')
-    .eq('role', role)
-    .order('full_name', { ascending: true })
-    .limit(1)
-    .maybeSingle()
+  const admin = await createAdminClient()
+  const { data: authUsers, error: authError } = await admin.auth.admin.listUsers()
 
-  const dbEmail = profile?.email || (role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_EMAIL : process.env.NEST_AUTO_LOGIN_EMAIL)
-  const fallbackEmail = dbEmail || (role === 'coordinator' ? 'coordinator@nest.edu' : 'student 1@nest.edu')
-  const password = (role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_PASSWORD : process.env.NEST_AUTO_LOGIN_PASSWORD) || defaultPasswords[role]
+  const candidates = (authUsers?.users ?? []).filter((user) => {
+    const metadataRole = user.user_metadata?.role
+    return metadataRole === role || (metadataRole === undefined && user.email?.toLowerCase().includes(role))
+  })
 
-  if (error && !dbEmail) {
-    throw error
+  const chosen = candidates.find((user) => user.email?.toLowerCase().endsWith('@nest.edu')) || candidates[0]
+
+  if (!chosen && authError) {
+    throw authError
   }
+
+  const fallbackEmail = chosen?.email || (role === 'coordinator' ? 'coordinator@nest.edu' : 'student1@nest.edu')
+  const password = (role === 'coordinator' ? process.env.NEST_AUTO_LOGIN_COORDINATOR_PASSWORD : process.env.NEST_AUTO_LOGIN_PASSWORD) || defaultPasswords[role]
 
   return {
     email: fallbackEmail,
@@ -47,15 +48,15 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('role')
-      .eq('id', data.user.id)
-      .single()
+      .or(`id.eq.${data.user.id},email.eq.${data.user.email}`)
+      .maybeSingle()
 
     if (profileError) throw profileError
 
     return NextResponse.json({
       authenticated: true,
       email: data.user.email,
-      role: profile.role,
+      role: profile?.role || data.user.user_metadata?.role || role,
     })
   } catch (error) {
     const message = error instanceof Error && error.message === 'fetch failed'

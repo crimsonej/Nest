@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus } from 'lucide-react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -33,6 +33,11 @@ export function CoordinatorGroups() {
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({})
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<any>(null)
+  const [groupEditName, setGroupEditName] = useState('')
+  const [groupEditDescription, setGroupEditDescription] = useState('')
+  const [groupEditStatus, setGroupEditStatus] = useState('forming')
+  const [savingGroup, setSavingGroup] = useState(false)
 
   const form = useForm({
     resolver: zodResolver(groupCreationSchema),
@@ -59,7 +64,7 @@ export function CoordinatorGroups() {
         supabase.from('groups').select('*, leader:users!groups_leader_id_fkey(id, full_name, email), coursework:courseworks(id, title, course_unit_id)').order('created_at', { ascending: false }),
         supabase.from('group_members').select('*, user:users(id, full_name, email, student_registration_number)'),
         supabase.from('selected_coordinators').select('*'),
-        supabase.from('courseworks').select('id, title, course_unit_id, course_unit:course_units(code, name)').order('created_at', { ascending: false }),
+        supabase.from('courseworks').select('id, title, course_unit_id, min_group_size, max_group_size, allow_self_formation, lock_at, course_unit:course_units(code, name)').order('created_at', { ascending: false }),
       ])
 
       const units = unitsRes.data || []
@@ -189,6 +194,9 @@ export function CoordinatorGroups() {
         throw new Error('You need to be signed in before creating a group.')
       }
 
+      const selectedCoursework = courseworks.find((coursework) => coursework.id === values.courseworkId)
+      if (!selectedCoursework) throw new Error('Select a valid coursework assignment.')
+
       const { data: group, error } = await supabase
         .from('groups')
         .insert({
@@ -197,7 +205,7 @@ export function CoordinatorGroups() {
           description: values.description,
           leader_id: user.id,
           is_private: values.isPrivate,
-          max_members: values.maxMembers,
+          max_members: selectedCoursework.max_group_size,
           status: 'forming',
         })
         .select()
@@ -284,6 +292,37 @@ export function CoordinatorGroups() {
     }
   }
 
+  const openGroupEditor = (group: any) => {
+    setEditingGroup(group)
+    setGroupEditName(group.name || '')
+    setGroupEditDescription(group.description || '')
+    setGroupEditStatus(group.status || 'forming')
+  }
+
+  const saveGroupEdits = async () => {
+    if (!editingGroup || !groupEditName.trim()) return
+
+    setSavingGroup(true)
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({
+          name: groupEditName.trim(),
+          description: groupEditDescription.trim() || null,
+          status: groupEditStatus,
+        })
+        .eq('id', editingGroup.id)
+
+      if (error) throw error
+      setEditingGroup(null)
+      await fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Unable to update the group.')
+    } finally {
+      setSavingGroup(false)
+    }
+  }
+
   const selectedCourseSummary = unitSummaries.find((unit) => unit.id === selectedCourseUnitId)
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
@@ -345,9 +384,16 @@ export function CoordinatorGroups() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-3">
                         <CardTitle className="text-lg font-bold">{group.name}</CardTitle>
-                        <Badge variant={group.status === 'active' ? 'success' : group.status === 'forming' ? 'warning' : 'secondary'}>
-                          {group.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {currentUnitManagers && (
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openGroupEditor(group)} title="Edit group">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Badge variant={group.status === 'active' ? 'success' : group.status === 'forming' ? 'warning' : 'secondary'}>
+                            {group.status}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -499,6 +545,27 @@ export function CoordinatorGroups() {
           </Card>
         )}
 
+        <Modal isOpen={editingGroup !== null} onClose={() => setEditingGroup(null)} title="Edit Group" size="md">
+          <div className="space-y-4">
+            <Input label="Group name" value={groupEditName} onChange={(event) => setGroupEditName(event.target.value)} />
+            <Textarea label="Group description" value={groupEditDescription} onChange={(event) => setGroupEditDescription(event.target.value)} />
+            <Select
+              label="Group status"
+              value={groupEditStatus}
+              onChange={setGroupEditStatus}
+              options={[
+                { value: 'forming', label: 'Forming - members can still be added' },
+                { value: 'active', label: 'Active - formation complete' },
+                { value: 'locked', label: 'Locked - no further changes' },
+              ]}
+            />
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setEditingGroup(null)}>Cancel</Button>
+              <Button onClick={saveGroupEdits} loading={savingGroup} disabled={!groupEditName.trim()}>Save changes</Button>
+            </div>
+          </div>
+        </Modal>
+
         <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Create New Group" size="lg">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Controller
@@ -526,13 +593,6 @@ export function CoordinatorGroups() {
               error={form.formState.errors.description?.message}
               placeholder="Brief description of this group"
               {...form.register('description')}
-            />
-            <Input
-              label="Max members"
-              type="number"
-              error={form.formState.errors.maxMembers?.message}
-              placeholder="5"
-              {...form.register('maxMembers', { valueAsNumber: true })}
             />
             <Controller
               name="isPrivate"

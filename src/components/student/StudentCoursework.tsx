@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, BookOpen, Clock, Lock, CheckCircle } from 'lucide-react'
+import { Search, BookOpen, Clock, Lock, CheckCircle, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { Textarea } from '../ui/Textarea'
 import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,6 +27,8 @@ export function StudentCoursework() {
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [tasks, setTasks] = useState<any[]>([])
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<Set<string>>(new Set())
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', dueDate: '' })
+  const [creatingTask, setCreatingTask] = useState(false)
 
   useEffect(() => {
     fetchEnrollments()
@@ -86,8 +89,39 @@ export function StudentCoursework() {
 
   const handleViewTasks = (coursework: any) => {
     setSelectedCoursework(coursework)
+    setNewTask({ title: '', description: '', priority: 'medium', dueDate: '' })
     fetchTasks(coursework.id)
     setTaskModalOpen(true)
+  }
+
+  async function handleCreateTask() {
+    if (!user?.id || !selectedCoursework || !newTask.title.trim()) return
+
+    setCreatingTask(true)
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          user_id: user.id,
+          coursework_id: selectedCoursework.id,
+          group_id: null,
+          title: newTask.title.trim(),
+          description: newTask.description.trim() || null,
+          status: 'todo',
+          priority: newTask.priority,
+          due_date: newTask.dueDate ? new Date(newTask.dueDate).toISOString() : null,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      setTasks((current) => [...current, data])
+      setNewTask({ title: '', description: '', priority: 'medium', dueDate: '' })
+    } catch (error) {
+      console.error('Error creating task:', error)
+    } finally {
+      setCreatingTask(false)
+    }
   }
 
   const filteredCourseworks = courseworks.filter((cw) => {
@@ -217,6 +251,46 @@ export function StudentCoursework() {
 
       <Modal isOpen={taskModalOpen} onClose={() => setTaskModalOpen(false)} title={`${selectedCoursework?.title} - Tasks`} size="lg">
         <div className="space-y-4">
+          <div className="space-y-3 rounded-xl border border-border bg-surface-hover/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-medium text-text-primary">Add a task</p>
+              <Button size="sm" onClick={handleCreateTask} loading={creatingTask} disabled={!newTask.title.trim()}>
+                <Plus className="h-4 w-4" />
+                Create task
+              </Button>
+            </div>
+            <Input
+              label="Task title"
+              placeholder="e.g. Draft the introduction"
+              value={newTask.title}
+              onChange={(event) => setNewTask((current) => ({ ...current, title: event.target.value }))}
+            />
+            <Textarea
+              label="Description"
+              placeholder="Optional task details"
+              value={newTask.description}
+              onChange={(event) => setNewTask((current) => ({ ...current, description: event.target.value }))}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Select
+                label="Priority"
+                value={newTask.priority}
+                onChange={(value) => setNewTask((current) => ({ ...current, priority: value }))}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                ]}
+              />
+              <Input
+                label="Due date"
+                type="datetime-local"
+                value={newTask.dueDate}
+                onChange={(event) => setNewTask((current) => ({ ...current, dueDate: event.target.value }))}
+              />
+            </div>
+          </div>
+
           {tasks.length === 0 ? (
             <div className="text-center py-8">
               <BookOpen className="h-12 w-12 mx-auto text-text-muted" />

@@ -61,7 +61,7 @@ export function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in pointer-events-auto"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -71,7 +71,7 @@ export function Modal({
       <div
         ref={contentRef}
         className={cn(
-          'w-full bg-surface rounded-xl shadow-xl animate-slide-up',
+          'relative z-10 w-full bg-surface rounded-xl shadow-xl animate-slide-up pointer-events-auto',
           sizeClasses[size]
         )}
         onClick={(e) => e.stopPropagation()}

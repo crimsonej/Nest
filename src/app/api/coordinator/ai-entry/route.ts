@@ -142,7 +142,10 @@ function isValidRow(row: any) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { action, prompt, provider, apiKey, model, rows } = body
+    const { action, prompt, provider: requestedProvider, apiKey: requestedApiKey, model: requestedModel, rows } = body
+    const provider = requestedProvider || process.env.CRIMSON_DEFAULT_PROVIDER || 'gemini'
+    const apiKey = requestedApiKey || (provider === 'gemini' ? process.env.GEMINI_API_KEY : undefined)
+    const model = requestedModel || (provider === 'gemini' ? process.env.CRIMSON_DEFAULT_MODEL || 'gemini-2.5-flash' : undefined)
     let authenticatedCoordinatorId: string | null = null
 
     const authClient = await createClient()
@@ -171,6 +174,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, provider, models: testedModels, discovered: discoveredModels.length, tested: candidates.length })
     }
 
+    if (action === 'configured') {
+      if (!apiKey || !provider || !model) return NextResponse.json({ error: 'The configured AI provider is unavailable.' }, { status: 503 })
+      const usable = await testProviderModel(provider as Provider, apiKey, model)
+      if (!usable) return NextResponse.json({ error: 'The configured AI model did not respond.' }, { status: 503 })
+      return NextResponse.json({
+        success: true,
+        provider,
+        models: [{ id: model, label: model, provider }],
+      })
+    }
+
     if (action === 'preview') {
       const parsedRows: any[] = []
       let aiRows: any[] | null = null
@@ -181,6 +195,9 @@ export async function POST(request: Request) {
       }
 
       const lines = prompt.split('\n').filter((l: string) => l.trim().length > 0)
+      if (lines.length > 0 && /full\s*name|registration\s*(number|no)|email|phone/i.test(lines[0])) {
+        lines.shift()
+      }
 
       for (const line of lines) {
         const parts = line.split(/[,;\t|]+/).map((p: string) => p.trim())
@@ -320,11 +337,22 @@ export async function POST(request: Request) {
         if (!authUser) {
           const created = await supabase.auth.admin.createUser({
             email,
-            password: `${crypto.randomUUID()}Aa1!`,
-            email_confirm: false,
-            user_metadata: { full_name: row.full_name, role: 'student', status: 'normal' },
+            password: process.env.NEST_IMPORTED_STUDENT_PASSWORD || process.env.NEST_AUTO_LOGIN_PASSWORD || 'NestStudent123!',
+            email_confirm: true,
+            user_metadata: {
+              full_name: row.full_name,
+              role: 'student',
+              status: 'normal',
+              gender: row.gender || 'other',
+              university: row.university || 'Ndejje University',
+              student_registration_number: registrationNumber,
+              faculty: row.faculty || 'Faculty of Computing',
+              course: row.course || 'BSc Computer Science',
+            },
           })
-          if (created.error || !created.data.user) throw created.error || new Error('Unable to create Auth user.')
+          if (created.error || !created.data.user) {
+            throw new Error(created.error?.message || 'Unable to create Auth user.')
+          }
           authUser = created.data.user
         }
 

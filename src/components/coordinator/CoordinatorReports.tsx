@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
+import * as XLSX from 'xlsx'
 
 type ReportCategory =
   | 'students'
@@ -322,6 +323,21 @@ export function CoordinatorReports() {
     URL.revokeObjectURL(url)
   }
 
+  const handleExportXlsx = () => {
+    if (!selectedCategory) return
+
+    const columns = getColumnsForCategory(selectedCategory)
+    const rows = overviewData[selectedCategory] || []
+    if (rows.length === 0) return
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((row) => Object.fromEntries(columns.map((column) => [column.header, column.value(row)])))
+    )
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report')
+    XLSX.writeFile(workbook, `${selectedCategory}-overview-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
   const handleExportPdf = () => {
     if (!selectedCategory) return
 
@@ -617,6 +633,10 @@ export function CoordinatorReports() {
                   <Download className="h-4 w-4" />
                   Export CSV
                 </Button>
+                <Button variant="outline" onClick={handleExportXlsx} disabled={selectedDataset.length === 0}>
+                  <Download className="h-4 w-4" />
+                  Export Excel
+                </Button>
               </div>
 
               {selectedGroup ? (
@@ -686,6 +706,10 @@ export function CoordinatorReports() {
                     <Download className="h-4 w-4" />
                     Export CSV
                   </Button>
+                  <Button variant="outline" onClick={handleExportXlsx} disabled={selectedUnitStudents.length === 0}>
+                    <Download className="h-4 w-4" />
+                    Export Excel
+                  </Button>
                 </div>
 
                 {selectedUnitStudents.length ? (
@@ -733,6 +757,10 @@ export function CoordinatorReports() {
                     <Download className="h-4 w-4" />
                     Export CSV
                   </Button>
+                  <Button variant="outline" onClick={handleExportXlsx} disabled={filteredStudentsForCourse.length === 0}>
+                    <Download className="h-4 w-4" />
+                    Export Excel
+                  </Button>
                 </div>
 
                 {filteredStudentsForCourse.length ? (
@@ -761,6 +789,10 @@ export function CoordinatorReports() {
               <Button variant="outline" onClick={handleExportCsv} disabled={selectedDataset.length === 0}>
                 <Download className="h-4 w-4" />
                 Download CSV
+              </Button>
+              <Button variant="outline" onClick={handleExportXlsx} disabled={selectedDataset.length === 0}>
+                <Download className="h-4 w-4" />
+                Download Excel
               </Button>
               <Button variant="outline" onClick={handleExportPdf} disabled={selectedDataset.length === 0}>
                 <FileText className="h-4 w-4" />

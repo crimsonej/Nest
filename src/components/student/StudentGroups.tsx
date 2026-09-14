@@ -71,7 +71,7 @@ export function StudentGroups() {
     try {
       const [unitsRes, cwRes, groupsRes, membersRes, usersRes, enrollmentsRes, scRes] = await Promise.all([
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
-        supabase.from('courseworks').select('id, title, course_unit_id, course_unit:course_units(code, name, whatsapp_group_link)').eq('is_published', true).order('created_at', { ascending: false }),
+        supabase.from('courseworks').select('id, title, course_unit_id, min_group_size, max_group_size, allow_self_formation, lock_at, course_unit:course_units(code, name, whatsapp_group_link)').eq('is_published', true).order('created_at', { ascending: false }),
         supabase.from('groups').select(`
           *,
           coursework:courseworks(
@@ -280,6 +280,16 @@ export function StudentGroups() {
         throw new Error('Group name is required.')
       }
 
+      const selectedCoursework = courseworks.find((coursework) => coursework.id === values.courseworkId)
+      if (!selectedCoursework) throw new Error('Select a valid coursework assignment.')
+
+      const isEnrolled = studentEnrollments.some(
+        (enrollment) => enrollment.user_id === user.id && enrollment.course_unit_id === selectedCoursework.course_unit_id && enrollment.status === 'active'
+      )
+      if (!isEnrolled) throw new Error('You must be registered for this course unit before forming a group.')
+      if (!selectedCoursework.allow_self_formation) throw new Error('Self-formed groups are disabled for this coursework.')
+      if (selectedCoursework.lock_at && new Date(selectedCoursework.lock_at) <= new Date()) throw new Error('Group formation is locked for this coursework.')
+
       const { data: existingGroup, error: duplicateCheckError } = await supabase
         .from('groups')
         .select('id')
@@ -303,7 +313,7 @@ export function StudentGroups() {
           description: values.description,
           leader_id: user.id,
           is_private: values.isPrivate,
-          max_members: values.maxMembers,
+          max_members: selectedCoursework.max_group_size,
           status: 'forming',
         })
         .select()
@@ -924,13 +934,6 @@ export function StudentGroups() {
               placeholder="Brief goals for this coursework group"
               {...form.register('description')}
             />
-            <Input
-              label="Max Members"
-              type="number"
-              error={form.formState.errors.maxMembers?.message}
-              placeholder="5"
-              {...form.register('maxMembers', { valueAsNumber: true })}
-            />
             <Controller
               name="isPrivate"
               control={form.control}
@@ -1177,13 +1180,6 @@ export function StudentGroups() {
             error={form.formState.errors.description?.message}
             placeholder="Brief goals for this coursework group"
             {...form.register('description')}
-          />
-          <Input
-            label="Max Members"
-            type="number"
-            error={form.formState.errors.maxMembers?.message}
-            placeholder="5"
-            {...form.register('maxMembers', { valueAsNumber: true })}
           />
           <Controller
             name="isPrivate"

@@ -38,11 +38,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (authUser) {
-        const { data: profile } = await supabase
+        let profile = null
+
+        const byId = await supabase
           .from('users')
           .select('*')
           .eq('id', authUser.id)
           .maybeSingle()
+
+        if (byId.data) {
+          profile = byId.data
+        } else if (authUser.email) {
+          const byEmail = await supabase
+            .from('users')
+            .select('*')
+            .ilike('email', authUser.email)
+            .maybeSingle()
+
+          profile = byEmail.data
+        }
+
+        if (!profile && authUser.email) {
+          const fallbackProfile = {
+            id: authUser.id,
+            email: authUser.email,
+            full_name: (authUser.user_metadata?.full_name as string) || 'User Profile',
+            role: (authUser.user_metadata?.role as UserRole) || 'student',
+            gender: (authUser.user_metadata?.gender as User['gender']) || 'other',
+            university: (authUser.user_metadata?.university as string) || 'Ndejje University',
+            faculty: (authUser.user_metadata?.faculty as string) || 'Faculty of Computing',
+            course: (authUser.user_metadata?.course as string) || 'BSc Computer Science',
+            student_registration_number: (authUser.user_metadata?.student_registration_number as string) || undefined,
+            whatsapp_phone: (authUser.user_metadata?.whatsapp_phone as string) || undefined,
+            status: (authUser.user_metadata?.status as User['status']) || 'normal',
+            created_at: authUser.created_at,
+            updated_at: authUser.updated_at || new Date().toISOString(),
+          }
+
+          const { data: insertedProfile, error: insertError } = await supabase
+            .from('users')
+            .upsert(fallbackProfile, { onConflict: 'id' })
+            .select('*')
+            .single()
+
+          if (!insertError) {
+            profile = insertedProfile
+          }
+        }
 
         if (profile) {
           setUser(profile)

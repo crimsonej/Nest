@@ -137,16 +137,18 @@ export function CoordinatorCoursework() {
     setSubmitting(true)
     try {
       const insertData = {
-        ...values,
+        title: values.title,
+        description: values.description || null,
+        type: values.type,
+        max_group_size: values.maxGroupSize,
+        min_group_size: values.minGroupSize,
+        allow_self_formation: values.allowSelfFormation,
+        is_published: editModalOpen && selectedCoursework ? selectedCoursework.is_published : false,
         lock_at: values.lockAt || null,
         course_unit_id: values.courseUnitId,
         work_style: values.workStyle,
         submission_mode: values.submissionMode,
       }
-      delete insertData.lockAt
-      delete insertData.courseUnitId
-      delete insertData.workStyle
-      delete insertData.submissionMode
 
       if (editModalOpen && selectedCoursework) {
         const { error } = await supabase
