@@ -1,68 +1,171 @@
+'use client'
+
 import { ReactNode } from 'react'
-import { ArrowUpRight, Check, CircleUserRound, Users, Sparkles } from 'lucide-react'
+import { motion, type Variants } from 'framer-motion'
+import { ArrowUpRight, Check, CircleUserRound, Sparkles } from 'lucide-react'
+
+const featurePills = ['Organize units', 'Build groups', 'Track progress']
+
+const sidebarVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+  },
+}
+
+const sidebarItem: Variants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { type: 'spring', stiffness: 380, damping: 30 },
+  },
+}
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="auth-stage min-h-screen bg-background lg:grid lg:grid-cols-[1.08fr_0.92fr] transition-colors duration-300">
-      {/* Visual Sidebar */}
-      <div className="auth-visual relative hidden overflow-hidden p-10 text-white sm:p-12 lg:flex lg:flex-col lg:justify-between">
-        <div className="auth-grid absolute inset-0 opacity-30 pointer-events-none" />
+    <div className="auth-stage min-h-screen bg-background lg:grid lg:grid-cols-[1.1fr_0.9fr] transition-colors duration-300">
+      {/* ── Visual Sidebar ── */}
+      <div className="auth-visual relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
+        {/* Grid overlay */}
+        <div className="auth-grid absolute inset-0 opacity-25 pointer-events-none" />
+
+        {/* Animated orbs */}
         <div className="hero-orb hero-orb-one" />
         <div className="hero-orb hero-orb-two" />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-900 shadow-xl shadow-black/20">
-              <Sparkles className="h-6 w-6 text-primary" />
+        {/* Extra glow pulse at bottom-right */}
+        <div
+          className="absolute bottom-0 right-0 h-96 w-96 rounded-full opacity-20 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, var(--color-primary) 0%, transparent 70%)',
+            animation: 'pulse-glow 6s ease-in-out infinite alternate',
+          }}
+        />
+
+        {/* Content */}
+        <motion.div
+          variants={sidebarVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 flex flex-col justify-between h-full p-10 sm:p-14 text-white"
+        >
+          {/* Top section */}
+          <div>
+            {/* Logo */}
+            <motion.div
+              variants={sidebarItem}
+              className="flex items-center gap-3"
+            >
+              <motion.div
+                whileHover={{ rotate: 15, scale: 1.1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-2xl shadow-black/30"
+              >
+                <Sparkles className="h-6 w-6 text-primary" />
+              </motion.div>
+              <span className="text-2xl font-black tracking-[0.22em]">
+                NEST
+              </span>
+            </motion.div>
+
+            {/* Hero copy */}
+            <div className="mt-24 max-w-lg">
+              <motion.p
+                variants={sidebarItem}
+                className="text-xs font-bold uppercase tracking-[0.22em] text-white/70"
+              >
+                University Collaboration, Organized
+              </motion.p>
+              <motion.h1
+                variants={sidebarItem}
+                className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight xl:text-5xl"
+              >
+                Make every course group easier to run.
+              </motion.h1>
+              <motion.p
+                variants={sidebarItem}
+                className="mt-6 max-w-md text-[15px] leading-8 text-white/75"
+              >
+                One focused workspace for students and coordinators to move from
+                scattered messages to clear, accountable progress.
+              </motion.p>
             </div>
-            <span className="text-2xl font-black tracking-[0.2em]">NEST</span>
+
+            {/* Feature Pills */}
+            <motion.div
+              variants={sidebarItem}
+              className="mt-10 flex flex-wrap gap-3"
+            >
+              {featurePills.map((item, i) => (
+                <motion.div
+                  key={item}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    delay: 0.55 + i * 0.1,
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 24,
+                  }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md"
+                >
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                    <Check className="h-3 w-3 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-white/90">{item}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
 
-          <div className="mt-20 max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-              University Collaboration, Organized
-            </p>
-            <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight xl:text-6xl">
-              Make every course group easier to run.
-            </h1>
-            <p className="mt-7 max-w-md text-base leading-8 text-white/80">
-              One focused workspace for students and coordinators to move from scattered messages to clear, accountable progress.
-            </p>
-          </div>
-
-          <div className="mt-10 grid max-w-lg gap-3 sm:grid-cols-3">
-            {['Organize units', 'Build groups', 'Track progress'].map((item) => (
-              <div key={item} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md">
-                <Check className="h-4 w-4 text-white" />
-                <p className="mt-4 text-xs font-semibold text-white/90">{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
-          <span className="flex items-center gap-2">
-            <CircleUserRound className="h-4 w-4" /> University Workspace
-          </span>
-          <span className="flex items-center gap-2">
-            Secure Workspace Access <ArrowUpRight className="h-4 w-4" />
-          </span>
-        </div>
+          {/* Bottom bar */}
+          <motion.div
+            variants={sidebarItem}
+            className="flex items-center justify-between text-xs text-white/60 mt-10"
+          >
+            <span className="flex items-center gap-2">
+              <CircleUserRound className="h-4 w-4" />
+              University Workspace
+            </span>
+            <span className="flex items-center gap-2">
+              Secure Workspace Access
+              <ArrowUpRight className="h-4 w-4" />
+            </span>
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* Form Pane */}
-      <div className="auth-form-pane relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10 sm:px-10">
-        <div className="auth-mobile-mark absolute left-6 top-6 flex items-center gap-3.5 lg:hidden">
+      {/* ── Form Pane ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="auth-form-pane relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-10"
+      >
+        {/* Mobile logo mark */}
+        <div className="auth-mobile-mark absolute left-5 top-5 flex items-center gap-3 lg:hidden">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/30">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="text-base font-black tracking-[0.2em] text-text-primary">NEST</span>
+          <span className="text-base font-black tracking-[0.22em] text-text-primary">
+            NEST
+          </span>
         </div>
 
-        <div className="w-full max-w-lg rounded-3xl border border-border/80 bg-surface/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl transition-all">
+        {/* Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.05 }}
+          className="w-full max-w-xl rounded-3xl border border-border/80 bg-surface/95 p-6 sm:p-9 shadow-2xl backdrop-blur-2xl hover:border-primary/30 transition-colors duration-300"
+        >
           {children}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

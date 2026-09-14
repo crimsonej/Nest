@@ -14,10 +14,10 @@ export interface UniversityRule {
 export const universityRules: UniversityRule[] = [
   {
     university: 'Ndejje University',
-    abbreviation: 'NU',
+    abbreviation: 'NDU',
     branch: 'Kampala Campus',
     location: 'Kampala, Uganda',
-    acceptedRegNumberPattern: '^\\d{2}/\\d{1,2}/\\d{3,4}/[A-Z]/\\d{4}$',
+    acceptedRegNumberPattern: '^\\d{2}/[12]/\\d{3}/D/\\d{4}$',
     exampleRegNumber: '26/2/222/D/2222',
     supportedIntakeYears: [1, 2, 3, 4, 5],
     programs: ['Computer Science', 'Information Technology', 'Software Engineering', 'Statistics', 'Business', 'Education'],

@@ -81,7 +81,7 @@ html.dark {
 
   html {
     scroll-behavior: smooth;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   body {
@@ -90,7 +90,7 @@ html.dark {
     min-width: 320px;
     background-image: radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 40%), linear-gradient(135deg, color-mix(in srgb, var(--color-background) 95%, var(--color-primary)) 0%, var(--color-background) 50%, color-mix(in srgb, var(--color-background) 96%, #ffffff) 100%);
     background-attachment: fixed;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   :focus-visible {
@@ -100,24 +100,28 @@ html.dark {
   .hero-orb {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(100px);
+    filter: blur(45px);
     opacity: 0.35;
-    animation: float-orb 12s ease-in-out infinite alternate;
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    contain: layout style;
+    animation: float-orb 14s ease-in-out infinite alternate;
   }
 
   .hero-orb-one {
     top: 2%;
     left: 6%;
-    height: 20rem;
-    width: 20rem;
+    height: 18rem;
+    width: 18rem;
     background: color-mix(in srgb, var(--color-primary) 70%, #ec4899);
   }
 
   .hero-orb-two {
     right: 8%;
     top: 10%;
-    height: 22rem;
-    width: 22rem;
+    height: 20rem;
+    width: 20rem;
     background: color-mix(in srgb, var(--color-primary) 40%, #8b5cf6);
     animation-delay: 2s;
   }
@@ -125,8 +129,8 @@ html.dark {
   .hero-orb-three {
     bottom: 5%;
     left: 35%;
-    height: 18rem;
-    width: 18rem;
+    height: 16rem;
+    width: 16rem;
     background: color-mix(in srgb, var(--color-primary) 50%, #3b82f6);
     animation-delay: 4s;
   }
@@ -245,18 +249,25 @@ html.dark {
 }
 
 @keyframes float-orb {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(20px, -25px, 0) scale(1.05);
-  }
-  100% {
-    transform: translate3d(-15px, 15px, 0) scale(0.95);
-  }
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(12px, -16px, 0) scale(1.03); }
+  66%  { transform: translate3d(-8px, 8px, 0) scale(0.97); }
+  100% { transform: translate3d(6px, -6px, 0) scale(1.01); }
+}
+
+@keyframes pulse-glow {
+  0%   { transform: translate3d(0, 0, 0) scale(1);   opacity: 0.15; }
+  50%  { transform: translate3d(-20px, -20px, 0) scale(1.2); opacity: 0.25; }
+  100% { transform: translate3d(10px, 10px, 0) scale(0.95);  opacity: 0.18; }
 }
 
 @layer utilities {
+  .gpu-fast {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
