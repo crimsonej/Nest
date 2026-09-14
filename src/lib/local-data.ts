@@ -15,7 +15,9 @@ export type LocalTableName =
   | 'unassigned_students'
 
 export function isLocalDataMode() {
-  return process.env.NEXT_PUBLIC_USE_LOCAL_DATA === 'true' || process.env.NEXT_PUBLIC_USE_LOCAL_DATA === '1'
+  // The production app is configured to use the live Supabase project only.
+  // Keep this helper present for compatibility, but never enable local demo mode.
+  return false
 }
 
 export function validateRegNumber(regNo: string, pattern = '^\\d{2}/\\d{1,2}/\\d{3,4}/[A-Z]/\\d{4}$') {
@@ -54,22 +56,8 @@ export function filterUserForPrivacy(targetUser: any, currentUserId: string, sta
 const localDataListeners = new Set<(table: string) => void>()
 
 export function subscribeLocalData(listener: (table: string) => void) {
-  localDataListeners.add(listener)
-  if (typeof window !== 'undefined') {
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === 'nest-local-data-change' && event.newValue) {
-        const storedState = window.localStorage.getItem('nest-local-state-v2')
-        if (storedState) (globalThis as any).__nest_local_state = JSON.parse(storedState)
-        listener(event.newValue)
-      }
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => {
-      localDataListeners.delete(listener)
-      window.removeEventListener('storage', handleStorage)
-    }
-  }
-  return () => localDataListeners.delete(listener)
+  // Local demo subscriptions are intentionally disabled in production mode.
+  return () => undefined
 }
 
 function notifyLocalDataChanged(table: string) {

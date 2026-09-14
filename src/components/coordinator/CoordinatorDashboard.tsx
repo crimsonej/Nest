@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownRight, ArrowRight, Plus } from 'lucide-react'
+import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownRight, ArrowRight, Plus, BookCopy } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -71,6 +71,7 @@ export function CoordinatorDashboard() {
   const supabase = createClient()
   const [metrics, setMetrics] = useState({
     activeCourseUnits: 0,
+    totalCourses: 0,
     totalStudents: 0,
     totalGroups: 0,
     groupFormationRate: 0,
@@ -96,18 +97,20 @@ export function CoordinatorDashboard() {
 
   async function fetchMetrics() {
     try {
-      const [unitsRes, studentsRes, groupsRes, membersRes, requestsRes] = await Promise.all([
+      const [unitsRes, coursesRes, studentsRes, groupsRes, membersRes, requestsRes] = await Promise.all([
         supabase.from('course_units').select('id', { count: 'exact' }).eq('is_active', true),
+        supabase.from('courses').select('id', { count: 'exact' }).eq('is_active', true),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'student'),
         supabase.from('groups').select('id', { count: 'exact' }).in('status', ['forming', 'active']),
         supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active']),
         supabase.from('group_join_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
       ])
 
-      const queryError = unitsRes.error || studentsRes.error || groupsRes.error || membersRes.error || requestsRes.error
+      const queryError = unitsRes.error || coursesRes.error || studentsRes.error || groupsRes.error || membersRes.error || requestsRes.error
       if (queryError) throw queryError
 
       const activeCourseUnits = unitsRes.count || 0
+      const totalCourses = coursesRes.count || 0
       const totalStudents = studentsRes.count || 0
       const totalGroups = groupsRes.count || 0
       const groupedStudents = new Set(membersRes.data?.map((m: { user_id: string }) => m.user_id) || []).size
@@ -117,6 +120,7 @@ export function CoordinatorDashboard() {
 
       setMetrics({
         activeCourseUnits,
+        totalCourses,
         totalStudents,
         totalGroups,
         groupFormationRate,
@@ -243,12 +247,20 @@ export function CoordinatorDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="Active Course Units"
           value={metrics.activeCourseUnits}
           icon={<BookOpen className="h-6 w-6" />}
           color="primary"
+          href="/coordinator/course-units"
+        />
+        <MetricCard
+          title="Available Courses"
+          value={formatNumber(metrics.totalCourses)}
+          icon={<BookCopy className="h-6 w-6" />}
+          color="success"
+          href="/coordinator/courses"
         />
         <MetricCard
           title="Total Students"

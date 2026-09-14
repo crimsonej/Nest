@@ -28,9 +28,11 @@ export function useRealtime<T = Record<string, unknown>>({
     if (!enabled) return
 
     const newChannel = supabase
-      .channel(`realtime:${table}`)
+      .channel(`realtime:${table}`) as any
+
+    newChannel
       .on(
-        'postgres_changes',
+        'postgres_changes' as const,
         {
           event: '*',
           schema: 'public',
@@ -72,9 +74,11 @@ export function useRealtimeSubscription(
 
   useEffect(() => {
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName) as any
+
+    channel
       .on(
-        'postgres_changes',
+        'postgres_changes' as const,
         { event: '*', schema: 'public' },
         callback
       )

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getLocalUserByEmail, isLocalDataMode } from '@/lib/local-data'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -25,23 +24,6 @@ function getAccount(role: keyof typeof seededAccounts) {
 }
 
 export async function POST(request: Request) {
-  if (isLocalDataMode()) {
-    const body = await request.json().catch(() => ({})) as { role?: keyof typeof seededAccounts }
-    const role = body.role === 'coordinator' ? 'coordinator' : 'student'
-    const account = getAccount(role)
-    const user = getLocalUserByEmail(account.email)
-
-    if (!user || user.role !== role) {
-      return NextResponse.json({ error: 'Local demo account unavailable for this role.' }, { status: 401 })
-    }
-
-    return NextResponse.json({
-      authenticated: true,
-      email: user.email,
-      role: user.role,
-    })
-  }
-
   try {
     const body = await request.json().catch(() => ({})) as { role?: keyof typeof seededAccounts }
     const role = body.role === 'coordinator' ? 'coordinator' : 'student'

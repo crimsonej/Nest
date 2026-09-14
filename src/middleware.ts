@@ -1,12 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isLocalDataMode } from '@/lib/local-data'
 
 export async function middleware(request: NextRequest) {
-  if (isLocalDataMode()) {
-    return NextResponse.next()
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })

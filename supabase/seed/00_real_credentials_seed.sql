@@ -23,9 +23,12 @@ BEGIN
   END IF;
 END $$;
 
+-- IMPORTANT:
+-- This seed is intentionally idempotent and must not delete or truncate live auth/public tables.
+-- In production or shared Supabase projects, destructive resets require database-owner privileges
+-- and should be handled with a dedicated reset workflow, not by app SQL.
+
 DO $$
-DECLARE
-  v_instance_id UUID;
 BEGIN
   IF EXISTS (
     SELECT 1
@@ -33,41 +36,9 @@ BEGIN
     WHERE table_schema = 'auth'
       AND table_name = 'users'
   ) THEN
-    SELECT id INTO v_instance_id
-    FROM auth.instances
-    LIMIT 1;
-
-    IF v_instance_id IS NOT NULL THEN
-      DELETE FROM auth.identities
-      WHERE user_id IN (
-        SELECT id
-        FROM auth.users
-        WHERE email LIKE '%@nest.edu'
-      );
-
-      DELETE FROM auth.users
-      WHERE email LIKE '%@nest.edu';
-    END IF;
+    RAISE NOTICE 'Auth users table detected; continuing with idempotent seed updates.';
   END IF;
 END $$;
-
-TRUNCATE TABLE
-  public.audit_logs,
-  public.group_join_requests,
-  public.group_members,
-  public.tasks,
-  public.resources,
-  public.groups,
-  public.courseworks,
-  public.course_units,
-  public.courses,
-  public.faculties,
-  public.selected_coordinators,
-  public.student_course_units,
-  public.registration_rules,
-  public.universities,
-  public.users
-RESTART IDENTITY CASCADE;
 
 INSERT INTO public.universities (
   university,
@@ -95,6 +66,9 @@ ON CONFLICT (university) DO UPDATE SET
   example_reg_number = EXCLUDED.example_reg_number,
   is_active = TRUE,
   updated_at = NOW();
+
+-- Guard against re-running the seed in a live project without wiping data.
+-- This keeps the script safe for existing rows and avoids the ownership errors triggered by destructive table resets.
 
 INSERT INTO public.registration_rules (
   university_id,
@@ -412,3 +386,121 @@ WHERE email IN (
   'student3@nest.edu',
   'student4@nest.edu'
 );
+
+-- Fill the missing user metadata fields and expand the live seed to a realistic baseline of 50 profiles.
+UPDATE public.users
+SET gender = CASE
+  WHEN gender IS NULL AND full_name ILIKE '%a%' THEN 'female'
+  WHEN gender IS NULL AND full_name ILIKE '%o%' THEN 'male'
+  ELSE gender
+END,
+    status = COALESCE(status, 'normal'),
+    university = COALESCE(university, 'Ndejje University'),
+    updated_at = NOW()
+WHERE gender IS NULL OR status IS NULL OR university IS NULL;
+
+WITH seed_students AS (
+  SELECT * FROM (
+    VALUES
+      ('Alice Mwangi', 'female', '26/2/222/D/2222', '+254700000002', 'student1@nest.edu'),
+      ('Brian Otieno', 'male', '26/2/223/D/2223', '+254700000003', 'student2@nest.edu'),
+      ('Caroline Njeri', 'female', '26/2/224/D/2224', '+254700000004', 'student3@nest.edu'),
+      ('Daniel Kibet', 'male', '26/2/225/D/2225', '+254700000005', 'student4@nest.edu'),
+      ('Faith Achieng', 'female', '26/2/226/D/2226', '+254700000006', 'student5@nest.edu'),
+      ('George Wambua', 'male', '26/2/227/D/2227', '+254700000007', 'student6@nest.edu'),
+      ('Hannah Muwonge', 'female', '26/2/228/D/2228', '+254700000008', 'student7@nest.edu'),
+      ('Isaac Kato', 'male', '26/2/229/D/2229', '+254700000009', 'student8@nest.edu'),
+      ('Joy Namuddu', 'female', '26/2/230/D/2230', '+254700000010', 'student9@nest.edu'),
+      ('Kevin Mwesigwa', 'male', '26/2/231/D/2231', '+254700000011', 'student10@nest.edu'),
+      ('Lilian Nansubuga', 'female', '26/2/232/D/2232', '+254700000012', 'student11@nest.edu'),
+      ('Martin Ouma', 'male', '26/2/233/D/2233', '+254700000013', 'student12@nest.edu'),
+      ('Naomi Kisa', 'female', '26/2/234/D/2234', '+254700000014', 'student13@nest.edu'),
+      ('Oliver Nabulya', 'male', '26/2/235/D/2235', '+254700000015', 'student14@nest.edu'),
+      ('Priscilla Auma', 'female', '26/2/236/D/2236', '+254700000016', 'student15@nest.edu'),
+      ('Quentin Ssebagala', 'male', '26/2/237/D/2237', '+254700000017', 'student16@nest.edu'),
+      ('Ruth Nakibuuka', 'female', '26/2/238/D/2238', '+254700000018', 'student17@nest.edu'),
+      ('Samuel Kibirige', 'male', '26/2/239/D/2239', '+254700000019', 'student18@nest.edu'),
+      ('Tina Ssentongo', 'female', '26/2/240/D/2240', '+254700000020', 'student19@nest.edu'),
+      ('Umar Muli', 'male', '26/2/241/D/2241', '+254700000021', 'student20@nest.edu'),
+      ('Violet Nanyonga', 'female', '26/2/242/D/2242', '+254700000022', 'student21@nest.edu'),
+      ('Walter Kiwanuka', 'male', '26/2/243/D/2243', '+254700000023', 'student22@nest.edu'),
+      ('Xavier Nalubega', 'male', '26/2/244/D/2244', '+254700000024', 'student23@nest.edu'),
+      ('Yvonne Nampijja', 'female', '26/2/245/D/2245', '+254700000025', 'student24@nest.edu'),
+      ('Zainab Mirembe', 'female', '26/2/246/D/2246', '+254700000026', 'student25@nest.edu'),
+      ('Abel Atukunda', 'male', '26/2/247/D/2247', '+254700000027', 'student26@nest.edu'),
+      ('Betty Ayebare', 'female', '26/2/248/D/2248', '+254700000028', 'student27@nest.edu'),
+      ('Collins Atwine', 'male', '26/2/249/D/2249', '+254700000029', 'student28@nest.edu'),
+      ('Diana Namatovu', 'female', '26/2/250/D/2250', '+254700000030', 'student29@nest.edu'),
+      ('Ethan Mugisha', 'male', '26/2/251/D/2251', '+254700000031', 'student30@nest.edu'),
+      ('Flora Nakitto', 'female', '26/2/252/D/2252', '+254700000032', 'student31@nest.edu'),
+      ('Godfrey Lule', 'male', '26/2/253/D/2253', '+254700000033', 'student32@nest.edu'),
+      ('Hellen Nabirye', 'female', '26/2/254/D/2254', '+254700000034', 'student33@nest.edu'),
+      ('Ian Muwanga', 'male', '26/2/255/D/2255', '+254700000035', 'student34@nest.edu'),
+      ('Janet Akello', 'female', '26/2/256/D/2256', '+254700000036', 'student35@nest.edu'),
+      ('Kenneth Okwir', 'male', '26/2/257/D/2257', '+254700000037', 'student36@nest.edu'),
+      ('Lucy Nampeera', 'female', '26/2/258/D/2258', '+254700000038', 'student37@nest.edu'),
+      ('Michael Okello', 'male', '26/2/259/D/2259', '+254700000039', 'student38@nest.edu'),
+      ('Nadia Nakitende', 'female', '26/2/260/D/2260', '+254700000040', 'student39@nest.edu'),
+      ('Oscar Bwengye', 'male', '26/2/261/D/2261', '+254700000041', 'student40@nest.edu'),
+      ('Patricia Katuura', 'female', '26/2/262/D/2262', '+254700000042', 'student41@nest.edu'),
+      ('Qadir Waiswa', 'male', '26/2/263/D/2263', '+254700000043', 'student42@nest.edu'),
+      ('Rita Byaruhanga', 'female', '26/2/264/D/2264', '+254700000044', 'student43@nest.edu'),
+      ('Stephen Kizza', 'male', '26/2/265/D/2265', '+254700000045', 'student44@nest.edu'),
+      ('Tracy Nampala', 'female', '26/2/266/D/2266', '+254700000046', 'student45@nest.edu'),
+      ('Uriel Ssekyewa', 'male', '26/2/267/D/2267', '+254700000047', 'student46@nest.edu'),
+      ('Vivian Masaba', 'female', '26/2/268/D/2268', '+254700000048', 'student47@nest.edu'),
+      ('Winston Kankya', 'male', '26/2/269/D/2269', '+254700000049', 'student48@nest.edu'),
+      ('Yasmin Nyakato', 'female', '26/2/270/D/2270', '+254700000050', 'student49@nest.edu'),
+      ('Zakariya Kirabo', 'male', '26/2/271/D/2271', '+254700000051', 'student50@nest.edu')
+  ) AS v(full_name, gender, student_registration_number, whatsapp_phone, email)
+),
+student_auth_rows AS (
+  SELECT
+    COALESCE(au.id, gen_random_uuid()) AS id,
+    sd.email,
+    sd.full_name,
+    sd.gender,
+    sd.student_registration_number,
+    sd.whatsapp_phone
+  FROM seed_students sd
+  LEFT JOIN auth.users au ON au.email = sd.email
+  WHERE au.id IS NULL
+)
+INSERT INTO auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+SELECT
+  sar.id,
+  (SELECT id FROM auth.instances LIMIT 1),
+  'authenticated',
+  'authenticated',
+  sar.email,
+  crypt('NestStudent123!', gen_salt('bf')),
+  NOW(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', sar.full_name, 'role', 'student', 'gender', sar.gender)::jsonb,
+  NOW(),
+  NOW()
+FROM student_auth_rows sar
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE public.users u
+SET faculty_id = c.faculty_id,
+    course_id = c.id,
+    university_id = univ.id,
+    updated_at = NOW()
+FROM public.courses c
+JOIN public.faculties f ON f.id = c.faculty_id
+JOIN public.universities univ ON univ.university = 'Ndejje University'
+WHERE u.role = 'student' AND (u.course = c.code OR u.course = c.name)
+  AND u.faculty_id IS NULL;

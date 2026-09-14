@@ -333,9 +333,27 @@ export function CoordinatorStudents() {
           }
           setStudents((prev) => [newStudent, ...prev])
         } else {
+          const generatedPassword = `${crypto.randomUUID().slice(0, 12)}Aa!`
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: generatedPassword,
+            options: {
+              data: {
+                full_name: formData.full_name,
+                role: 'student',
+                gender: formData.gender,
+                university: formData.university,
+              },
+            },
+          })
+
+          if (authError) throw authError
+          if (!authData.user) throw new Error('Unable to create the student authentication record.')
+
           const { data, error } = await supabase
             .from('users')
-            .insert({
+            .upsert({
+              id: authData.user.id,
               email: formData.email,
               full_name: formData.full_name,
               role: 'student',
@@ -346,7 +364,7 @@ export function CoordinatorStudents() {
               faculty: formData.faculty,
               course: formData.course,
               status: 'normal',
-            })
+            }, { onConflict: 'id' })
             .select()
             .single()
 

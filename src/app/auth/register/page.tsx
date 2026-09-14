@@ -21,17 +21,21 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [facultyOptions, setFacultyOptions] = useState<Array<{ value: string; label: string; id: string }>>([])
-  const [courseOptions, setCourseOptions] = useState<Array<{ value: string; label: string; facultyId: string }>>([])
+  const [courseOptions, setCourseOptions] = useState<Array<{ id: string; value: string; label: string; facultyId: string }>>([])
+  const [courseUnitOptions, setCourseUnitOptions] = useState<Array<{ id: string; value: string; label: string; courseId: string }>>([])
+  const [selectedCourseUnitIds, setSelectedCourseUnitIds] = useState<string[]>([])
   const universityOptions = getUniversityOptions()
 
   async function fetchAcademicOptions() {
     try {
-      const [{ data: faculties }, { data: courses }] = await Promise.all([
+      const [{ data: faculties }, { data: courses }, { data: courseUnits }] = await Promise.all([
         supabase.from('faculties').select('id, code, name').eq('is_active', true).order('name'),
         supabase.from('courses').select('id, code, name, faculty_id').eq('is_active', true).order('name'),
+        supabase.from('course_units').select('id, code, name, course_id').eq('is_active', true).order('code'),
       ])
       setFacultyOptions(faculties?.map((faculty: { code: string; name: string; id: string }) => ({ value: faculty.code, label: `${faculty.code} - ${faculty.name}`, id: faculty.id })) || [])
-      setCourseOptions(courses?.map((course: { code: string; name: string; faculty_id: string }) => ({ value: course.code, label: `${course.code} - ${course.name}`, facultyId: course.faculty_id })) || [])
+      setCourseOptions(courses?.map((course: { id: string; code: string; name: string; faculty_id: string }) => ({ id: course.id, value: course.code, label: `${course.code} - ${course.name}`, facultyId: course.faculty_id })) || [])
+      setCourseUnitOptions(courseUnits?.map((unit: { id: string; code: string; name: string; course_id: string }) => ({ id: unit.id, value: unit.id, label: `${unit.code} - ${unit.name}`, courseId: unit.course_id })) || [])
     } catch (err) {
       console.error('Error fetching academic options:', err)
     }
@@ -61,9 +65,15 @@ export default function RegisterPage() {
   const selectedUniversityRule = resolveUniversityRule(selectedUniversity)
   const selectedFaculty = form.watch('faculty')
   const selectedFacultyId = facultyOptions.find((option) => option.value === selectedFaculty)?.id
+  const selectedCourseName = form.watch('course')
+  const selectedCourseId = courseOptions.find((option) => option.value === selectedCourseName)?.id || ''
   const visibleCourseOptions = courseOptions.filter((option) => {
     if (!selectedFacultyId) return true
     return option.facultyId === selectedFacultyId
+  })
+  const visibleCourseUnitOptions = courseUnitOptions.filter((option) => {
+    if (!selectedCourseId) return false
+    return option.courseId === selectedCourseId
   })
 
   async function onSubmit(values: any) {
@@ -85,23 +95,41 @@ export default function RegisterPage() {
 
       if (signUpError) throw signUpError
 
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .update({
-            full_name: values.fullName,
-            gender: values.gender,
-            university: values.university,
-            student_registration_number: values.studentRegistrationNumber,
-            whatsapp_phone: values.whatsappPhone,
-            faculty: values.faculty,
-            course: values.course,
-            role: 'student',
-            status: 'normal',
-          })
-          .eq('id', data.user.id)
+      const authUser = data.user
+      if (!authUser) {
+        throw new Error('User creation did not return a valid account. Please try again.')
+      }
 
-        if (profileError) throw profileError
+      const { error: profileError } = await supabase
+        .from('users')
+        .upsert({
+          id: authUser.id,
+          email: values.email,
+          full_name: values.fullName,
+          gender: values.gender,
+          university: values.university,
+          student_registration_number: values.studentRegistrationNumber,
+          whatsapp_phone: values.whatsappPhone,
+          faculty: values.faculty,
+          course: values.course,
+          role: 'student',
+          status: 'normal',
+        }, { onConflict: 'id' })
+
+      if (profileError) throw profileError
+
+      if (selectedCourseUnitIds.length > 0) {
+        const enrollments = selectedCourseUnitIds.map((courseUnitId) => ({
+          user_id: authUser.id,
+          course_unit_id: courseUnitId,
+          status: 'active',
+        }))
+
+        const { error: enrollmentError } = await supabase
+          .from('student_course_units')
+          .upsert(enrollments, { onConflict: 'user_id,course_unit_id' })
+
+        if (enrollmentError) throw enrollmentError
       }
 
       setSuccess(true)
@@ -214,9 +242,50 @@ export default function RegisterPage() {
           options={visibleCourseOptions}
           placeholder="Select your degree course"
           value={form.watch('course')}
-          onChange={(value) => form.setValue('course', value, { shouldValidate: true })}
+          onChange={(value) => {
+            form.setValue('course', value, { shouldValidate: true })
+            setSelectedCourseUnitIds([])
+          }}
         />
       </div>
+
+      {selectedCourseId && visibleCourseUnitOptions.length > 0 && (
+        <div className="space-y-3 rounded-xl border border-border bg-surface-hover/50 p-4">
+          <div>
+            <p className="label mb-1">Available course units for this course *</p>
+            <p className="text-xs text-text-muted">Select the units you are taking this semester.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {visibleCourseUnitOptions.map((unit) => {
+              const checked = selectedCourseUnitIds.includes(unit.id)
+              return (
+                <label key={unit.id} className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setSelectedCourseUnitIds((prev) =>
+                        checked ? prev.filter((id) => id !== unit.id) : [...prev, unit.id]
+                      )
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <span>
+                    <span className="block font-medium text-text-primary">{unit.label}</span>
+                    <span className="text-xs text-text-muted">This unit will be linked to your student profile.</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {selectedCourseId && visibleCourseUnitOptions.length === 0 && (
+        <div className="rounded-xl border border-warning/25 bg-warning/5 p-3 text-sm text-warning">
+          No active course units are available for the selected course yet. Coordinate with the coordinator to add them first.
+        </div>
+      )}
 
       <div className="relative">
         <Input
