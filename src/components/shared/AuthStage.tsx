@@ -468,6 +468,10 @@ function RegisterFormSection({
   const [courseUnitsLoading, setCourseUnitsLoading] = useState(false)
   const [courseUnitError, setCourseUnitError] = useState('')
   const [pendingAuthUserId, setPendingAuthUserId] = useState('')
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [pendingRegistration, setPendingRegistration] = useState<any>(null)
+  const [verificationLoading, setVerificationLoading] = useState(false)
   const [savingCourseUnits, setSavingCourseUnits] = useState(false)
   const universityOptions = getUniversityOptions()
 
@@ -589,6 +593,31 @@ function RegisterFormSection({
     return option.facultyId === selectedFacultyId
   })
 
+  async function finishProfileRegistration(authUser: { id: string }, values: any, courseId: string) {
+    const { error: profileError } = await supabase.from('users').upsert(
+      {
+        id: authUser.id,
+        email: values.email,
+        full_name: values.fullName,
+        gender: values.gender,
+        university: values.university,
+        student_registration_number: values.studentRegistrationNumber,
+        whatsapp_phone: values.whatsappPhone,
+        faculty: values.faculty,
+        course: values.course,
+        role: 'student',
+        status: 'normal',
+      },
+      { onConflict: 'id' }
+    )
+    if (profileError) throw profileError
+
+    setPendingAuthUserId(authUser.id)
+    setSelectedCourseUnitIds([])
+    setCourseUnitDialogOpen(true)
+    await fetchCourseUnits(courseId)
+  }
+
   async function onSubmit(values: any) {
     setLoading(true)
     setError('')
@@ -615,29 +644,14 @@ function RegisterFormSection({
       if (!authUser)
         throw new Error('Account registration did not return a valid user.')
 
-      const { error: profileError } = await supabase.from('users').upsert(
-        {
-          id: authUser.id,
-          email: values.email,
-          full_name: values.fullName,
-          gender: values.gender,
-          university: values.university,
-          student_registration_number: values.studentRegistrationNumber,
-          whatsapp_phone: values.whatsappPhone,
-          faculty: values.faculty,
-          course: values.course,
-          role: 'student',
-          status: 'normal',
-        },
-        { onConflict: 'id' }
-      )
-
-      if (profileError) throw profileError
-
-      setPendingAuthUserId(authUser.id)
-      setSelectedCourseUnitIds([])
-      setCourseUnitDialogOpen(true)
-      await fetchCourseUnits(selectedCourseId)
+      if (data.session) {
+        await finishProfileRegistration(authUser, values, selectedCourseId)
+      } else {
+        setPendingAuthUserId(authUser.id)
+        setPendingRegistration({ ...values, courseId: selectedCourseId })
+        setVerificationEmail(values.email)
+        setVerificationCode('')
+      }
     } catch (err) {
       const message = err && typeof err === 'object' && 'message' in err
         ? String((err as { message: unknown }).message)
@@ -645,6 +659,53 @@ function RegisterFormSection({
       setError(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function verifyRegistrationCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setVerificationLoading(true)
+    setError('')
+    try {
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email: verificationEmail,
+        token: verificationCode.trim(),
+        type: 'signup',
+      })
+      if (verifyError) throw verifyError
+      const authUser = data.user
+      if (!authUser || !pendingRegistration) {
+        throw new Error('Verification succeeded but the account profile is unavailable.')
+      }
+
+      setVerificationEmail('')
+      setVerificationCode('')
+      setPendingRegistration(null)
+      await finishProfileRegistration(authUser, pendingRegistration, pendingRegistration.courseId)
+    } catch (err) {
+      setError(err && typeof err === 'object' && 'message' in err
+        ? String((err as { message: unknown }).message)
+        : 'Unable to verify the code.')
+    } finally {
+      setVerificationLoading(false)
+    }
+  }
+
+  async function resendRegistrationCode() {
+    setVerificationLoading(true)
+    setError('')
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: verificationEmail,
+      })
+      if (resendError) throw resendError
+    } catch (err) {
+      setError(err && typeof err === 'object' && 'message' in err
+        ? String((err as { message: unknown }).message)
+        : 'Unable to resend the verification code.')
+    } finally {
+      setVerificationLoading(false)
     }
   }
 
@@ -711,6 +772,34 @@ function RegisterFormSection({
           </p>
         </motion.div>
       </motion.div>
+    )
+  }
+
+  if (verificationEmail) {
+    return (
+      <form onSubmit={verifyRegistrationCode} className="space-y-5">
+        <h1 className="text-2xl font-extrabold text-text-primary">Check your email</h1>
+        <p className="text-sm text-text-secondary">
+          Enter the verification code sent to {verificationEmail}.
+        </p>
+        {error && <p className="text-sm font-semibold text-danger" role="alert">{error}</p>}
+        <Input
+          label="Verification code"
+          placeholder="123456"
+          value={verificationCode}
+          onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          required
+        />
+        <Button type="submit" size="lg" className="w-full" disabled={verificationLoading || verificationCode.length < 6}>
+          {verificationLoading ? 'Verifying...' : 'Verify email'}
+        </Button>
+        <button type="button" onClick={resendRegistrationCode} disabled={verificationLoading} className="w-full text-sm font-semibold text-primary">
+          Resend code
+        </button>
+      </form>
     )
   }
 
