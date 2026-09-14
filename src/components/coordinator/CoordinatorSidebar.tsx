@@ -13,7 +13,7 @@ const navigation = [
   { name: 'Students', href: '/coordinator/students', icon: GraduationCap },
   { name: 'Courses', href: '/coordinator/courses', icon: Layers3 },
   { name: 'Course Units', href: '/coordinator/course-units', icon: BookCopy },
-  { name: 'Group Monitor', href: '/coordinator/groups', icon: Users },
+  { name: 'Groups', href: '/coordinator/groups', icon: Users },
   { name: 'Coursework Manager', href: '/coordinator/coursework', icon: BookOpen },
   { name: 'AI Entry (Crimson)', href: '/coordinator/ai-entry', icon: Bot },
   { name: 'Interventions', href: '/coordinator/interventions', icon: Shield },

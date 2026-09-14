@@ -1,265 +1,559 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Search, Filter, ChevronDown, Users, Lock, Globe, Edit, Trash2, Plus, Download, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
-import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { formatDate } from '@/lib/utils'
-import { DataTable } from '../ui/DataTable'
 
 export function CoordinatorGroups() {
   const { user } = useAuth()
   const supabase = createClient()
-  const [groups, setGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [courseworkFilter, setCourseworkFilter] = useState('all')
-  const [courseworks, setCourseworks] = useState<any[]>([])
-  const [locking, setLocking] = useState<string | null>(null)
-  const [exporting, setExporting] = useState(false)
+  const [selectedCourseUnitId, setSelectedCourseUnitId] = useState<string | null>(null)
+  const [assignmentTargets, setAssignmentTargets] = useState<Record<string, string>>({})
+  const [courseUnits, setCourseUnits] = useState<any[]>([])
+  const [students, setStudents] = useState<any[]>([])
+  const [studentEnrollments, setStudentEnrollments] = useState<any[]>([])
+  const [groups, setGroups] = useState<any[]>([])
+  const [groupMembers, setGroupMembers] = useState<any[]>([])
+  const [selectedCoordinators, setSelectedCoordinators] = useState<any[]>([])
+  const [assigningIds, setAssigningIds] = useState<Record<string, boolean>>({})
+  const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    fetchCourseworks()
-    fetchGroups()
+    fetchData()
   }, [user])
 
-  async function fetchCourseworks() {
-    const { data } = await supabase
-      .from('courseworks')
-      .select('id, title, course_unit:course_units(code)')
-      .order('created_at', { ascending: false })
-    setCourseworks(data || [])
-  }
-
-  async function fetchGroups() {
+  async function fetchData() {
     setLoading(true)
     try {
-      let query = supabase
-        .from('groups')
-        .select(`
-          *,
-          coursework:courseworks(
-            id,
-            title,
-            course_unit:course_units(code, name)
-          ),
-          leader:users!groups_leader_id_fkey(full_name, email),
-          members:group_members(count)
-        `)
-        .order('created_at', { ascending: false })
+      const [unitsRes, usersRes, enrollmentsRes, groupsRes, membersRes, scRes] = await Promise.all([
+        supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
+        supabase.from('users').select('*').order('full_name', { ascending: true }),
+        supabase.from('student_course_units').select('*').eq('status', 'active'),
+        supabase.from('groups').select('*, leader:users!groups_leader_id_fkey(id, full_name, email), coursework:courseworks(id, title, course_unit_id)').order('created_at', { ascending: false }),
+        supabase.from('group_members').select('*, user:users(id, full_name, email, student_registration_number)'),
+        supabase.from('selected_coordinators').select('*'),
+      ])
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-      if (courseworkFilter !== 'all') {
-        query = query.eq('coursework_id', courseworkFilter)
-      }
-      if (searchQuery) {
-        query = query.ilike('name', `%${searchQuery}%`)
-      }
+      const units = unitsRes.data || []
+      const unitStudents = usersRes.data || []
+      const activeEnrollments = enrollmentsRes.data || []
+      const groupRows = groupsRes.data || []
+      const memberRows = membersRes.data || []
+      const scRows = scRes.data || []
 
-      const { data } = await query
-      setGroups(data || [])
+      setCourseUnits(units)
+      setStudents(unitStudents)
+      setStudentEnrollments(activeEnrollments)
+      setGroups(groupRows)
+      setGroupMembers(memberRows)
+      setSelectedCoordinators(scRows)
+
+      // Do not auto-select — user should click a Course Unit tile to navigate into it
     } catch (error) {
-      console.error('Error fetching groups:', error)
+      console.error('Error fetching group data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleLockGroup = async (groupId: string, currentStatus: string) => {
-    setLocking(groupId)
-    const newStatus = currentStatus === 'locked' ? 'active' : 'locked'
-    const { error } = await supabase.from('groups').update({ status: newStatus }).eq('id', groupId)
-    if (!error) {
-      fetchGroups()
-    }
-    setLocking(null)
-  }
+  const selectedCourseUnit = useMemo(
+    () => courseUnits.find((unit) => unit.id === selectedCourseUnitId) || null,
+    [courseUnits, selectedCourseUnitId]
+  )
 
-  const handleExport = async () => {
-    setExporting(true)
+  const selectedGroups = useMemo(
+    () => groups.filter((group) => group.coursework?.course_unit_id === selectedCourseUnitId),
+    [groups, selectedCourseUnitId]
+  )
+
+  const unitSummaries = useMemo(() => {
+    return courseUnits
+      .map((unit) => {
+        const enrolledUserIds = studentEnrollments
+          .filter((enrollment) => enrollment.course_unit_id === unit.id && enrollment.status === 'active')
+          .map((enrollment) => enrollment.user_id)
+
+        const registeredStudentIds = enrolledUserIds.length > 0
+          ? new Set(enrolledUserIds)
+          : new Set(students.filter((s) => s.role === 'student').map((s) => s.id))
+
+        const unitGroups = groups.filter((group) => group.coursework?.course_unit_id === unit.id)
+        
+        const groupCounts = unitGroups.map((group) => ({
+          id: group.id,
+          name: group.name,
+          count: groupMembers.filter((member) => member.group_id === group.id).length,
+          max: group.max_members,
+        }))
+
+        const assignedUserIds = new Set(
+          groupMembers
+            .filter((member) => unitGroups.some((group) => group.id === member.group_id))
+            .map((member) => member.user_id)
+        )
+
+        const totalStudents = registeredStudentIds.size
+        const totalMembersAssigned = assignedUserIds.size
+        const groupedPercentage = totalStudents > 0 ? Math.min(100, Math.round((totalMembersAssigned / totalStudents) * 100)) : 0
+
+        return {
+          ...unit,
+          totalStudents,
+          totalGroups: unitGroups.length,
+          groupCounts,
+          totalMembersAssigned,
+          groupedPercentage,
+        }
+      })
+      .filter((unit) => {
+        const search = searchQuery.trim().toLowerCase()
+        if (!search) return true
+        const haystack = `${unit.code} ${unit.name} ${unit.course?.name || ''}`.toLowerCase()
+        return haystack.includes(search)
+      })
+  }, [courseUnits, studentEnrollments, students, groups, groupMembers, searchQuery])
+
+  const orphanStudents = useMemo(() => {
+    if (!selectedCourseUnitId) return []
+
+    const assignedUserIds = new Set(
+      groupMembers
+        .filter((member) => selectedGroups.some((group) => group.id === member.group_id))
+        .map((member) => member.user_id)
+    )
+
+    const enrolledUserIds = new Set(
+      studentEnrollments
+        .filter((enrollment) => enrollment.course_unit_id === selectedCourseUnitId && enrollment.status === 'active')
+        .map((enrollment) => enrollment.user_id)
+    )
+
+    return students
+      .filter((student) => {
+        if (student.role !== 'student' && student.status !== 'normal' && student.status !== 'selected_coordinator') {
+          return false
+        }
+        const isEnrolled = enrolledUserIds.size > 0 ? enrolledUserIds.has(student.id) : true
+        return isEnrolled && !assignedUserIds.has(student.id)
+      })
+      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+  }, [students, studentEnrollments, groupMembers, selectedCourseUnitId, selectedGroups])
+
+  const currentUnitManagers = useMemo(() => {
+    if (!selectedCourseUnitId) return false
+    if (user?.role === 'coordinator') return true
+    return selectedCoordinators.some(
+      (sc) => sc.user_id === user?.id && sc.course_unit_id === selectedCourseUnitId
+    )
+  }, [selectedCourseUnitId, user, selectedCoordinators])
+
+  const handleAssignStudentToGroup = async (studentId: string, groupId: string) => {
+    const group = groups.find((item) => item.id === groupId)
+    if (!group || !group.coursework?.course_unit_id) return
+
+    const targetCourseUnitId = group.coursework.course_unit_id
+    const conflictingGroupIds = groupMembers
+      .filter(
+        (member) =>
+          member.user_id === studentId &&
+          groups.some(
+            (item) => item.id === member.group_id && item.coursework?.course_unit_id === targetCourseUnitId && item.id !== groupId
+          )
+      )
+      .map((member) => member.group_id)
+
+    setAssigningIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: true }))
+
     try {
-      const csv = groups.map(g => ({
-        'Course Code': g.coursework?.course_unit?.code,
-        'Coursework': g.coursework?.title,
-        'Group Name': g.name,
-        'Leader': g.leader?.full_name,
-        'Leader Email': g.leader?.email,
-        'Member Count': g.members?.[0]?.count || 1,
-        'Max Members': g.max_members,
-        'Status': g.status,
-        'Visibility': g.is_private ? 'Private' : 'Public',
-        'Created': formatDate(g.created_at),
-      })).reduce((acc, row) => {
-        if (acc === '') return Object.keys(row).join(',')
-        return acc + '\n' + Object.values(row).map(v => `"${v}"`).join(',')
-      }, '')
+      if (conflictingGroupIds.length > 0) {
+        const { error: removeError } = await supabase
+          .from('group_members')
+          .delete()
+          .in('group_id', conflictingGroupIds)
+          .eq('user_id', studentId)
 
-      const blob = new Blob([csv], { type: 'text/csv' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `groups-export-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+        if (removeError) throw removeError
+      }
+
+      const { error } = await supabase
+        .from('group_members')
+        .upsert(
+          { user_id: studentId, group_id: groupId, role: 'member' },
+          { onConflict: 'group_id,user_id' }
+        )
+
+      if (error) throw error
+      await fetchData()
     } catch (error) {
-      console.error('Export error:', error)
+      console.error('Error assigning student to group:', error)
+      alert(error instanceof Error ? error.message : 'Unable to assign student to the group.')
     } finally {
-      setExporting(false)
+      setAssigningIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
   }
 
-  const filteredGroups = groups.filter((g) => {
-    const matchesSearch = g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.leader?.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || g.status === statusFilter
-    const matchesCoursework = courseworkFilter === 'all' || g.coursework_id === courseworkFilter
-    return matchesSearch && matchesStatus && matchesCoursework
-  })
+  const handleRemoveFromGroup = async (studentId: string, groupId: string) => {
+    setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: true }))
 
-  const columns = [
-    {
-      key: 'course_code',
-      header: 'Course Code',
-      render: (row: any) => row.coursework?.course_unit?.code || 'N/A',
-    },
-    {
-      key: 'coursework',
-      header: 'Coursework',
-      render: (row: any) => row.coursework?.title || 'N/A',
-    },
-    {
-      key: 'name',
-      header: 'Group Name',
-      render: (row: any) => (
+    try {
+      const { error } = await supabase.from('group_members').delete().eq('user_id', studentId).eq('group_id', groupId)
+      if (error) throw error
+      await fetchData()
+    } catch (error) {
+      console.error('Error removing student from group:', error)
+      alert(error instanceof Error ? error.message : 'Unable to remove student from the group.')
+    } finally {
+      setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
+    }
+  }
+
+  const selectedCourseSummary = unitSummaries.find((unit) => unit.id === selectedCourseUnitId)
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
+
+  // DETAIL VIEW: a course unit has been selected
+  if (selectedCourseUnitId && selectedCourseSummary) {
+    return (
+      <div className="space-y-6">
+        {/* Back + Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              All Course Units
+            </Button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Course Unit</p>
+              <h1 className="text-2xl font-bold text-text-primary">
+                {selectedCourseSummary.code} • {selectedCourseSummary.name}
+              </h1>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="primary">{selectedCourseSummary.totalMembersAssigned} / {selectedCourseSummary.totalStudents} Grouped</Badge>
+            <Badge variant="secondary">{selectedCourseSummary.totalGroups} Groups</Badge>
+            <Badge variant="warning">{orphanStudents.length} Orphans</Badge>
+            <Button variant="outline" size="sm" onClick={fetchData} loading={loading}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Group Formation Tiles */}
         <div>
-          <p className="font-medium text-text-primary">{row.name}</p>
-          <p className="text-sm text-text-muted">Leader: {row.leader?.full_name}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'leader',
-      header: 'Leader',
-      render: (row: any) => row.leader?.full_name || 'Unknown',
-    },
-    {
-      key: 'members',
-      header: 'Members',
-      render: (row: any) => `${row.members?.[0]?.count || 1} / ${row.max_members}`,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row: any) => (
-        <Badge variant={row.status === 'active' ? 'success' : row.status === 'forming' ? 'warning' : row.status === 'locked' ? 'secondary' : 'danger'}>
-          {row.status}
-        </Badge>
-      ),
-    },
-    {
-      key: 'visibility',
-      header: 'Visibility',
-      render: (row: any) => (
-        <Badge variant={row.is_private ? 'secondary' : 'primary'} dot>
-          {row.is_private ? 'Private' : 'Public'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (row: any) => (
-        <div className="flex items-center justify-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleLockGroup(row.id, row.status)}
-            loading={locking === row.id}
-            className={row.status === 'locked' ? 'text-success' : 'text-warning'}
-          >
-            {row.status === 'locked' ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Edit className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      ),
-    },
-  ]
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Groups in {selectedCourseSummary.code}</h2>
+            <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
+          </div>
 
+          {selectedGroups.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-text-muted">
+                No groups have been formed for this course unit yet.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {selectedGroups.map((group) => {
+                const members = groupMembers.filter((member) => member.group_id === group.id)
+                const leaderName = group.leader?.full_name || 'Unassigned'
+                const isFull = members.length >= group.max_members
+
+                return (
+                  <Card key={group.id} className="flex flex-col justify-between hover:border-primary/40 transition-all">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <CardTitle className="text-lg font-bold">{group.name}</CardTitle>
+                        <Badge variant={group.status === 'active' ? 'success' : group.status === 'forming' ? 'warning' : 'secondary'}>
+                          {group.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-xs text-text-secondary line-clamp-2">
+                        {group.description || 'Collaborative group for course unit assignments.'}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-xl border border-border bg-surface-hover p-2.5">
+                          <p className="text-text-muted">Leader</p>
+                          <p className="font-semibold text-text-primary truncate">{leaderName}</p>
+                        </div>
+                        <div className="rounded-xl border border-border bg-surface-hover p-2.5">
+                          <p className="text-text-muted">Students</p>
+                          <p className={`font-semibold ${isFull ? 'text-danger' : 'text-text-primary'}`}>
+                            {members.length} / {group.max_members}{isFull ? ' (Full)' : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Member Roster */}
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Assigned Members</span>
+                          <span className="text-[11px] text-text-muted">{members.length} students</span>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {members.length === 0 ? (
+                            <p className="text-xs text-text-muted italic">No students assigned yet.</p>
+                          ) : (
+                            members.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between rounded-xl border border-border bg-surface-hover px-3 py-2">
+                                <div>
+                                  <p className="text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
+                                  <p className="text-[10px] text-text-muted">{member.user?.student_registration_number || 'No Reg No'}</p>
+                                </div>
+                                {currentUnitManagers && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 text-danger hover:bg-danger/10"
+                                    title="Remove student from group"
+                                    onClick={() => handleRemoveFromGroup(member.user_id, group.id)}
+                                    loading={!!removingIds[`${member.user_id}-${group.id}`]}
+                                  >
+                                    <UserMinus className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Orphan Students Spreadsheet Table — Coordinator & SC Only */}
+        {currentUnitManagers && (
+          <Card className="border-amber-500/30 shadow-sm">
+            <CardHeader className="bg-amber-500/5 pb-3 border-b border-border">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <BookCopy className="h-5 w-5 text-amber-600" />
+                  <div>
+                    <CardTitle className="text-base text-text-primary">
+                      Orphan Students — {selectedCourseSummary.code}
+                    </CardTitle>
+                    <p className="text-xs text-text-secondary">
+                      Restricted to coordinators and selected coordinators of this unit. Manually assign or override group placement.
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={orphanStudents.length > 0 ? 'warning' : 'success'}>
+                  {orphanStudents.length} {orphanStudents.length === 1 ? 'Orphan' : 'Orphans'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {orphanStudents.length === 0 ? (
+                <div className="p-8 text-center text-text-muted">
+                  <ShieldCheck className="h-8 w-8 text-success mx-auto mb-2 opacity-80" />
+                  <p className="font-semibold text-text-primary">All registered students are assigned!</p>
+                  <p className="text-xs mt-1">No orphan students remain in {selectedCourseSummary.code}.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-border bg-surface-hover text-xs font-semibold uppercase tracking-wider text-text-muted">
+                        <th className="py-3 px-4">Student Name & Email</th>
+                        <th className="py-3 px-4">Reg Number</th>
+                        <th className="py-3 px-4">WhatsApp</th>
+                        <th className="py-3 px-4">Target Group</th>
+                        <th className="py-3 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {orphanStudents.map((student) => {
+                        const targetGroupId = assignmentTargets[student.id] || selectedGroups[0]?.id || ''
+                        return (
+                          <tr key={student.id} className="hover:bg-surface-hover/50 transition-colors">
+                            <td className="py-3 px-4">
+                              <p className="font-semibold text-text-primary">{student.full_name}</p>
+                              <p className="text-xs text-text-muted">{student.email}</p>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-xs font-medium text-text-primary">
+                              {student.student_registration_number || '—'}
+                            </td>
+                            <td className="py-3 px-4 text-xs text-text-secondary">
+                              {student.whatsapp_phone || '—'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Select
+                                value={targetGroupId}
+                                onChange={(value) => setAssignmentTargets((prev) => ({ ...prev, [student.id]: value }))}
+                                options={selectedGroups.map((group) => {
+                                  const cnt = groupMembers.filter((m) => m.group_id === group.id).length
+                                  return { value: group.id, label: `${group.name} (${cnt}/${group.max_members})` }
+                                })}
+                                placeholder="Select group..."
+                                className="w-52 text-xs"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleAssignStudentToGroup(student.id, targetGroupId)}
+                                loading={!!assigningIds[`${student.id}-${targetGroupId}`]}
+                                disabled={!selectedGroups.length || !targetGroupId}
+                              >
+                                <UserPlus className="h-3.5 w-3.5 mr-1" />
+                                Assign / Override
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
+  // DEFAULT VIEW: Course Unit tiles only
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Group Monitor</h1>
-          <p className="text-text-secondary">Real-time view of all active groups across course units</p>
+          <h1 className="text-2xl font-bold text-text-primary">Groups</h1>
+          <p className="text-text-secondary">Select a course unit to view its groups, rosters, and manage orphan student assignments.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} loading={exporting}>
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={fetchGroups} loading={loading}>
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
+        <Button variant="outline" onClick={fetchData} loading={loading}>
+          <RefreshCw className="h-4 w-4 mr-1.5" />
+          Refresh
+        </Button>
       </div>
 
+      {/* Search */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                placeholder="Search groups, leaders..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'forming', label: 'Forming' },
-                { value: 'active', label: 'Active' },
-                { value: 'locked', label: 'Locked' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'disbanded', label: 'Disbanded' },
-              ]}
-              className="w-40"
-            />
-            <Select
-              value={courseworkFilter}
-              onChange={setCourseworkFilter}
-              options={[
-                { value: 'all', label: 'All Coursework' },
-                ...courseworks.map((cw) => ({ value: cw.id, label: `${cw.course_unit?.code} - ${cw.title}` })),
-              ]}
-              className="w-48"
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+            <Input
+              placeholder="Search course unit code or name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
             />
           </div>
         </CardContent>
       </Card>
 
-      <DataTable
-        columns={columns}
-        data={filteredGroups}
-        keyExtractor={(row) => row.id}
-        loading={loading}
-        emptyMessage="No groups found matching your criteria"
-      />
+      {/* Course Unit Tiles */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Select a Course Unit</h2>
+          <span className="text-xs text-text-muted">{unitSummaries.length} active course units</span>
+        </div>
+
+        {loading && unitSummaries.length === 0 ? (
+          <div className="grid gap-4 xl:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 animate-pulse rounded-2xl border border-border bg-surface" />
+            ))}
+          </div>
+        ) : unitSummaries.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-text-muted">
+              No active course units found.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-3">
+            {unitSummaries.map((unit) => (
+              <button
+                key={unit.id}
+                type="button"
+                onClick={() => setSelectedCourseUnitId(unit.id)}
+                className="group rounded-2xl border border-border bg-surface p-5 text-left transition-all hover:border-primary/60 hover:bg-surface-hover hover:shadow-md"
+              >
+                {/* Unit Header */}
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <span className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-primary">
+                      {unit.code}
+                    </span>
+                    <h3 className="mt-1.5 text-lg font-bold text-text-primary group-hover:text-primary transition-colors">{unit.name}</h3>
+                  </div>
+                  <Badge variant={unit.is_active ? 'success' : 'secondary'}>
+                    {unit.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+
+                {/* Grouped vs Registered Progress */}
+                <div className="mb-4 rounded-xl border border-border/60 bg-surface-hover/80 p-3">
+                  <div className="flex items-center justify-between text-xs font-medium text-text-secondary mb-1.5">
+                    <span>Students in Groups</span>
+                    <strong className="text-text-primary">
+                      {unit.totalMembersAssigned} / {unit.totalStudents} ({unit.groupedPercentage}%)
+                    </strong>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-border/50">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${unit.groupedPercentage}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Group Counts */}
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-text-secondary">
+                    <span>Groups Present</span>
+                    <strong className="text-text-primary">{unit.totalGroups} {unit.totalGroups === 1 ? 'group' : 'groups'}</strong>
+                  </div>
+
+                  {unit.groupCounts.length > 0 ? (
+                    <div>
+                      <p className="mb-1 text-[11px] font-medium text-text-muted">Students per group:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {unit.groupCounts.map((g: any) => (
+                          <span
+                            key={g.id}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-[11px] font-medium text-text-primary"
+                          >
+                            <Users className="h-3 w-3 text-primary" />
+                            <span className="truncate max-w-[80px]">{g.name}:</span>
+                            <strong className="text-primary">{g.count}</strong>/{g.max}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-text-muted italic">No groups formed yet.</p>
+                  )}
+                </div>
+
+                {/* Click CTA */}
+                <div className="mt-4 flex items-center justify-end gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  View Groups & Formation
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

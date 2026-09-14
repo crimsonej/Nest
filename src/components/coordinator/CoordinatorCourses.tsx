@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Search, Pencil, Trash2, FolderOpen } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, FolderOpen, LayoutGrid, List } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -22,6 +22,7 @@ export function CoordinatorCourses() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<any>(null)
@@ -193,15 +194,35 @@ export function CoordinatorCourses() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Courses</h1>
           <p className="text-text-secondary">Manage the academic programmes that appear in the system and can be linked to course units.</p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4" />
-          Add Course
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-border bg-surface p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('tile')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'tile' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Tiles
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <List className="h-4 w-4" />
+              List
+            </button>
+          </div>
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4" />
+            Add Course
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -230,13 +251,60 @@ export function CoordinatorCourses() {
         </CardContent>
       </Card>
 
-      <DataTable
-        columns={columns}
-        data={filteredCourses}
-        keyExtractor={(row) => row.id}
-        loading={loading}
-        emptyMessage="No courses found"
-      />
+      {viewMode === 'tile' ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="h-52 rounded-2xl border border-border bg-surface animate-pulse" />
+            ))
+          ) : filteredCourses.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-text-muted">
+              No courses found.
+            </div>
+          ) : (
+            filteredCourses.map((course) => (
+              <Card key={course.id} className="h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-text-muted">{course.code}</p>
+                      <CardTitle className="mt-1 text-xl">{course.name}</CardTitle>
+                    </div>
+                    <Badge variant={course.is_active ? 'success' : 'secondary'}>
+                      {course.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Faculty</p>
+                    <p className="mt-1 text-sm text-text-primary">{course.faculty?.name || 'Unassigned faculty'}</p>
+                  </div>
+                  <p className="text-sm text-text-secondary">
+                    {course.description || 'No description provided for this course.'}
+                  </p>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="ghost" size="sm" onClick={() => openEditModal(course)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(course.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredCourses}
+          keyExtractor={(row) => row.id}
+          loading={loading}
+          emptyMessage="No courses found"
+        />
+      )}
 
       <Modal
         isOpen={createModalOpen || editModalOpen}

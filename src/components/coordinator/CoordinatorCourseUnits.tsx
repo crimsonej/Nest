@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Search, Pencil, Trash2, BookCopy, CheckCircle2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Plus, Search, Pencil, Trash2, BookCopy, CheckCircle2, LayoutGrid, List } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -12,7 +12,6 @@ import { Modal } from '../ui/Modal'
 import { Checkbox } from '../ui/Checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { DataTable } from '../ui/DataTable'
 
 export function CoordinatorCourseUnits() {
   const { user } = useAuth()
@@ -22,6 +21,7 @@ export function CoordinatorCourseUnits() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [viewMode, setViewMode] = useState<'tile' | 'list'>('tile')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedCourseUnit, setSelectedCourseUnit] = useState<any>(null)
@@ -33,8 +33,6 @@ export function CoordinatorCourseUnits() {
     name: '',
     description: '',
     coordinatorId: '',
-    maxGroupSize: 5,
-    minGroupSize: 2,
     isActive: true,
   })
 
@@ -70,8 +68,6 @@ export function CoordinatorCourseUnits() {
     name: '',
     description: '',
     coordinatorId: user?.id || '',
-    maxGroupSize: 5,
-    minGroupSize: 2,
     isActive: true,
   })
 
@@ -89,8 +85,6 @@ export function CoordinatorCourseUnits() {
       name: courseUnit.name,
       description: courseUnit.description || '',
       coordinatorId: courseUnit.coordinator_id || user?.id || '',
-      maxGroupSize: courseUnit.max_group_size || 5,
-      minGroupSize: courseUnit.min_group_size || 2,
       isActive: courseUnit.is_active,
     })
     setEditModalOpen(true)
@@ -102,11 +96,6 @@ export function CoordinatorCourseUnits() {
       return
     }
 
-    if (formValues.minGroupSize < 1 || formValues.maxGroupSize < formValues.minGroupSize) {
-      alert('Minimum group size must be at least 1 and cannot exceed the maximum group size.')
-      return
-    }
-
     setSubmitting(true)
     try {
       const payload = {
@@ -115,8 +104,6 @@ export function CoordinatorCourseUnits() {
         name: formValues.name.trim(),
         description: formValues.description.trim() || null,
         coordinator_id: formValues.coordinatorId || user?.id,
-        max_group_size: formValues.maxGroupSize,
-        min_group_size: formValues.minGroupSize,
         is_active: formValues.isActive,
       }
 
@@ -153,70 +140,45 @@ export function CoordinatorCourseUnits() {
     }
   }
 
-  const filteredCourseUnits = courseUnits.filter((courseUnit) => {
-    const matchesSearch = `${courseUnit.code} ${courseUnit.name} ${courseUnit.course?.name || ''}`.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && courseUnit.is_active) || (statusFilter === 'inactive' && !courseUnit.is_active)
-    return matchesSearch && matchesStatus
-  })
-
-  const columns = [
-    {
-      key: 'code',
-      header: 'Course Unit',
-      render: (row: any) => (
-        <div>
-          <p className="font-medium text-text-primary">{row.code}</p>
-          <p className="text-sm text-text-muted">{row.name}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'course',
-      header: 'Course',
-      render: (row: any) => row.course?.name || row.course_id || 'Unassigned',
-    },
-    {
-      key: 'group_size',
-      header: 'Group Size',
-      render: (row: any) => `${row.min_group_size || 2} - ${row.max_group_size || 5}`,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row: any) => row.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="secondary">Inactive</Badge>,
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      render: (row: any) => row.description || 'No description',
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (row: any) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => openEditModal(row)}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      ),
-    },
-  ]
+  const filteredCourseUnits = useMemo(() => {
+    return courseUnits.filter((courseUnit) => {
+      const matchesSearch = `${courseUnit.code} ${courseUnit.name} ${courseUnit.course?.name || ''}`.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && courseUnit.is_active) || (statusFilter === 'inactive' && !courseUnit.is_active)
+      return matchesSearch && matchesStatus
+    })
+  }, [courseUnits, searchQuery, statusFilter])
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Course Units</h1>
-          <p className="text-text-secondary">Create and manage the units students can register for and that feed into coursework and groups.</p>
+          <p className="text-text-secondary">Create and manage the academic units that feed coursework, registrations, and group formation.</p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4" />
-          Add Course Unit
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl border border-border bg-surface p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('tile')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'tile' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Tiles
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <List className="h-4 w-4" />
+              List
+            </button>
+          </div>
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4" />
+            Add Course Unit
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -245,13 +207,104 @@ export function CoordinatorCourseUnits() {
         </CardContent>
       </Card>
 
-      <DataTable
-        columns={columns}
-        data={filteredCourseUnits}
-        keyExtractor={(row) => row.id}
-        loading={loading}
-        emptyMessage="No course units found"
-      />
+      {viewMode === 'tile' ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-52 rounded-2xl border border-border bg-surface animate-pulse" />
+            ))
+          ) : filteredCourseUnits.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-text-muted">
+              No course units found.
+            </div>
+          ) : (
+            filteredCourseUnits.map((courseUnit) => (
+              <Card key={courseUnit.id} className="h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-text-muted">{courseUnit.code}</p>
+                      <CardTitle className="mt-1 text-xl">{courseUnit.name}</CardTitle>
+                    </div>
+                    <Badge variant={courseUnit.is_active ? 'success' : 'secondary'}>
+                      {courseUnit.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Course</p>
+                    <p className="mt-1 text-sm text-text-primary">{courseUnit.course?.name || 'Unassigned course'}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Coordinator</p>
+                    <p className="mt-1 text-sm text-text-primary">{courseUnit.coordinator?.full_name || 'Unassigned'}</p>
+                  </div>
+
+                  <p className="text-sm text-text-secondary">
+                    {courseUnit.description || 'No description provided for this course unit.'}
+                  </p>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="ghost" size="sm" onClick={() => openEditModal(courseUnit)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(courseUnit.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Course Unit</th>
+                  <th>Course</th>
+                  <th>Coordinator</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCourseUnits.map((courseUnit) => (
+                  <tr key={courseUnit.id}>
+                    <td>
+                      <div>
+                        <p className="font-medium text-text-primary">{courseUnit.code}</p>
+                        <p className="text-sm text-text-muted">{courseUnit.name}</p>
+                      </div>
+                    </td>
+                    <td>{courseUnit.course?.name || 'Unassigned course'}</td>
+                    <td>{courseUnit.coordinator?.full_name || 'Unassigned'}</td>
+                    <td>
+                      <Badge variant={courseUnit.is_active ? 'success' : 'secondary'}>
+                        {courseUnit.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => openEditModal(courseUnit)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(courseUnit.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={createModalOpen || editModalOpen}
@@ -291,22 +344,6 @@ export function CoordinatorCourseUnits() {
             value={formValues.description}
             onChange={(e) => setFormValues((prev) => ({ ...prev, description: e.target.value }))}
           />
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label="Min Group Size"
-              type="number"
-              min={1}
-              value={formValues.minGroupSize}
-              onChange={(e) => setFormValues((prev) => ({ ...prev, minGroupSize: Number(e.target.value || 1) }))}
-            />
-            <Input
-              label="Max Group Size"
-              type="number"
-              min={1}
-              value={formValues.maxGroupSize}
-              onChange={(e) => setFormValues((prev) => ({ ...prev, maxGroupSize: Number(e.target.value || 1) }))}
-            />
-          </div>
           <Checkbox
             label="Active"
             description="This course unit should be available for registration and coordination."
