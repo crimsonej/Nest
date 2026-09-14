@@ -18,7 +18,7 @@ insert into public.universities (
   abbreviation,
   branch,
   location,
-  accepted_reg_number,
+  accepted_reg_number_pattern,
   example_reg_number
 )
 values (
@@ -26,14 +26,14 @@ values (
   'NDU',
   'Kampala Campus',
   'Kampala, Uganda',
-  '^\\d{2}/[12]/\\d{3}/D/\\d{4}$',
+    '^[0-9]{2}/[12]/[0-9]{3}/D/[0-9]{4}$',
   '26/2/222/D/2222'
 )
 on conflict (university) do update
 set abbreviation = excluded.abbreviation,
     branch = excluded.branch,
     location = excluded.location,
-    accepted_reg_number = excluded.accepted_reg_number,
+    accepted_reg_number_pattern = excluded.accepted_reg_number_pattern,
     example_reg_number = excluded.example_reg_number;
 
 insert into public.faculties (code, name, is_active)

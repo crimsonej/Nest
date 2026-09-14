@@ -473,7 +473,7 @@ function RegisterFormSection({
 
   async function fetchAcademicOptions() {
     try {
-      const [{ data: faculties }, { data: courses }] = await Promise.all([
+      const [facultiesResult, coursesResult] = await Promise.all([
         supabase
           .from('faculties')
           .select('id, code, name')
@@ -485,15 +485,19 @@ function RegisterFormSection({
           .eq('is_active', true)
           .order('name'),
       ])
+
+      if (facultiesResult.error) throw facultiesResult.error
+      if (coursesResult.error) throw coursesResult.error
+
       setFacultyOptions(
-        faculties?.map((f: { code: string; name: string; id: string }) => ({
+        facultiesResult.data?.map((f: { code: string; name: string; id: string }) => ({
           value: f.code,
           label: `${f.code} - ${f.name}`,
           id: f.id,
         })) || []
       )
       setCourseOptions(
-        courses?.map(
+        coursesResult.data?.map(
           (c: {
             id: string
             code: string
@@ -509,6 +513,7 @@ function RegisterFormSection({
       )
     } catch (err) {
       console.error('Error fetching academic options:', err)
+      setError(err instanceof Error ? err.message : 'Unable to load faculties and courses.')
     }
   }
 
@@ -550,7 +555,7 @@ function RegisterFormSection({
 
   useEffect(() => {
     fetchAcademicOptions()
-  }, [supabase])
+  }, [])
 
   const form = useForm({
     resolver: zodResolver(studentRegistrationSchema),
