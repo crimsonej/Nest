@@ -222,7 +222,11 @@ export function StudentDashboard() {
 
         const groups = groupsRes.data || []
         const tasks = tasksRes.data || []
-        const enrolledIds = (enrollmentsRes.data || []).map((e: any) => e.course_unit_id)
+        const enrolledIds = Array.from(new Set((enrollmentsRes.data || []).map((e: any) => e.course_unit_id).filter(Boolean)))
+        const relevantCourseworks = (cwRes.data || []).filter((coursework: any) => {
+          if (!coursework.course_unit_id) return true
+          return enrolledIds.includes(coursework.course_unit_id)
+        })
 
         setMetrics({
           myGroups: groups.length,
@@ -237,8 +241,8 @@ export function StudentDashboard() {
         setAllCourseUnits(allUnitsRes.data || [])
         setMyCourseUnitIds(enrolledIds)
 
-        const activeCw = (cwRes.data || []).find((c: any) => c.lock_at && new Date(c.lock_at) > new Date())
-        setNearestCoursework(activeCw || (cwRes.data || [])[0] || null)
+        const activeCw = relevantCourseworks.find((coursework: any) => coursework.lock_at && new Date(coursework.lock_at) > new Date())
+        setNearestCoursework(activeCw || relevantCourseworks[0] || null)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
         setDataError(error instanceof Error ? error.message : 'Unable to load dashboard data.')
