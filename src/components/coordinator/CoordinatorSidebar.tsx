@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Sparkles, Bot, GraduationCap, Layers3, BookCopy } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Bot, GraduationCap, Layers3, BookCopy } from 'lucide-react'
+import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '../ui/Button'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -103,9 +104,7 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
         <Link href="/coordinator/dashboard" onClick={onClose} className="flex items-center gap-3 text-white">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/30">
-            <Sparkles className="h-5 w-5" />
-          </span>
+          <Image src="/logo.png" alt="NEST Logo" width={40} height={40} className="rounded-2xl shrink-0" />
           <div>
             <strong className="block text-base tracking-[0.18em] font-extrabold">NEST</strong>
             <small className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Coordinator Portal</small>

@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { Users, BookOpen, Shield, CheckCircle, Sparkles, LogIn, UserPlus, ArrowRight } from 'lucide-react'
+import { Users, BookOpen, Shield, CheckCircle, LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 import { motion } from 'framer-motion'
 
@@ -35,10 +36,10 @@ export default function HomePage() {
         <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
             <motion.div
-              whileHover={{ rotate: 12, scale: 1.1 }}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30 text-white"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
-              <Sparkles className="h-5 w-5" />
+              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="rounded-2xl" priority />
             </motion.div>
             <div>
               <span className="text-xl font-black tracking-[0.2em] text-text-primary">NEST</span>
