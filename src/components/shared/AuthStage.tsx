@@ -602,6 +602,10 @@ function RegisterFormSection({
             role: 'student',
             gender: values.gender,
             university: values.university,
+            student_registration_number: values.studentRegistrationNumber,
+            whatsapp_phone: values.whatsappPhone,
+            faculty: values.faculty,
+            course: values.course,
           },
         },
       })
@@ -635,7 +639,10 @@ function RegisterFormSection({
       setCourseUnitDialogOpen(true)
       await fetchCourseUnits(selectedCourseId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+      const message = err && typeof err === 'object' && 'message' in err
+        ? String((err as { message: unknown }).message)
+        : 'Registration failed'
+      setError(message)
     } finally {
       setLoading(false)
     }
