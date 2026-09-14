@@ -2,6 +2,7 @@
 
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -15,15 +16,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
-      <div className="w-full">
+      <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="label">
+          <label htmlFor={inputId} className="block text-sm font-semibold text-text-primary tracking-wide">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-muted">
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-text-muted transition-colors">
               {icon}
             </span>
           )}
@@ -31,9 +32,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'input',
+              'input w-full rounded-xl border border-border/80 bg-surface px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/70 shadow-xs transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:opacity-50 disabled:cursor-not-allowed',
               Boolean(icon) && 'pl-10',
-              error && 'border-danger focus:border-danger focus:ring-danger/20',
+              error && 'border-danger focus:border-danger focus:ring-danger/25',
               className,
             )}
             aria-invalid={error ? 'true' : 'false'}
@@ -42,12 +43,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <p id={`${inputId}-error`} className="mt-1.5 text-sm text-danger" role="alert">
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            id={`${inputId}-error`}
+            className="text-xs font-medium text-danger"
+            role="alert"
+          >
             {error}
-          </p>
+          </motion.p>
         )}
         {helperText && !error && (
-          <p id={`${inputId}-helper`} className="mt-1.5 text-sm text-text-muted">
+          <p id={`${inputId}-helper`} className="text-xs text-text-muted">
             {helperText}
           </p>
         )}

@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, User, Phone, Contact, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, User, Phone, Contact, Eye, EyeOff, AlertCircle, CheckCircle, BookOpen, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { Modal } from '@/components/ui/Modal'
 import { createClient } from '@/lib/supabase/client'
 import { studentRegistrationSchema } from '@/lib/validators'
 import { defaultUniversity, getUniversityOptions, resolveUniversityRule } from '@/lib/university-config'
@@ -24,20 +25,48 @@ export default function RegisterPage() {
   const [courseOptions, setCourseOptions] = useState<Array<{ id: string; value: string; label: string; facultyId: string }>>([])
   const [courseUnitOptions, setCourseUnitOptions] = useState<Array<{ id: string; value: string; label: string; courseId: string }>>([])
   const [selectedCourseUnitIds, setSelectedCourseUnitIds] = useState<string[]>([])
+  const [courseUnitDialogOpen, setCourseUnitDialogOpen] = useState(false)
+  const [courseUnitsLoading, setCourseUnitsLoading] = useState(false)
+  const [courseUnitError, setCourseUnitError] = useState('')
+  const [pendingAuthUserId, setPendingAuthUserId] = useState('')
+  const [savingCourseUnits, setSavingCourseUnits] = useState(false)
   const universityOptions = getUniversityOptions()
 
   async function fetchAcademicOptions() {
     try {
-      const [{ data: faculties }, { data: courses }, { data: courseUnits }] = await Promise.all([
+      const [{ data: faculties }, { data: courses }] = await Promise.all([
         supabase.from('faculties').select('id, code, name').eq('is_active', true).order('name'),
         supabase.from('courses').select('id, code, name, faculty_id').eq('is_active', true).order('name'),
-        supabase.from('course_units').select('id, code, name, course_id').eq('is_active', true).order('code'),
       ])
       setFacultyOptions(faculties?.map((faculty: { code: string; name: string; id: string }) => ({ value: faculty.code, label: `${faculty.code} - ${faculty.name}`, id: faculty.id })) || [])
       setCourseOptions(courses?.map((course: { id: string; code: string; name: string; faculty_id: string }) => ({ id: course.id, value: course.code, label: `${course.code} - ${course.name}`, facultyId: course.faculty_id })) || [])
-      setCourseUnitOptions(courseUnits?.map((unit: { id: string; code: string; name: string; course_id: string }) => ({ id: unit.id, value: unit.id, label: `${unit.code} - ${unit.name}`, courseId: unit.course_id })) || [])
     } catch (err) {
       console.error('Error fetching academic options:', err)
+    }
+  }
+
+  async function fetchCourseUnits(courseId: string) {
+    setCourseUnitsLoading(true)
+    setCourseUnitError('')
+    try {
+      const { data, error } = await supabase
+        .from('course_units')
+        .select('id, code, name, course_id')
+        .eq('course_id', courseId)
+        .eq('is_active', true)
+        .order('code')
+
+      if (error) throw error
+      setCourseUnitOptions(data?.map((unit: { id: string; code: string; name: string; course_id: string }) => ({
+        id: unit.id,
+        value: unit.id,
+        label: `${unit.code} - ${unit.name}`,
+        courseId: unit.course_id,
+      })) || [])
+    } catch (err) {
+      setCourseUnitError(err instanceof Error ? err.message : 'Unable to load course units.')
+    } finally {
+      setCourseUnitsLoading(false)
     }
   }
 
@@ -71,11 +100,6 @@ export default function RegisterPage() {
     if (!selectedFacultyId) return true
     return option.facultyId === selectedFacultyId
   })
-  const visibleCourseUnitOptions = courseUnitOptions.filter((option) => {
-    if (!selectedCourseId) return false
-    return option.courseId === selectedCourseId
-  })
-
   async function onSubmit(values: any) {
     setLoading(true)
     setError('')
@@ -118,26 +142,48 @@ export default function RegisterPage() {
 
       if (profileError) throw profileError
 
-      if (selectedCourseUnitIds.length > 0) {
-        const enrollments = selectedCourseUnitIds.map((courseUnitId) => ({
-          user_id: authUser.id,
-          course_unit_id: courseUnitId,
-          status: 'active',
-        }))
-
-        const { error: enrollmentError } = await supabase
-          .from('student_course_units')
-          .upsert(enrollments, { onConflict: 'user_id,course_unit_id' })
-
-        if (enrollmentError) throw enrollmentError
-      }
-
-      setSuccess(true)
-      setTimeout(() => router.push('/auth/login?registered=true'), 2000)
+      setPendingAuthUserId(authUser.id)
+      setSelectedCourseUnitIds([])
+      setCourseUnitDialogOpen(true)
+      await fetchCourseUnits(selectedCourseId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function finishRegistration() {
+    setCourseUnitDialogOpen(false)
+    setSuccess(true)
+    setTimeout(() => router.push('/auth/login?registered=true'), 2000)
+  }
+
+  async function saveCourseUnits() {
+    if (!pendingAuthUserId || selectedCourseUnitIds.length === 0) {
+      finishRegistration()
+      return
+    }
+
+    setSavingCourseUnits(true)
+    setCourseUnitError('')
+    try {
+      const enrollments = selectedCourseUnitIds.map((courseUnitId) => ({
+        user_id: pendingAuthUserId,
+        course_unit_id: courseUnitId,
+        status: 'active',
+      }))
+
+      const { error: enrollmentError } = await supabase
+        .from('student_course_units')
+        .upsert(enrollments, { onConflict: 'user_id,course_unit_id' })
+
+      if (enrollmentError) throw enrollmentError
+      finishRegistration()
+    } catch (err) {
+      setCourseUnitError(err instanceof Error ? err.message : 'Unable to save course units.')
+    } finally {
+      setSavingCourseUnits(false)
     }
   }
 
@@ -158,6 +204,11 @@ export default function RegisterPage() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <div className="mb-7 border-b border-border pb-6">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Join your workspace</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-primary">Create your NEST account</h1>
+        <p className="mt-2 text-sm leading-6 text-text-secondary">Register with your university details to start collaborating with your course groups.</p>
+      </div>
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-danger-light text-danger text-sm" role="alert">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -249,44 +300,6 @@ export default function RegisterPage() {
         />
       </div>
 
-      {selectedCourseId && visibleCourseUnitOptions.length > 0 && (
-        <div className="space-y-3 rounded-xl border border-border bg-surface-hover/50 p-4">
-          <div>
-            <p className="label mb-1">Available course units for this course *</p>
-            <p className="text-xs text-text-muted">Select the units you are taking this semester.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {visibleCourseUnitOptions.map((unit) => {
-              const checked = selectedCourseUnitIds.includes(unit.id)
-              return (
-                <label key={unit.id} className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      setSelectedCourseUnitIds((prev) =>
-                        checked ? prev.filter((id) => id !== unit.id) : [...prev, unit.id]
-                      )
-                    }}
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  <span>
-                    <span className="block font-medium text-text-primary">{unit.label}</span>
-                    <span className="text-xs text-text-muted">This unit will be linked to your student profile.</span>
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {selectedCourseId && visibleCourseUnitOptions.length === 0 && (
-        <div className="rounded-xl border border-warning/25 bg-warning/5 p-3 text-sm text-warning">
-          No active course units are available for the selected course yet. Coordinate with the coordinator to add them first.
-        </div>
-      )}
-
       <div className="relative">
         <Input
           label="Password"
@@ -336,6 +349,70 @@ export default function RegisterPage() {
           Sign In
         </Link>
       </p>
+
+      <Modal
+        isOpen={courseUnitDialogOpen}
+        onClose={finishRegistration}
+        title="Choose your course units"
+        description="This step is optional. You can skip it now and add course units from your student dashboard later."
+        size="lg"
+      >
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/5 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-text-primary">Personalize your workspace</p>
+              <p className="mt-1 text-sm leading-6 text-text-secondary">Select the units you are taking this semester so relevant coursework can appear in your dashboard.</p>
+            </div>
+          </div>
+
+          {courseUnitsLoading ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              Loading active course units...
+            </div>
+          ) : courseUnitError ? (
+            <div className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm text-danger" role="alert">
+              {courseUnitError}
+            </div>
+          ) : courseUnitOptions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-text-secondary">
+              No active course units are available for this course yet. You can add them later from your student dashboard.
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {courseUnitOptions.map((unit) => {
+                const checked = selectedCourseUnitIds.includes(unit.id)
+                return (
+                  <label key={unit.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-primary/40 hover:bg-primary/5">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setSelectedCourseUnitIds((prev) => checked ? prev.filter((id) => id !== unit.id) : [...prev, unit.id])}
+                      className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <span>
+                      <span className="block font-medium text-text-primary">{unit.label}</span>
+                      <span className="text-xs text-text-muted">Link this unit to your profile</span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={finishRegistration} disabled={savingCourseUnits}>
+              Skip for now
+            </Button>
+            <Button onClick={saveCourseUnits} loading={savingCourseUnits} disabled={courseUnitsLoading || Boolean(courseUnitError) || courseUnitOptions.length === 0}>
+              Save selected units
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </form>
   )
 }

@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { X, Loader2 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from './Button'
 
 interface ModalProps {
@@ -49,7 +50,7 @@ export function Modal({
     }
   }, [isOpen, onClose])
 
-  if (!mounted || !isOpen) return null
+  if (!mounted) return null
 
   const sizeClasses = {
     sm: 'max-w-md',
@@ -59,54 +60,73 @@ export function Modal({
     full: 'max-w-[90vw]',
   }
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in pointer-events-auto"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
-      aria-describedby={description ? 'modal-description' : undefined}
-    >
-      <div
-        ref={contentRef}
-        className={cn(
-          'relative z-10 w-full bg-surface rounded-xl shadow-xl animate-slide-up pointer-events-auto',
-          sizeClasses[size]
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {(title || showCloseButton) && (
-          <div className="flex items-start justify-between p-6 border-b border-border">
-            <div>
-              {title && (
-                <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
-                  {title}
-                </h2>
-              )}
-              {description && (
-                <p id="modal-description" className="mt-1 text-sm text-text-secondary">
-                  {description}
-                </p>
-              )}
-            </div>
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
-                aria-label="Close modal"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-        )}
-        <div className="p-6 max-h-[70vh] overflow-y-auto">{children}</div>
-      </div>
-    </div>
-  )
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? 'modal-title' : undefined}
+          aria-describedby={description ? 'modal-description' : undefined}
+        >
+          {/* Animated Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md"
+            onClick={onClose}
+          />
 
-  return createPortal(modalContent, document.body)
+          {/* Animated Modal Body */}
+          <motion.div
+            ref={contentRef}
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className={cn(
+              'relative z-10 w-full rounded-2xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto',
+              sizeClasses[size]
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(title || showCloseButton) && (
+              <div className="flex items-start justify-between p-6 border-b border-border/70 bg-surface-hover/30">
+                <div>
+                  {title && (
+                    <h2 id="modal-title" className="text-xl font-bold tracking-tight text-text-primary">
+                      {title}
+                    </h2>
+                  )}
+                  {description && (
+                    <p id="modal-description" className="mt-1 text-sm text-text-secondary">
+                      {description}
+                    </p>
+                  )}
+                </div>
+                {showCloseButton && (
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={onClose}
+                    className="p-1.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="h-5 w-5" />
+                  </motion.button>
+                )}
+              </div>
+            )}
+            <div className="p-6 max-h-[75vh] overflow-y-auto scrollbar-thin">{children}</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body
+  )
 }
 
 interface ConfirmDialogProps {
@@ -135,8 +155,8 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="space-y-4">
-        <p className="text-text-secondary">{message}</p>
-        <div className="flex justify-end gap-3">
+        <p className="text-text-secondary text-sm leading-relaxed">{message}</p>
+        <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
@@ -163,12 +183,19 @@ export function LoadingOverlay({ isLoading, message = 'Loading...' }: LoadingOve
   if (!isLoading) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-3 p-6 bg-surface rounded-xl shadow-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-text-secondary">{message}</p>
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="flex flex-col items-center gap-3 p-6 bg-surface border border-border rounded-2xl shadow-xl"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium text-text-secondary">{message}</p>
+        </motion.div>
       </div>
-    </div>,
+    </AnimatePresence>,
     document.body
   )
 }

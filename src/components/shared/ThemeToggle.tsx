@@ -2,7 +2,8 @@
 
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
-import { Sun, Sunset, Moon } from 'lucide-react'
+import { Sun, Flame, Moon } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -13,54 +14,51 @@ export default function ThemeToggle() {
   }, [])
 
   if (!mounted) {
-    return <div className="h-9 w-28 rounded-full bg-surface-hover border border-border animate-pulse" />
+    return <div className="h-9 w-32 rounded-full bg-surface-hover border border-border animate-pulse" />
   }
 
   const currentTheme = theme || 'light'
 
+  const options = [
+    { id: 'light', label: 'Light', icon: Sun, color: 'text-amber-500', activeBg: 'bg-white shadow-md text-amber-600' },
+    { id: 'mid', label: 'Crimson', icon: Flame, color: 'text-rose-500', activeBg: 'bg-rose-600 text-white shadow-md shadow-rose-600/30' },
+    { id: 'dark', label: 'Dark', icon: Moon, color: 'text-cyan-400', activeBg: 'bg-slate-800 text-cyan-300 shadow-md' },
+  ]
+
   return (
-    <div className="relative inline-flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1 shadow-inner backdrop-blur transition-all duration-300">
-      <button
-        type="button"
-        onClick={() => setTheme('light')}
-        aria-label="Light mode"
-        className={`relative z-10 flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-all duration-200 ${
-          currentTheme === 'light'
-            ? 'text-primary shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-        }`}
-      >
-        <Sun className="h-3.5 w-3.5 transition-transform duration-300 hover:rotate-45" />
-        <span className="hidden sm:inline">Light</span>
-      </button>
+    <div className="relative inline-flex items-center gap-1 rounded-full border border-border/80 bg-surface/80 p-1 shadow-inner backdrop-blur-md transition-colors duration-300">
+      {options.map((option) => {
+        const Icon = option.icon
+        const isActive = currentTheme === option.id
 
-      <button
-        type="button"
-        onClick={() => setTheme('mid')}
-        aria-label="Mid sepia mode"
-        className={`relative z-10 flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-all duration-200 ${
-          currentTheme === 'mid'
-            ? 'text-amber-600 dark:text-amber-400 shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-        }`}
-      >
-        <Sunset className="h-3.5 w-3.5 transition-transform duration-300 hover:scale-110" />
-        <span className="hidden sm:inline">Mid</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setTheme('dark')}
-        aria-label="Dark mode"
-        className={`relative z-10 flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-all duration-200 ${
-          currentTheme === 'dark'
-            ? 'text-cyan-400 shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-        }`}
-      >
-        <Moon className="h-3.5 w-3.5 transition-transform duration-300 hover:-rotate-12" />
-        <span className="hidden sm:inline">Dark</span>
-      </button>
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setTheme(option.id)}
+            aria-label={`${option.label} mode`}
+            className={`relative z-10 flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors duration-200 select-none ${
+              isActive ? (option.id === 'mid' ? 'text-white' : option.id === 'dark' ? 'text-cyan-300' : 'text-slate-900') : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="activeThemeIndicator"
+                className={`absolute inset-0 rounded-full ${option.activeBg}`}
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <motion.div
+              whileHover={{ rotate: option.id === 'light' ? 45 : option.id === 'dark' ? -15 : 0, scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              className="relative z-10 flex items-center gap-1.5"
+            >
+              <Icon className={`h-3.5 w-3.5 ${isActive ? '' : option.color}`} />
+              <span className="hidden sm:inline">{option.label}</span>
+            </motion.div>
+          </button>
+        )
+      })}
     </div>
   )
 }

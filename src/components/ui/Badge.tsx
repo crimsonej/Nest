@@ -18,21 +18,21 @@ export function Badge({ children, variant = 'secondary', className, dot = false 
     secondary: 'badge-secondary',
   }
 
+  const dotColorClasses = {
+    primary: 'bg-primary',
+    success: 'bg-success',
+    warning: 'bg-warning',
+    danger: 'bg-danger',
+    secondary: 'bg-text-muted',
+  }
+
   return (
-    <span
-      className={cn('badge', variantClasses[variant], className)}
-    >
+    <span className={cn('badge shadow-xs', variantClasses[variant], className)}>
       {dot && (
-        <span
-          className={cn(
-            'w-1.5 h-1.5 rounded-full mr-1.5',
-            variant === 'primary' && 'bg-primary',
-            variant === 'success' && 'bg-success',
-            variant === 'warning' && 'bg-warning',
-            variant === 'danger' && 'bg-danger',
-            variant === 'secondary' && 'bg-secondary'
-          )}
-        />
+        <span className="relative flex h-2 w-2 mr-1.5">
+          <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', dotColorClasses[variant])} />
+          <span className={cn('relative inline-flex rounded-full h-2 w-2', dotColorClasses[variant])} />
+        </span>
       )}
       {children}
     </span>

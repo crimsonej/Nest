@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus, Calendar, Check, AlertCircle, Trash2 } from 'lucide-react'
+import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus, Check } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 
 interface MetricCardProps {
   title: string
@@ -23,32 +24,32 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, change, changeType = 'neutral', icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
-    primary: 'bg-primary/10 text-primary',
-    success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning',
-    danger: 'bg-danger/10 text-danger',
+    primary: 'bg-primary-light text-primary border border-primary/20',
+    success: 'bg-success-light text-success border border-success/20',
+    warning: 'bg-warning-light text-warning border border-warning/20',
+    danger: 'bg-danger-light text-danger border border-danger/20',
   }
 
   return (
-    <Card className={onClick ? 'cursor-pointer hover:border-primary/50 transition-all' : ''} onClick={onClick}>
+    <Card hover={Boolean(onClick)} onClick={onClick}>
       <CardContent className="p-5 sm:p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-text-secondary">{title}</p>
-            <p className="mt-2 text-3xl font-bold text-text-primary">{value}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{title}</p>
+            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-text-primary tracking-tight">{value}</p>
             {change && (
-              <p className={cn('mt-1 text-sm font-medium', {
-                'text-success': changeType === 'increase',
-                'text-danger': changeType === 'decrease',
-                'text-text-muted': changeType === 'neutral',
-              })}>
+              <p
+                className={cn('mt-1.5 text-xs font-semibold', {
+                  'text-success': changeType === 'increase',
+                  'text-danger': changeType === 'decrease',
+                  'text-text-muted': changeType === 'neutral',
+                })}
+              >
                 {change}
               </p>
             )}
           </div>
-          <div className={cn('rounded-xl p-3', colorClasses[color])}>
-            {icon}
-          </div>
+          <div className={cn('rounded-2xl p-3 shadow-xs', colorClasses[color])}>{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -88,43 +89,39 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
   ]
 
   return (
-    <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/8 via-primary/5 to-transparent shadow-[0_20px_45px_-28px_rgba(30,107,91,0.65)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(74,222,128,0.18),_transparent_38%)]" />
-      <CardContent className="relative p-5 sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+    <Card className="relative overflow-hidden border-primary/30 bg-surface/90 shadow-xl backdrop-blur-xl">
+      <div className="absolute inset-0 bg-radial-gradient(circle_at_top_right,_rgba(225,29,72,0.12),_transparent_40%) pointer-events-none" />
+      <CardContent className="relative p-6 sm:p-7">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
           <div className="max-w-xl">
             <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-danger shadow-[0_0_18px_rgba(239,68,68,0.8)] animate-pulse" />
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Next deadline</p>
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger"></span>
+              </span>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-primary">Next Deadline</p>
             </div>
-            <h3 className="mt-2 text-xl font-bold text-text-primary sm:text-2xl">{title}</h3>
-            <p className="mt-1 text-sm text-text-muted">
+            <h3 className="mt-2 text-xl font-extrabold tracking-tight text-text-primary sm:text-2xl">{title}</h3>
+            <p className="mt-1 text-xs font-medium text-text-muted">
               Due {new Date(lockAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
             </p>
           </div>
 
           {isExpired ? (
-            <div className="inline-flex items-center self-start rounded-xl border border-danger/20 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
-              Deadline expired
+            <div className="inline-flex items-center self-start rounded-2xl border border-danger/20 bg-danger-light px-4 py-2 text-xs font-bold text-danger">
+              Deadline Expired
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-3">
               {segments.map((segment) => (
                 <div
                   key={segment.label}
-                  className="group flex min-w-[84px] flex-col items-center rounded-2xl border border-border/70 bg-surface/90 px-3 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
+                  className="flex min-w-[80px] flex-col items-center rounded-2xl border border-border/80 bg-surface/95 px-3.5 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
                 >
-                  <span
-                    key={`${segment.label}-${segment.value}`}
-                    className="countdown-number text-2xl font-black tracking-tight text-text-primary sm:text-3xl"
-                    style={{
-                      animation: 'countdownFlip 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                      textShadow: '0 0 18px rgba(42, 162, 117, 0.18)',
-                    }}
-                  >
+                  <span className="text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
                     {String(segment.value).padStart(2, '0')}
                   </span>
-                  <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                  <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
                     {segment.label}
                   </span>
                 </div>
@@ -133,31 +130,6 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
           )}
         </div>
       </CardContent>
-      <style jsx>{`
-        .countdown-number {
-          display: inline-block;
-          transform-origin: center bottom;
-          will-change: transform, opacity, filter;
-        }
-
-        @keyframes countdownFlip {
-          0% {
-            transform: rotateX(92deg) scaleY(0.9);
-            opacity: 0.2;
-            filter: blur(2px);
-          }
-          45% {
-            transform: rotateX(-18deg) scaleY(1.06);
-            opacity: 0.8;
-            filter: blur(0.5px);
-          }
-          100% {
-            transform: rotateX(0deg) scaleY(1);
-            opacity: 1;
-            filter: blur(0);
-          }
-        }
-      `}</style>
     </Card>
   )
 }
@@ -209,10 +181,7 @@ export function StudentDashboard() {
             .select('*, course_unit:course_units(name, code)')
             .eq('is_published', true)
             .order('lock_at', { ascending: true }),
-          supabase
-            .from('course_units')
-            .select('*')
-            .eq('is_active', true),
+          supabase.from('course_units').select('*').eq('is_active', true),
         ])
 
         const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error || cwRes.error || allUnitsRes.error
@@ -260,16 +229,10 @@ export function StudentDashboard() {
 
     try {
       if (isEnrolled) {
-        await supabase
-          .from('student_course_units')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('course_unit_id', unitId)
+        await supabase.from('student_course_units').delete().eq('user_id', user.id).eq('course_unit_id', unitId)
         setMyCourseUnitIds((prev) => prev.filter((id) => id !== unitId))
       } else {
-        await supabase
-          .from('student_course_units')
-          .insert({ user_id: user.id, course_unit_id: unitId, status: 'active' })
+        await supabase.from('student_course_units').insert({ user_id: user.id, course_unit_id: unitId, status: 'active' })
         setMyCourseUnitIds((prev) => [...prev, unitId])
       }
       setDataVersion((v) => v + 1)
@@ -295,97 +258,96 @@ export function StudentDashboard() {
     )
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  }
+
   return (
-    <div className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
       {dataError && (
-        <div className="rounded-xl border border-danger/20 bg-danger-light p-4 text-sm text-danger" role="alert">
+        <div className="rounded-2xl border border-danger/20 bg-danger-light p-4 text-xs font-semibold text-danger" role="alert">
           Unable to load live dashboard data: {dataError}
         </div>
       )}
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      {/* Header Banner */}
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 rounded-3xl border border-primary/20 bg-primary-light/30 p-6 sm:flex-row sm:items-center sm:justify-between shadow-xs backdrop-blur-md"
+      >
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Student Workspace</p>
-          <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">Welcome back, {user?.full_name?.split(' ')[0]}.</h1>
-          <p className="mt-1 text-text-secondary">Ndejje University - Kampala Campus</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Student Workspace</p>
+          <h1 className="mt-1 text-2xl font-extrabold text-text-primary sm:text-3xl tracking-tight">
+            Welcome back, {user?.full_name?.split(' ')[0]}.
+          </h1>
+          <p className="mt-1 text-xs text-text-secondary font-medium">Ndejje University · Kampala Campus</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setIsModalOpen(true)}>
+        <div className="flex flex-wrap gap-2.5">
+          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
             <BookOpen className="h-4 w-4 mr-1.5" />
-            Manage Registered Course Units ({myCourseUnitIds.length})
+            Course Units ({myCourseUnitIds.length})
           </Button>
           <Link href="/student/coursework">
-            <Button>
+            <Button size="sm">
               <Plus className="h-4 w-4 mr-1.5" />
               Browse Coursework
             </Button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {nearestCoursework && nearestCoursework.lock_at && (
-        <CountdownWidget lockAt={nearestCoursework.lock_at} title={`${nearestCoursework.course_unit?.code || 'Course'} - ${nearestCoursework.title}`} />
+        <motion.div variants={itemVariants}>
+          <CountdownWidget lockAt={nearestCoursework.lock_at} title={`${nearestCoursework.course_unit?.code || 'Course'} - ${nearestCoursework.title}`} />
+        </motion.div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="My Groups"
-          value={metrics.myGroups}
-          icon={<Users className="h-6 w-6" />}
-          color="primary"
-        />
-        <MetricCard
-          title="Registered Course Units"
-          value={metrics.registeredCourseUnits}
-          icon={<BookOpen className="h-6 w-6" />}
-          color="primary"
-          onClick={() => setIsModalOpen(true)}
-        />
-        <MetricCard
-          title="Completed Tasks"
-          value={metrics.completedTasks}
-          icon={<TrendingUp className="h-6 w-6" />}
-          color="success"
-        />
-        <MetricCard
-          title="Upcoming Deadlines"
-          value={metrics.upcomingDeadlines}
-          icon={<Clock className="h-6 w-6" />}
-          color="danger"
-        />
-      </div>
+      {/* Metric Cards Grid */}
+      <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="My Groups" value={metrics.myGroups} icon={<Users className="h-6 w-6" />} color="primary" />
+        <MetricCard title="Course Units" value={metrics.registeredCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" onClick={() => setIsModalOpen(true)} />
+        <MetricCard title="Completed Tasks" value={metrics.completedTasks} icon={<TrendingUp className="h-6 w-6" />} color="success" />
+        <MetricCard title="Upcoming Deadlines" value={metrics.upcomingDeadlines} icon={<Clock className="h-6 w-6" />} color="danger" />
+      </motion.div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      {/* Lists Grid */}
+      <motion.div variants={itemVariants} className="grid gap-6 xl:grid-cols-2">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
+          <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
             <CardTitle>My Groups</CardTitle>
-            <Link href="/student/groups" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
-              View all <ArrowRight className="h-4 w-4" />
+            <Link href="/student/groups" className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+              View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </CardHeader>
-          <CardContent className="px-5 py-4 sm:px-6">
+          <CardContent className="px-6 py-4">
             {recentGroups.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto text-text-muted" />
-                <p className="mt-2 text-text-secondary">You haven't joined any groups yet</p>
-                <p className="text-sm text-text-muted">Browse coursework to find or create groups</p>
+              <div className="text-center py-10">
+                <Users className="h-10 w-10 mx-auto text-text-muted opacity-60" />
+                <p className="mt-2 text-sm font-semibold text-text-secondary">You haven't joined any groups yet</p>
+                <p className="text-xs text-text-muted mt-1">Browse coursework to find or create project groups</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentGroups.map(({ group }) => (
-                  <div key={group.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-surface-hover">
+                  <div key={group.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
+                      <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
+                        <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-medium text-text-primary">{group.name}</p>
-                        <p className="text-sm text-text-muted">
+                        <p className="font-bold text-sm text-text-primary">{group.name}</p>
+                        <p className="text-xs text-text-muted mt-0.5">
                           {group.coursework?.course_unit?.code} - {group.coursework?.title}
                         </p>
                       </div>
                     </div>
-                    <Badge variant={group.status === 'active' ? 'success' : 'warning'}>
+                    <Badge variant={group.status === 'active' ? 'success' : 'warning'} dot>
                       {group.status}
                     </Badge>
                   </div>
@@ -396,34 +358,30 @@ export function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between px-5 py-4 sm:px-6">
+          <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
             <CardTitle>Recent Tasks</CardTitle>
-            <Link href="/student/tasks" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
-              View all <ArrowRight className="h-4 w-4" />
+            <Link href="/student/tasks" className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+              View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </CardHeader>
-          <CardContent className="px-5 py-4 sm:px-6">
+          <CardContent className="px-6 py-4">
             {recentTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 mx-auto text-text-muted" />
-                <p className="mt-2 text-text-secondary">No tasks yet</p>
-                <p className="text-sm text-text-muted">Create tasks to track your coursework progress</p>
+              <div className="text-center py-10">
+                <BookOpen className="h-10 w-10 mx-auto text-text-muted opacity-60" />
+                <p className="mt-2 text-sm font-semibold text-text-secondary">No tasks assigned yet</p>
+                <p className="text-xs text-text-muted mt-1">Create tasks to track your coursework progress</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-surface-hover">
+                  <div key={task.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', {
-                        'bg-warning/10 text-warning': task.priority === 'high',
-                        'bg-primary/10 text-primary': task.priority === 'medium',
-                        'bg-secondary/10 text-secondary': task.priority === 'low',
-                      })}>
+                      <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
                         <Target className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-medium text-text-primary">{task.title}</p>
-                        <p className="text-sm text-text-muted">
+                        <p className="font-bold text-sm text-text-primary">{task.title}</p>
+                        <p className="text-xs text-text-muted mt-0.5">
                           {task.coursework_id ? 'Coursework task' : 'Personal task'}
                         </p>
                       </div>
@@ -432,11 +390,6 @@ export function StudentDashboard() {
                       <Badge variant={task.status === 'completed' || task.status === 'submitted' ? 'success' : task.status === 'in_progress' ? 'primary' : 'secondary'}>
                         {task.status.replace('_', ' ')}
                       </Badge>
-                      {task.due_date && (
-                        <span className="text-xs text-text-muted">
-                          Due {new Date(task.due_date).toLocaleDateString()}
-                        </span>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -444,32 +397,29 @@ export function StudentDashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="My Registered Course Units" size="lg">
+      {/* Registered Course Units Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registered Course Units" size="lg">
         <div className="space-y-4 pt-2">
-          <p className="text-sm text-text-secondary">
-            Select or remove course units you are taking this semester. Group discovery and coursework deadlines will be tailored to these course units.
+          <p className="text-xs text-text-secondary leading-relaxed">
+            Select or remove course units you are taking this semester. Group discovery and coursework deadlines will be tailored to these selections.
           </p>
 
-          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+          <div className="max-h-96 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
             {allCourseUnits.map((unit) => {
               const isEnrolled = myCourseUnitIds.includes(unit.id)
               return (
-                <div key={unit.id} className="flex items-center justify-between rounded-xl border border-border bg-surface p-3.5 shadow-sm">
+                <div key={unit.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-surface p-4 shadow-xs">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">{unit.code}</span>
-                      <span className="font-semibold text-text-primary">{unit.name}</span>
+                      <span className="font-bold text-primary text-sm">{unit.code}</span>
+                      <span className="font-bold text-text-primary text-sm">{unit.name}</span>
                     </div>
                     <p className="text-xs text-text-muted mt-0.5">{unit.description || 'Ndejje University Course Unit'}</p>
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant={isEnrolled ? 'outline' : 'primary'}
-                    onClick={() => toggleCourseUnitEnrollment(unit.id)}
-                  >
+                  <Button size="sm" variant={isEnrolled ? 'outline' : 'primary'} onClick={() => toggleCourseUnitEnrollment(unit.id)}>
                     {isEnrolled ? (
                       <>
                         <Check className="h-3.5 w-3.5 text-success mr-1" />
@@ -487,11 +437,11 @@ export function StudentDashboard() {
             })}
           </div>
 
-          <div className="flex justify-end pt-3">
+          <div className="flex justify-end pt-3 border-t border-border/60">
             <Button onClick={() => setIsModalOpen(false)}>Done</Button>
           </div>
         </div>
       </Modal>
-    </div>
+    </motion.div>
   )
 }

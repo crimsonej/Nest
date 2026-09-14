@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface DataTableProps<T> {
   columns: Array<{
@@ -82,23 +83,23 @@ export function DataTable<T extends { id: string }>({
 
   if (loading) {
     return (
-      <div className="table-container">
-        <table className="table">
+      <div className="w-full overflow-x-auto rounded-2xl border border-border/80 bg-surface shadow-sm scrollbar-thin">
+        <table className="w-full text-sm">
           <thead>
-            <tr>
+            <tr className="border-b border-border/60 bg-surface-hover/50">
               {columns.map((col) => (
-                <th key={col.key} className={col.className}>
-                  <div className="animate-pulse h-4 bg-secondary/20 w-3/4" />
+                <th key={col.key} className="px-4 py-3.5 text-left font-semibold text-text-secondary">
+                  <div className="animate-pulse h-4 bg-text-muted/20 rounded w-3/4" />
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i}>
+              <tr key={i} className="border-b border-border/40">
                 {columns.map((col) => (
-                  <td key={col.key}>
-                    <div className="animate-pulse h-4 bg-secondary/20 w-1/2" />
+                  <td key={col.key} className="px-4 py-3.5">
+                    <div className="animate-pulse h-4 bg-text-muted/15 rounded w-1/2" />
                   </td>
                 ))}
               </tr>
@@ -110,12 +111,12 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="table-container scrollbar-thin">
-      <table className="table" role="grid">
+    <div className="w-full overflow-x-auto rounded-2xl border border-border/80 bg-surface shadow-sm scrollbar-thin">
+      <table className="w-full text-sm text-left" role="grid">
         <thead>
-          <tr>
+          <tr className="border-b border-border/70 bg-surface-hover/60 text-xs font-bold uppercase tracking-wider text-text-secondary">
             {selection && (
-              <th className="w-12">
+              <th className="w-12 px-4 py-3.5">
                 <input
                   type="checkbox"
                   checked={selection.selectedKeys.size === data.length && data.length > 0}
@@ -128,27 +129,26 @@ export function DataTable<T extends { id: string }>({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={cn(col.className, col.sortable && 'cursor-pointer select-none')}
+                className={cn('px-4 py-3.5 font-bold', col.className, col.sortable && 'cursor-pointer select-none hover:text-text-primary')}
                 onClick={() => col.sortable && handleSort(col.key)}
-                style={{ width: col.className?.includes('w-') ? undefined : 'auto' }}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <span>{col.header}</span>
                   {col.sortable && sortColumn === col.key && (
                     <span className="text-primary">
-                      {sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      {sortDirection === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     </span>
                   )}
                 </div>
               </th>
             ))}
-            {actions && <th className="w-32 text-center">Actions</th>}
+            {actions && <th className="w-32 px-4 py-3.5 text-center">Actions</th>}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border/50">
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selection ? 1 : 0) + (actions ? 1 : 0)} className="text-center py-8 text-text-muted">
+              <td colSpan={columns.length + (selection ? 1 : 0) + (actions ? 1 : 0)} className="text-center py-12 text-text-muted">
                 {emptyMessage}
               </td>
             </tr>
@@ -157,13 +157,14 @@ export function DataTable<T extends { id: string }>({
               <tr
                 key={keyExtractor(row)}
                 className={cn(
+                  'transition-colors duration-150 hover:bg-surface-hover/70',
                   onRowClick && 'cursor-pointer',
                   selection && selection.selectedKeys.has(keyExtractor(row)) && 'bg-primary/5'
                 )}
                 onClick={() => onRowClick?.(row)}
               >
                 {selection && (
-                  <td className="w-12">
+                  <td className="w-12 px-4 py-3.5">
                     <input
                       type="checkbox"
                       checked={selection.selectedKeys.has(keyExtractor(row))}
@@ -175,13 +176,13 @@ export function DataTable<T extends { id: string }>({
                   </td>
                 )}
                 {columns.map((col) => (
-                  <td key={col.key} className={col.className}>
+                  <td key={col.key} className={cn('px-4 py-3.5 text-text-primary', col.className)}>
                     {col.render ? col.render(row) : (row as Record<string, unknown>)[col.key] as React.ReactNode}
                   </td>
                 ))}
                 {actions && (
-                  <td className="text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {actions(row)}
                     </div>
                   </td>
@@ -192,11 +193,11 @@ export function DataTable<T extends { id: string }>({
         </tbody>
       </table>
       {pagination && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-surface-hover/50">
-          <div className="text-sm text-text-secondary">
-            Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
-            {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
-            {pagination.total} results
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-border/60 bg-surface-hover/30 text-xs sm:text-sm">
+          <div className="text-text-secondary">
+            Showing <strong className="font-semibold text-text-primary">{(pagination.page - 1) * pagination.pageSize + 1}</strong> to{' '}
+            <strong className="font-semibold text-text-primary">{Math.min(pagination.page * pagination.pageSize, pagination.total)}</strong> of{' '}
+            <strong className="font-semibold text-text-primary">{pagination.total}</strong> results
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -205,7 +206,8 @@ export function DataTable<T extends { id: string }>({
               className="btn btn-outline btn-sm"
               aria-label="Previous page"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Prev
             </button>
             <button
               onClick={() => pagination.onPageChange(pagination.page + 1)}
@@ -213,7 +215,8 @@ export function DataTable<T extends { id: string }>({
               className="btn btn-outline btn-sm"
               aria-label="Next page"
             >
-              <ChevronRight className="h-4 w-4" />
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
             </button>
           </div>
         </div>
@@ -221,6 +224,3 @@ export function DataTable<T extends { id: string }>({
     </div>
   )
 }
-
-import { useState } from 'react'
-import { ChevronUp } from 'lucide-react'

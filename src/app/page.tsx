@@ -1,89 +1,123 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { Users, BookOpen, Shield, BarChart3, ArrowRight, CheckCircle } from 'lucide-react'
-import DatabaseStatus from '@/components/shared/DatabaseStatus'
+import { Users, BookOpen, Shield, CheckCircle, Sparkles, LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import { motion } from 'framer-motion'
 
 export default function HomePage() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  }
+
   return (
-    <div className="site-grid min-h-screen bg-background">
+    <div className="site-grid min-h-screen bg-background relative overflow-hidden transition-colors duration-300 flex flex-col justify-between">
+      {/* Background Animated Motion Orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="hero-orb hero-orb-one" />
         <div className="hero-orb hero-orb-two" />
         <div className="hero-orb hero-orb-three" />
       </div>
 
-      <header className="sticky top-0 z-20 border-b border-border/80 bg-background/85 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-2.5 sm:px-4 py-3 sm:py-5">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </div>
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-xl">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <motion.div
+              whileHover={{ rotate: 12, scale: 1.1 }}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30 text-white"
+            >
+              <Sparkles className="h-5 w-5" />
+            </motion.div>
             <div>
-              <span className="text-lg sm:text-xl font-semibold tracking-[0.18em] text-text-primary">NEST</span>
-              <p className="hidden text-[10px] uppercase tracking-[0.2em] text-text-muted md:block">Ndejje University</p>
+              <span className="text-xl font-black tracking-[0.2em] text-text-primary">NEST</span>
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted md:block">University Workspace</p>
             </div>
           </div>
-          <nav className="flex items-center gap-1.5 sm:gap-4">
-            <Link href="#features" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Features</Link>
-            <Link href="#how-it-works" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">How It Works</Link>
+
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <Link href="#features" className="hidden text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors md:block">
+              Features
+            </Link>
             <ThemeToggle />
-            <Link href="/student/dashboard" className="hidden text-text-secondary hover:text-text-primary transition-colors md:block">Student portal</Link>
-            <Link href="/coordinator/dashboard">
-              <Button size="sm" className="px-2.5 sm:px-4 text-xs sm:text-sm">
-                <span className="hidden min-[360px]:inline">Coordinator portal</span>
-                <span className="min-[360px]:hidden">Portal</span>
+            <Link href="/auth/login">
+              <Button variant="outline" size="sm" className="px-3 text-xs font-semibold">
+                <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="sm" className="px-3.5 text-xs font-semibold">
+                <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                Sign Up
               </Button>
             </Link>
           </nav>
         </div>
       </header>
 
-      <main>
-        <section className="container relative mx-auto px-4 py-24 lg:py-36">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              Built for Ndejje University, Kampala Campus
-            </div>
-            <h1 className="fade-up text-5xl font-semibold leading-[1.05] tracking-tight text-text-primary lg:text-7xl">
+      <main className="flex-1">
+        <section className="container relative mx-auto px-4 py-20 lg:py-32">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="mx-auto max-w-4xl text-center"
+          >
+            <motion.h1 variants={itemVariants} className="text-4xl font-extrabold leading-[1.08] tracking-tight text-text-primary sm:text-6xl lg:text-7xl">
               The calm center for course groups, tasks, and deadlines.
-            </h1>
-            <p className="fade-up mx-auto mb-9 max-w-2xl text-lg leading-8 text-text-secondary lg:text-xl">
+            </motion.h1>
+
+            <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl">
               NEST gives students and coordinators one clear space to manage course units, group membership, assignments, and campus-wide coordination without duplicate data or stale information.
-            </p>
-            <div className="fade-up flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/student/dashboard">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Open student portal
+            </motion.p>
+
+            <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link href="/auth/login" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto shadow-xl px-8">
+                  Sign In
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
-              <Link href="/coordinator/dashboard">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Open coordinator portal
+              <Link href="/auth/register" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
+                  Create an Account
                 </Button>
               </Link>
-            </div>
-            <p className="mt-6 text-sm text-text-muted">
-              Created by Kibirige Joachim Elijah · GitHub: <a href="https://github.com/crimsonej/crimsonej" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:text-primary-hover">crimsonej/crimsonej</a>
-            </p>
-            <DatabaseStatus />
-          </div>
+            </motion.div>
+
+            <motion.p variants={itemVariants} className="mt-8 text-xs text-text-muted">
+              Created by Kibirige Joachim Elijah · GitHub:{' '}
+              <a href="https://github.com/crimsonej" target="_blank" rel="noreferrer" className="font-bold text-primary hover:underline">
+                crimsonej
+              </a>
+            </motion.p>
+          </motion.div>
         </section>
 
-        <section id="features" className="container mx-auto px-4 py-24">
+        {/* Features Section */}
+        <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">Built for University Workflows</h2>
-            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Purpose-built features for student collaboration and coordinator oversight
+            <h2 className="text-3xl lg:text-5xl font-extrabold text-text-primary tracking-tight mb-4">
+              Built for University Workflows
+            </h2>
+            <p className="text-base sm:text-lg text-text-secondary max-w-2xl mx-auto">
+              Purpose-built tools designed for seamless student collaboration and real-time coordinator oversight.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3">
             <FeatureCard
               icon={Users}
               title="Student Group Formation"
@@ -94,7 +128,7 @@ export default function HomePage() {
               icon={BookOpen}
               title="Coursework & Task Management"
               description="Per-coursework group workspaces with task tracking, resource sharing, and deadline management across all assignments."
-              features={['Kanban-style task boards', 'File sharing per group', 'Due date tracking', 'Progress visualization']}
+              features={['Kanban task boards', 'File sharing per group', 'Due date tracking', 'Progress visualization']}
             />
             <FeatureCard
               icon={Shield}
@@ -104,58 +138,16 @@ export default function HomePage() {
             />
           </div>
         </section>
-
-        <section id="how-it-works" className="border-y border-border bg-surface/80 py-24">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">How It Works</h2>
-              <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                Get started in three simple steps
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <StepCard
-                number="01"
-                title="Coordinator Setup"
-                description="Coordinators create course units, publish coursework, and configure group size limits and auto-lock deadlines."
-                icon={<CheckCircle className="h-6 w-6" />}
-              />
-              <StepCard
-                number="02"
-                title="Student Registration"
-                description="Students register with their university details, browse available coursework, and create or join groups."
-                icon={<Users className="h-6 w-6" />}
-              />
-              <StepCard
-                number="03"
-                title="Automated Tracking"
-                description="Every group change syncs to Google Sheets automatically. Coordinators get real-time dashboards and exportable reports."
-                icon={<BarChart3 className="h-6 w-6" />}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="container mx-auto px-4 py-20 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">Ready to Simplify Group Management?</h2>
-          <p className="text-lg text-text-secondary mb-8 max-w-2xl mx-auto">
-            Register with your university details, then manage course units, groups, and coursework in one place.
-          </p>
-          <Link href="/auth/register">
-            <Button size="lg">
-              Register now
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </Link>
-        </section>
       </main>
 
-      <footer className="border-t border-border py-12">
-        <div className="container mx-auto px-4 text-center text-text-muted">
-          <p>© 2024 NEST. Created by Kibirige Joachim Elijah.</p>
-          <p className="mt-2">
-            GitHub: <a href="https://github.com/crimsonej/crimsonej" target="_blank" rel="noreferrer" className="font-medium text-primary hover:text-primary-hover">crimsonej/crimsonej</a>
+      <footer className="border-t border-border/80 py-8 bg-surface/40">
+        <div className="container mx-auto px-4 text-center text-xs text-text-muted space-y-2">
+          <p>© 2026 NEST. Created by Kibirige Joachim Elijah.</p>
+          <p>
+            GitHub:{' '}
+            <a href="https://github.com/crimsonej" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
+              crimsonej
+            </a>
           </p>
         </div>
       </footer>
@@ -163,37 +155,28 @@ export default function HomePage() {
   )
 }
 
-function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>, title: string, description: string, features: string[] }) {
+function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; features: string[] }) {
   return (
-    <div className="card p-6 h-full">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-        <Icon className="h-6 w-6 text-primary" />
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+      className="rounded-3xl border border-border/80 bg-surface/90 p-8 shadow-sm backdrop-blur-md hover:shadow-xl hover:border-primary/40 transition-all flex flex-col justify-between"
+    >
+      <div>
+        <div className="h-14 w-14 rounded-2xl bg-primary-light flex items-center justify-center mb-6 text-primary shadow-sm">
+          <Icon className="h-7 w-7" />
+        </div>
+        <h3 className="text-xl font-bold text-text-primary mb-3">{title}</h3>
+        <p className="text-sm text-text-secondary leading-relaxed mb-6">{description}</p>
       </div>
-      <h3 className="text-xl font-semibold text-text-primary mb-2">{title}</h3>
-      <p className="text-text-secondary mb-4">{description}</p>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5 border-t border-border/60 pt-6">
         {features.map((feature, i) => (
-          <li key={i} className="flex items-center gap-2 text-sm text-text-secondary">
+          <li key={i} className="flex items-center gap-2.5 text-xs font-medium text-text-secondary">
             <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
             {feature}
           </li>
         ))}
       </ul>
-    </div>
-  )
-}
-
-function StepCard({ number, title, description, icon }: { number: string, title: string, description: string, icon: React.ReactNode }) {
-  return (
-    <div className="relative card p-6">
-      <div className="absolute -top-3 left-6 bg-background px-2 text-primary font-bold text-lg">{number}</div>
-      <div className="pt-4">
-        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
-          {icon}
-        </div>
-        <h3 className="text-xl font-semibold text-text-primary mb-2">{title}</h3>
-        <p className="text-text-secondary">{description}</p>
-      </div>
-    </div>
+    </motion.div>
   )
 }
