@@ -1,5 +1,5 @@
-import { CoordinatorInterventions } from '@/components/coordinator/CoordinatorInterventions'
+import { redirect } from 'next/navigation'
 
 export default function CoordinatorInterventionsPage() {
-  return <CoordinatorInterventions />
+  redirect('/coordinator/groups')
 }

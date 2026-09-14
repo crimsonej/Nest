@@ -14,9 +14,8 @@ const navigation = [
   { name: 'Courses', href: '/coordinator/courses', icon: Layers3 },
   { name: 'Course Units', href: '/coordinator/course-units', icon: BookCopy },
   { name: 'Groups', href: '/coordinator/groups', icon: Users },
-  { name: 'Coursework Manager', href: '/coordinator/coursework', icon: BookOpen },
+  { name: 'Course Work', href: '/coordinator/coursework', icon: BookOpen },
   { name: 'AI Entry (Crimson)', href: '/coordinator/ai-entry', icon: Bot },
-  { name: 'Interventions', href: '/coordinator/interventions', icon: Shield },
   { name: 'Reports', href: '/coordinator/reports', icon: FileText },
   { name: 'Settings', href: '/coordinator/settings', icon: Settings },
 ]

@@ -220,9 +220,9 @@ export function CoordinatorDashboard() {
               New coursework
             </Button>
           </Link>
-          <Link href="/coordinator/interventions">
+          <Link href="/coordinator/groups">
             <Button size="sm">
-              Review priorities
+              Review groups
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -240,8 +240,8 @@ export function CoordinatorDashboard() {
               {metrics.pendingJoinRequests > 0 && `${metrics.pendingJoinRequests} pending join request${metrics.pendingJoinRequests === 1 ? '' : 's'}`}.
             </p>
           </div>
-          <Link href="/coordinator/interventions" className="inline-flex items-center gap-1 text-sm font-semibold text-warning hover:underline">
-            Open interventions
+          <Link href="/coordinator/groups" className="inline-flex items-center gap-1 text-sm font-semibold text-warning hover:underline">
+            Open groups
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

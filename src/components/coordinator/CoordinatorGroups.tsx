@@ -1,14 +1,19 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
+import { Modal } from '../ui/Modal'
+import { Textarea } from '../ui/Textarea'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
+import { groupCreationSchema } from '@/lib/validators'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 export function CoordinatorGroups() {
   const { user } = useAuth()
@@ -23,8 +28,22 @@ export function CoordinatorGroups() {
   const [groups, setGroups] = useState<any[]>([])
   const [groupMembers, setGroupMembers] = useState<any[]>([])
   const [selectedCoordinators, setSelectedCoordinators] = useState<any[]>([])
+  const [courseworks, setCourseworks] = useState<any[]>([])
   const [assigningIds, setAssigningIds] = useState<Record<string, boolean>>({})
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({})
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  const form = useForm({
+    resolver: zodResolver(groupCreationSchema),
+    defaultValues: {
+      courseworkId: '',
+      name: '',
+      description: '',
+      isPrivate: false,
+      maxMembers: 5,
+    },
+  })
 
   useEffect(() => {
     fetchData()
@@ -33,13 +52,14 @@ export function CoordinatorGroups() {
   async function fetchData() {
     setLoading(true)
     try {
-      const [unitsRes, usersRes, enrollmentsRes, groupsRes, membersRes, scRes] = await Promise.all([
+      const [unitsRes, usersRes, enrollmentsRes, groupsRes, membersRes, scRes, courseworksRes] = await Promise.all([
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('student_course_units').select('*').eq('status', 'active'),
         supabase.from('groups').select('*, leader:users!groups_leader_id_fkey(id, full_name, email), coursework:courseworks(id, title, course_unit_id)').order('created_at', { ascending: false }),
         supabase.from('group_members').select('*, user:users(id, full_name, email, student_registration_number)'),
         supabase.from('selected_coordinators').select('*'),
+        supabase.from('courseworks').select('id, title, course_unit_id, course_unit:course_units(code, name)').order('created_at', { ascending: false }),
       ])
 
       const units = unitsRes.data || []
@@ -48,6 +68,7 @@ export function CoordinatorGroups() {
       const groupRows = groupsRes.data || []
       const memberRows = membersRes.data || []
       const scRows = scRes.data || []
+      const courseworksRows = courseworksRes.data || []
 
       setCourseUnits(units)
       setStudents(unitStudents)
@@ -55,6 +76,7 @@ export function CoordinatorGroups() {
       setGroups(groupRows)
       setGroupMembers(memberRows)
       setSelectedCoordinators(scRows)
+      setCourseworks(courseworksRows)
 
       // Do not auto-select — user should click a Course Unit tile to navigate into it
     } catch (error) {
@@ -72,6 +94,11 @@ export function CoordinatorGroups() {
   const selectedGroups = useMemo(
     () => groups.filter((group) => group.coursework?.course_unit_id === selectedCourseUnitId),
     [groups, selectedCourseUnitId]
+  )
+
+  const selectedCourseworks = useMemo(
+    () => courseworks.filter((item) => item.course_unit_id === selectedCourseUnitId),
+    [courseworks, selectedCourseUnitId]
   )
 
   const unitSummaries = useMemo(() => {
@@ -154,6 +181,48 @@ export function CoordinatorGroups() {
       (sc) => sc.user_id === user?.id && sc.course_unit_id === selectedCourseUnitId
     )
   }, [selectedCourseUnitId, user, selectedCoordinators])
+
+  const onSubmit = async (values: any) => {
+    setCreating(true)
+    try {
+      if (!user?.id) {
+        throw new Error('You need to be signed in before creating a group.')
+      }
+
+      const { data: group, error } = await supabase
+        .from('groups')
+        .insert({
+          coursework_id: values.courseworkId,
+          name: values.name,
+          description: values.description,
+          leader_id: user.id,
+          is_private: values.isPrivate,
+          max_members: values.maxMembers,
+          status: 'forming',
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const { error: memberError } = await supabase.from('group_members').insert({
+        group_id: group.id,
+        user_id: user.id,
+        role: 'leader',
+      })
+
+      if (memberError) throw memberError
+
+      setCreateModalOpen(false)
+      form.reset()
+      await fetchData()
+    } catch (error) {
+      console.error('Error creating group:', error)
+      alert(error instanceof Error ? error.message : 'Unable to create the group.')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const handleAssignStudentToGroup = async (studentId: string, groupId: string) => {
     const group = groups.find((item) => item.id === groupId)
@@ -243,6 +312,10 @@ export function CoordinatorGroups() {
             <Badge variant="warning">{orphanStudents.length} Orphans</Badge>
             <Button variant="outline" size="sm" onClick={fetchData} loading={loading}>
               <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setCreateModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Group
             </Button>
           </div>
         </div>
@@ -425,6 +498,67 @@ export function CoordinatorGroups() {
             </CardContent>
           </Card>
         )}
+
+        <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Create New Group" size="lg">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Controller
+              name="courseworkId"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  label="Coursework assignment"
+                  error={form.formState.errors.courseworkId?.message}
+                  options={selectedCourseworks.map((cw) => ({ value: cw.id, label: `${cw.course_unit?.code || ''} - ${cw.title}` }))}
+                  placeholder="Select coursework assignment"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <Input
+              label="Group name"
+              error={form.formState.errors.name?.message}
+              placeholder="e.g. Algo Knights"
+              {...form.register('name')}
+            />
+            <Textarea
+              label="Group description"
+              error={form.formState.errors.description?.message}
+              placeholder="Brief description of this group"
+              {...form.register('description')}
+            />
+            <Input
+              label="Max members"
+              type="number"
+              error={form.formState.errors.maxMembers?.message}
+              placeholder="5"
+              {...form.register('maxMembers', { valueAsNumber: true })}
+            />
+            <Controller
+              name="isPrivate"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  label="Group privacy"
+                  options={[
+                    { value: 'false', label: 'Public - Open for students' },
+                    { value: 'true', label: 'Private - Request to join' },
+                  ]}
+                  value={String(field.value)}
+                  onChange={(value) => field.onChange(value === 'true')}
+                />
+              )}
+            />
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setCreateModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={creating}>
+                Create Group
+              </Button>
+            </div>
+          </form>
+        </Modal>
       </div>
     )
   }

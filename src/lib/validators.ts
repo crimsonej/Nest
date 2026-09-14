@@ -41,12 +41,14 @@ const localIdString = z.string().min(1, 'Required value is missing')
 export const courseworkSchema = z.object({
   courseUnitId: localIdString,
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
-  description: z.string().optional(),
-  type: z.enum(['assignment', 'project', 'presentation', 'lab']),
+  description: z.string().optional().or(z.literal('')),
+  type: z.enum(['assignment', 'coursework', 'presentation', 'project', 'lab']).default('assignment'),
+  workStyle: z.enum(['group_work', 'personal']).default('group_work'),
+  submissionMode: z.enum(['email', 'handwritten_copy', 'typed_printed']).default('email'),
   maxGroupSize: z.number().int().min(2, 'Minimum group size is 2').max(20),
   minGroupSize: z.number().int().min(1, 'Minimum group size is 1').max(10),
   allowSelfFormation: z.boolean().default(true),
-  lockAt: z.string().datetime().optional().nullable(),
+  lockAt: z.string().optional().nullable(),
 }).refine((data) => data.minGroupSize <= data.maxGroupSize, {
   message: 'Minimum group size cannot exceed maximum group size',
   path: ['minGroupSize'],
