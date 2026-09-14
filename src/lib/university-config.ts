@@ -17,7 +17,7 @@ export const universityRules: UniversityRule[] = [
     abbreviation: 'NDU',
     branch: 'Kampala Campus',
     location: 'Kampala, Uganda',
-    acceptedRegNumberPattern: '^\\d{2}/[12]/\\d{3}/D/\\d{4}$',
+    acceptedRegNumberPattern: '^\\d{2}/[12]/\\d{3}/D/\\d+$',
     exampleRegNumber: '26/2/222/D/2222',
     supportedIntakeYears: [1, 2, 3, 4, 5],
     programs: ['Computer Science', 'Information Technology', 'Software Engineering', 'Statistics', 'Business', 'Education'],
