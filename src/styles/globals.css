@@ -30,8 +30,8 @@ html.mid {
   --color-primary: #e11d48;
   --color-primary-hover: #be123c;
   --color-primary-light: #ffe4e6;
-  --color-secondary: #9f1239;
-  --color-secondary-hover: #881337;
+  --color-secondary: #8b5cf6;
+  --color-secondary-hover: #7c3aed;
   --color-success: #10b981;
   --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
@@ -40,7 +40,7 @@ html.mid {
   --color-danger-light: #fee2e2;
   --color-background: #fff5f7;
   --color-surface: #ffffff;
-  --color-surface-hover: #ffe4e6;
+  --color-surface-hover: #fff1f2;
   --color-border: #fecdd3;
   --color-text-primary: #4c0519;
   --color-text-secondary: #881337;
@@ -53,22 +53,22 @@ html.mid {
 html.dark {
   --color-primary: #f43f5e;
   --color-primary-hover: #fb7185;
-  --color-primary-light: rgba(244, 63, 94, 0.15);
-  --color-secondary: #64748b;
-  --color-secondary-hover: #94a3b8;
+  --color-primary-light: rgba(244, 63, 94, 0.18);
+  --color-secondary: #6366f1;
+  --color-secondary-hover: #818cf8;
   --color-success: #10b981;
-  --color-success-light: rgba(16, 185, 129, 0.15);
+  --color-success-light: rgba(16, 185, 129, 0.18);
   --color-warning: #f59e0b;
-  --color-warning-light: rgba(245, 158, 11, 0.15);
+  --color-warning-light: rgba(245, 158, 11, 0.18);
   --color-danger: #ef4444;
-  --color-danger-light: rgba(239, 68, 68, 0.15);
-  --color-background: #090d16;
-  --color-surface: #111827;
-  --color-surface-hover: #1f2937;
-  --color-border: #1f2937;
+  --color-danger-light: rgba(239, 68, 68, 0.18);
+  --color-background: #070a12;
+  --color-surface: #0f172a;
+  --color-surface-hover: #1e293b;
+  --color-border: #1e293b;
   --color-text-primary: #f9fafb;
-  --color-text-secondary: #d1d5db;
-  --color-text-muted: #9ca3af;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
   --sidebar-bg: #030712;
   --sidebar-text: #f9fafb;
   --sidebar-border: #111827;
@@ -81,16 +81,18 @@ html.dark {
 
   html {
     scroll-behavior: smooth;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
     @apply bg-background text-text-primary antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     min-width: 320px;
-    background-image: radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 40%), linear-gradient(135deg, color-mix(in srgb, var(--color-background) 95%, var(--color-primary)) 0%, var(--color-background) 50%, color-mix(in srgb, var(--color-background) 96%, #ffffff) 100%);
+    background-image: radial-gradient(circle at 15% 15%, color-mix(in srgb, var(--color-primary) 12%, transparent) 0%, transparent 45%),
+                      radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--color-secondary) 10%, transparent) 0%, transparent 45%),
+                      linear-gradient(135deg, color-mix(in srgb, var(--color-background) 96%, var(--color-primary)) 0%, var(--color-background) 60%, color-mix(in srgb, var(--color-background) 95%, #ffffff) 100%);
     background-attachment: fixed;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   :focus-visible {
@@ -100,7 +102,7 @@ html.dark {
   .hero-orb {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(45px);
+    filter: blur(50px);
     opacity: 0.35;
     transform: translateZ(0);
     will-change: transform;
@@ -110,29 +112,40 @@ html.dark {
   }
 
   .hero-orb-one {
-    top: 2%;
-    left: 6%;
-    height: 18rem;
-    width: 18rem;
+    top: -4%;
+    left: 2%;
+    height: 22rem;
+    width: 22rem;
     background: color-mix(in srgb, var(--color-primary) 70%, #ec4899);
   }
 
   .hero-orb-two {
-    right: 8%;
-    top: 10%;
-    height: 20rem;
-    width: 20rem;
+    right: 4%;
+    top: 8%;
+    height: 24rem;
+    width: 24rem;
     background: color-mix(in srgb, var(--color-primary) 40%, #8b5cf6);
-    animation-delay: 2s;
+    animation-delay: 2.5s;
   }
 
   .hero-orb-three {
-    bottom: 5%;
-    left: 35%;
-    height: 16rem;
-    width: 16rem;
+    bottom: 4%;
+    left: 25%;
+    height: 18rem;
+    width: 18rem;
     background: color-mix(in srgb, var(--color-primary) 50%, #3b82f6);
-    animation-delay: 4s;
+    animation-delay: 5s;
+  }
+
+  .hero-orb-bg-pane {
+    top: 15%;
+    right: -10%;
+    height: 28rem;
+    width: 28rem;
+    background: color-mix(in srgb, var(--color-primary) 35%, var(--color-secondary));
+    filter: blur(70px);
+    opacity: 0.22;
+    animation: float-orb 18s ease-in-out infinite alternate-reverse;
   }
 
   .auth-stage {
@@ -140,13 +153,18 @@ html.dark {
   }
 
   .auth-visual {
-    background-image: linear-gradient(135deg, var(--sidebar-bg) 0%, color-mix(in srgb, var(--sidebar-bg) 80%, black) 100%);
+    background-image: linear-gradient(135deg, var(--sidebar-bg) 0%, color-mix(in srgb, var(--sidebar-bg) 75%, black) 100%);
   }
 
   .auth-grid {
     background-image: linear-gradient(color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 20%, transparent) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: linear-gradient(to bottom right, black 40%, transparent 90%);
+  }
+  
+  .auth-form-dots {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-primary) 18%, transparent) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 

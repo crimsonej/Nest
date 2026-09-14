@@ -21,6 +21,7 @@ import {
   CheckCircle,
   BookOpen,
   Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -104,6 +105,25 @@ function getPanelVariants(direction: 'left' | 'right'): Variants {
 
 interface AuthStageProps {
   initialMode: 'login' | 'register'
+}
+
+const avatarIndexes = {
+  male: [1, 3, 5, 8, 12, 15, 18, 20, 22, 25, 28, 30],
+  female: [1, 4, 6, 9, 11, 14, 17, 19, 21, 24, 27, 30],
+  other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
+} as const
+
+function getAvatarOptions(gender: 'male' | 'female' | 'other', excludedUrls: string[] = []) {
+  const source = gender === 'female' ? 'women' : 'men'
+  const excluded = new Set(excludedUrls)
+  const available = [...avatarIndexes[gender]].filter(
+    (index) => !excluded.has(`https://randomuser.me/api/portraits/${source}/${index}.jpg`)
+  )
+  const pool = available.length >= 6 ? available : [...avatarIndexes[gender]]
+  return pool
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 6)
+    .map((index) => `https://randomuser.me/api/portraits/${source}/${index}.jpg`)
 }
 
 export function AuthStage({ initialMode }: AuthStageProps) {
@@ -270,16 +290,24 @@ function LoginFormSection({
   onSwitchToRegister: () => void
 }) {
   const supabase = createClient()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Determine icon based on input format
+  const getIdentifierIcon = () => {
+    const val = identifier.trim()
+    if (val.includes('/')) return <Contact className="h-4 w-4 text-primary" />
+    if (/^[+\d\s\-()]+$/.test(val) && val.length >= 4) return <Phone className="h-4 w-4 text-primary" />
+    return <Mail className="h-4 w-4 text-primary" />
+  }
+
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!email || !password) {
-      setError('Please enter both email and password.')
+    if (!identifier || !password) {
+      setError('Please enter your email, phone, or reg number and password.')
       return
     }
 
@@ -287,9 +315,25 @@ function LoginFormSection({
     setError('')
 
     try {
+      let targetEmail = identifier.trim()
+
+      // Resolve non-email identifiers via server endpoint
+      if (!targetEmail.includes('@')) {
+        const res = await fetch('/api/auth/resolve-identifier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: targetEmail }),
+        })
+        const resData = await res.json()
+        if (!res.ok || resData.error) {
+          throw new Error(resData.error || 'Account not found with provided identifier.')
+        }
+        targetEmail = resData.email
+      }
+
       const { data, error: signInError } =
         await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: targetEmail,
           password,
         })
 
@@ -341,7 +385,7 @@ function LoginFormSection({
             Welcome back
           </h1>
           <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-            Sign in to access your NEST workspace.
+            Sign in using your Email, Phone Number, or Registration Number.
           </p>
         </motion.div>
 
@@ -365,13 +409,13 @@ function LoginFormSection({
         {/* Fields */}
         <motion.div variants={fieldVariant}>
           <Input
-            label="Email Address"
-            type="email"
-            placeholder="student@university.edu"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            icon={<Mail className="h-4 w-4" />}
-            autoComplete="email"
+            label="Email, Phone, or Reg Number"
+            type="text"
+            placeholder="student@nest.edu, +256700..., or 26/2/222/D/2222"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            icon={getIdentifierIcon()}
+            autoComplete="username"
             required
           />
         </motion.div>
@@ -473,6 +517,8 @@ function RegisterFormSection({
   const [pendingRegistration, setPendingRegistration] = useState<any>(null)
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [savingCourseUnits, setSavingCourseUnits] = useState(false)
+  const [avatarOptions, setAvatarOptions] = useState<string[]>([])
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
   const universityOptions = getUniversityOptions()
 
   async function fetchAcademicOptions() {
@@ -577,6 +623,20 @@ function RegisterFormSection({
     },
   })
 
+  const selectedGender = form.watch('gender') as 'male' | 'female' | 'other'
+
+  useEffect(() => {
+    const options = getAvatarOptions(selectedGender)
+    setAvatarOptions(options)
+    setSelectedAvatarUrl(options[0] || '')
+  }, [selectedGender])
+
+  function refreshAvatarOptions() {
+    const options = getAvatarOptions(selectedGender, avatarOptions)
+    setAvatarOptions(options)
+    setSelectedAvatarUrl(options[0] || '')
+  }
+
   const selectedUniversity =
     form.watch('university') || defaultUniversity.university
   const selectedUniversityRule = resolveUniversityRule(selectedUniversity)
@@ -605,6 +665,7 @@ function RegisterFormSection({
         whatsapp_phone: values.whatsappPhone,
         faculty: values.faculty,
         course: values.course,
+        avatar_url: values.avatar_url || selectedAvatarUrl,
         role: 'student',
         status: 'normal',
       },
@@ -635,6 +696,7 @@ function RegisterFormSection({
             whatsapp_phone: values.whatsappPhone,
             faculty: values.faculty,
             course: values.course,
+            avatar_url: selectedAvatarUrl,
           },
         },
       })
@@ -645,10 +707,10 @@ function RegisterFormSection({
         throw new Error('Account registration did not return a valid user.')
 
       if (data.session) {
-        await finishProfileRegistration(authUser, values, selectedCourseId)
+        await finishProfileRegistration(authUser, { ...values, avatar_url: selectedAvatarUrl }, selectedCourseId)
       } else {
         setPendingAuthUserId(authUser.id)
-        setPendingRegistration({ ...values, courseId: selectedCourseId })
+        setPendingRegistration({ ...values, avatar_url: selectedAvatarUrl, courseId: selectedCourseId })
         setVerificationEmail(values.email)
         setVerificationCode('')
       }
@@ -893,6 +955,39 @@ function RegisterFormSection({
               form.setValue('university', value, { shouldValidate: true })
             }
           />
+        </motion.div>
+
+        {/* Profile avatar */}
+        <motion.div variants={fieldVariant} className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="label mb-0">Profile picture</p>
+              <p className="text-[11px] text-text-muted">Choose an avatar for your student profile.</p>
+            </div>
+            <button
+              type="button"
+              onClick={refreshAvatarOptions}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-primary/40 hover:text-primary"
+              title="Show new avatars"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {avatarOptions.map((avatarUrl) => (
+              <button
+                key={avatarUrl}
+                type="button"
+                onClick={() => setSelectedAvatarUrl(avatarUrl)}
+                className={`rounded-full p-0.5 transition-all ${selectedAvatarUrl === avatarUrl ? 'bg-primary ring-2 ring-primary/25' : 'bg-border hover:bg-primary/40'}`}
+                aria-label="Choose profile picture"
+                aria-pressed={selectedAvatarUrl === avatarUrl}
+              >
+                <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         {/* Row: Reg Number + WhatsApp */}

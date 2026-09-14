@@ -146,8 +146,30 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         transition={{ duration: 0.4 }}
         className="auth-form-pane relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-10"
       >
+        {/* Animated Dot Background Pattern */}
+        <div className="auth-form-dots absolute inset-0 opacity-45 pointer-events-none" />
+
+        {/* Ambient Glowing Orbs behind form */}
+        <div className="hero-orb hero-orb-bg-pane pointer-events-none" />
+        <div
+          className="absolute -bottom-10 -left-10 h-80 w-80 rounded-full opacity-20 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, var(--color-secondary) 0%, transparent 70%)',
+            animation: 'pulse-glow 8s ease-in-out infinite alternate',
+          }}
+        />
+        <div
+          className="absolute -top-12 -right-12 h-96 w-96 rounded-full opacity-15 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, var(--color-primary) 0%, transparent 70%)',
+            animation: 'pulse-glow 10s ease-in-out infinite alternate-reverse',
+          }}
+        />
+
         {/* Mobile logo mark */}
-        <div className="auth-mobile-mark absolute left-5 top-5 flex items-center gap-3 lg:hidden">
+        <div className="auth-mobile-mark absolute left-5 top-5 flex items-center gap-3 lg:hidden z-20">
           <Image src="/logo.png" alt="NEST Logo" width={40} height={40} className="rounded-2xl shadow-md" />
           <span className="text-base font-black tracking-[0.22em] text-text-primary">
             NEST
@@ -159,7 +181,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.05 }}
-          className="w-full max-w-xl rounded-3xl border border-border/80 bg-surface/95 p-6 sm:p-9 shadow-2xl backdrop-blur-2xl hover:border-primary/30 transition-colors duration-300"
+          className="relative z-10 w-full max-w-xl rounded-3xl border border-border/80 bg-surface/90 p-6 sm:p-9 shadow-2xl backdrop-blur-2xl hover:border-primary/40 transition-all duration-300"
         >
           {children}
         </motion.div>

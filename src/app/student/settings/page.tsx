@@ -5,8 +5,27 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { User, Save } from 'lucide-react'
+import { User, Save, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+
+const avatarIndexes = {
+  male: [1, 3, 5, 8, 12, 15, 18, 20, 22, 25, 28, 30],
+  female: [1, 4, 6, 9, 11, 14, 17, 19, 21, 24, 27, 30],
+  other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
+} as const
+
+function getAvatarOptions(gender: 'male' | 'female' | 'other', excluded: string[] = []) {
+  const source = gender === 'female' ? 'women' : 'men'
+  const excludedSet = new Set(excluded)
+  const available = avatarIndexes[gender].filter(
+    (index) => !excludedSet.has(`https://randomuser.me/api/portraits/${source}/${index}.jpg`)
+  )
+  const pool = available.length >= 6 ? available : avatarIndexes[gender]
+  return [...pool]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 6)
+    .map((index) => `https://randomuser.me/api/portraits/${source}/${index}.jpg`)
+}
 
 export default function StudentSettingsPage() {
   const { user, refreshUser } = useAuth()
@@ -22,6 +41,8 @@ export default function StudentSettingsPage() {
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<string[]>([])
   const [loadingCourseUnits, setLoadingCourseUnits] = useState(true)
   const [updatingCourseUnits, setUpdatingCourseUnits] = useState(false)
+  const [avatarOptions, setAvatarOptions] = useState<string[]>([])
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
   const [formData, setFormData] = useState({
     fullName: user?.full_name || '',
     email: user?.email || '',
@@ -72,6 +93,13 @@ export default function StudentSettingsPage() {
     })
   }, [user])
 
+  useEffect(() => {
+    const gender = user?.gender || 'other'
+    const options = getAvatarOptions(gender)
+    setAvatarOptions(options)
+    setSelectedAvatarUrl(user?.avatar_url || options[0] || '')
+  }, [user])
+
   async function handleSave() {
     if (!userId) return
 
@@ -82,6 +110,7 @@ export default function StudentSettingsPage() {
         .update({
           full_name: draftData.fullName,
           whatsapp_phone: draftData.whatsappPhone,
+          avatar_url: selectedAvatarUrl,
         })
         .eq('id', userId)
 
@@ -159,6 +188,10 @@ export default function StudentSettingsPage() {
       fullName: formData.fullName,
       whatsappPhone: formData.whatsappPhone,
     })
+    const gender = user?.gender || 'other'
+    const options = getAvatarOptions(gender)
+    setAvatarOptions(options)
+    setSelectedAvatarUrl(user?.avatar_url || options[0] || '')
     setIsEditOpen(true)
   }
 
@@ -167,8 +200,8 @@ export default function StudentSettingsPage() {
       <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary ring-4 ring-primary/5">
-              <User className="h-8 w-8" />
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary ring-4 ring-primary/5">
+              {user?.avatar_url ? <img src={user.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="h-8 w-8" />}
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Student profile</p>
@@ -308,6 +341,41 @@ export default function StudentSettingsPage() {
               onChange={(e) => setDraftData({ ...draftData, fullName: e.target.value })}
               className="input"
             />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <label className="label mb-0">Profile picture</label>
+                <p className="text-[11px] text-text-muted">Choose a new avatar for your profile.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const options = getAvatarOptions(user?.gender || 'other', avatarOptions)
+                  setAvatarOptions(options)
+                  setSelectedAvatarUrl(options[0] || '')
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-primary/40 hover:text-primary"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {avatarOptions.map((avatarUrl) => (
+                <button
+                  key={avatarUrl}
+                  type="button"
+                  onClick={() => setSelectedAvatarUrl(avatarUrl)}
+                  className={`rounded-full p-0.5 ${selectedAvatarUrl === avatarUrl ? 'bg-primary ring-2 ring-primary/25' : 'bg-border hover:bg-primary/40'}`}
+                  aria-label="Choose profile picture"
+                  aria-pressed={selectedAvatarUrl === avatarUrl}
+                >
+                  <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

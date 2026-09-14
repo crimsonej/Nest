@@ -11,6 +11,7 @@ export interface User {
   whatsapp_phone?: string
   faculty?: string
   course?: string
+  avatar_url?: string
   status?: 'normal' | 'coordinator' | 'selected_coordinator'
   created_at: string
   updated_at: string

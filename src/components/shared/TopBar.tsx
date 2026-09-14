@@ -2,12 +2,12 @@
 
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { User, LogOut, ChevronDown, MapPin, Sparkles } from 'lucide-react'
+import { User, LogOut, ChevronDown, MapPin, Sparkles, ArrowLeftRight } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from './ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
+export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator'; onSwitchWorkspace?: () => void }) {
   const { user, signOut } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -44,8 +44,10 @@ export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
               aria-label="User menu"
               aria-expanded={userMenuOpen}
             >
-              <div className="h-7 w-7 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold text-xs">
-                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+              <div className="h-7 w-7 overflow-hidden rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold text-xs">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
               </div>
               <span className="hidden sm:block text-xs font-semibold text-text-primary truncate max-w-[120px]">
                 {user?.full_name}
@@ -73,6 +75,18 @@ export function TopBar({ role }: { role: 'student' | 'coordinator' }) {
                       <p className="text-[11px] text-text-muted truncate mt-0.5">{user?.email}</p>
                     </div>
                     <div className="p-1">
+                      {onSwitchWorkspace && (
+                        <button
+                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-text-primary hover:bg-surface-hover transition-colors"
+                          onClick={() => {
+                            setUserMenuOpen(false)
+                            onSwitchWorkspace()
+                          }}
+                        >
+                          <ArrowLeftRight className="h-4 w-4 text-primary" />
+                          Switch workspace
+                        </button>
+                      )}
                       <button
                         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-danger hover:bg-danger-light/50 transition-colors"
                         onClick={signOut}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil } from 'lucide-react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil, Shuffle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -32,6 +32,10 @@ export function CoordinatorGroups() {
   const [assigningIds, setAssigningIds] = useState<Record<string, boolean>>({})
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({})
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [randomGroupModalOpen, setRandomGroupModalOpen] = useState(false)
+  const [randomGroupCourseworkId, setRandomGroupCourseworkId] = useState('')
+  const [randomMembersPerGroup, setRandomMembersPerGroup] = useState('')
+  const [randomizing, setRandomizing] = useState(false)
   const [creating, setCreating] = useState(false)
   const [editingGroup, setEditingGroup] = useState<any>(null)
   const [groupEditName, setGroupEditName] = useState('')
@@ -232,6 +236,108 @@ export function CoordinatorGroups() {
     }
   }
 
+  const openRandomGroupModal = () => {
+    const defaultCoursework = selectedCourseworks.length === 1 ? selectedCourseworks[0].id : ''
+    setRandomGroupCourseworkId(defaultCoursework)
+    setRandomMembersPerGroup('')
+    setRandomGroupModalOpen(true)
+  }
+
+  const createRandomGroups = async () => {
+    if (!user?.id) return
+
+    const selectedCoursework = selectedCourseworks.find((item) => item.id === randomGroupCourseworkId)
+    if (!selectedCoursework) {
+      alert('Select the coursework these groups should belong to.')
+      return
+    }
+
+    const requestedSize = randomMembersPerGroup.trim() ? Number(randomMembersPerGroup) : null
+    if (requestedSize !== null && (!Number.isInteger(requestedSize) || requestedSize < 2)) {
+      alert('Members per group must be at least 2, or leave it blank for balanced groups.')
+      return
+    }
+    if (requestedSize !== null && requestedSize > selectedCoursework.max_group_size) {
+      alert(`This coursework allows a maximum of ${selectedCoursework.max_group_size} members per group.`)
+      return
+    }
+
+    const assignedUserIds = new Set(
+      groupMembers
+        .filter((member) => selectedGroups.some((group) => group.id === member.group_id))
+        .map((member) => member.user_id)
+    )
+    const enrolledUserIds = new Set(
+      studentEnrollments
+        .filter((enrollment) => enrollment.course_unit_id === selectedCourseUnitId && enrollment.status === 'active')
+        .map((enrollment) => enrollment.user_id)
+    )
+    const roster = students
+      .filter((student) => {
+        const isStudent = student.role === 'student' || student.status === 'normal' || student.status === 'selected_coordinator'
+        const isEnrolled = enrolledUserIds.size > 0 ? enrolledUserIds.has(student.id) : true
+        return isStudent && isEnrolled && !assignedUserIds.has(student.id)
+      })
+      .sort(() => Math.random() - 0.5)
+
+    if (roster.length === 0) {
+      alert('All enrolled students in this course unit are already assigned to groups.')
+      return
+    }
+
+    const capacity = requestedSize || Number(selectedCoursework.max_group_size) || 5
+    const groupCount = Math.ceil(roster.length / capacity)
+    const baseSize = Math.floor(roster.length / groupCount)
+    const extraStudents = roster.length % groupCount
+    const chunks: any[][] = []
+    let offset = 0
+    for (let index = 0; index < groupCount; index += 1) {
+      const size = baseSize + (index < extraStudents ? 1 : 0)
+      chunks.push(roster.slice(offset, offset + size))
+      offset += size
+    }
+
+    setRandomizing(true)
+    try {
+      const groupRows = chunks.map((members, index) => ({
+        coursework_id: selectedCoursework.id,
+        name: `${selectedCourseUnit?.code || 'Course'} Random Group ${index + 1}`,
+        description: requestedSize
+          ? `Randomly assigned group with ${requestedSize} member target.`
+          : 'Randomly assigned and balanced group.',
+        leader_id: members[0].id,
+        is_private: false,
+        max_members: capacity,
+        status: 'forming',
+      }))
+      const { data: createdGroups, error: groupError } = await supabase
+        .from('groups')
+        .insert(groupRows)
+        .select('id')
+      if (groupError) throw groupError
+      if (!createdGroups || createdGroups.length !== chunks.length) {
+        throw new Error('The groups were not created completely.')
+      }
+
+      const memberRows = createdGroups.flatMap((group, index) =>
+        chunks[index].map((student, memberIndex) => ({
+          group_id: group.id,
+          user_id: student.id,
+          role: memberIndex === 0 ? 'leader' : 'member',
+        }))
+      )
+      const { error: memberError } = await supabase.from('group_members').insert(memberRows)
+      if (memberError) throw memberError
+
+      setRandomGroupModalOpen(false)
+      await fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Unable to create random groups.')
+    } finally {
+      setRandomizing(false)
+    }
+  }
+
   const handleAssignStudentToGroup = async (studentId: string, groupId: string) => {
     const group = groups.find((item) => item.id === groupId)
     if (!group || !group.coursework?.course_unit_id) return
@@ -356,6 +462,12 @@ export function CoordinatorGroups() {
               <Plus className="h-4 w-4 mr-1.5" />
               New Group
             </Button>
+            {currentUnitManagers && (
+              <Button variant="outline" onClick={openRandomGroupModal} disabled={selectedCourseworks.length === 0}>
+                <Shuffle className="h-4 w-4 mr-1.5" />
+                Random Groups
+              </Button>
+            )}
           </div>
         </div>
 
@@ -562,6 +674,39 @@ export function CoordinatorGroups() {
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setEditingGroup(null)}>Cancel</Button>
               <Button onClick={saveGroupEdits} loading={savingGroup} disabled={!groupEditName.trim()}>Save changes</Button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal isOpen={randomGroupModalOpen} onClose={() => setRandomGroupModalOpen(false)} title="Create Random Groups" size="md">
+          <div className="space-y-5">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-text-secondary">
+              Unassigned enrolled students will be shuffled and distributed as evenly as possible. Existing group members will not be moved.
+            </div>
+            <Select
+              label="Coursework assignment"
+              options={selectedCourseworks.map((cw) => ({ value: cw.id, label: `${cw.course_unit?.code || selectedCourseSummary.code} - ${cw.title}` }))}
+              placeholder="Select coursework assignment"
+              value={randomGroupCourseworkId}
+              onChange={setRandomGroupCourseworkId}
+            />
+            <Input
+              label="Members per group (optional)"
+              type="number"
+              min={2}
+              value={randomMembersPerGroup}
+              onChange={(event) => setRandomMembersPerGroup(event.target.value)}
+              placeholder="Leave blank to balance automatically"
+              helperText={randomGroupCourseworkId
+                ? `Maximum allowed: ${selectedCourseworks.find((cw) => cw.id === randomGroupCourseworkId)?.max_group_size || 'coursework limit'}`
+                : 'Leave blank to balance the roster automatically.'}
+            />
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setRandomGroupModalOpen(false)}>Cancel</Button>
+              <Button onClick={createRandomGroups} loading={randomizing} disabled={!randomGroupCourseworkId}>
+                <Shuffle className="h-4 w-4 mr-1.5" />
+                Create Random Groups
+              </Button>
             </div>
           </div>
         </Modal>
