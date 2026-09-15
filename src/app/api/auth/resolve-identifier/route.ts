@@ -35,27 +35,36 @@ export async function POST(request: Request) {
       const admin = await createAdminClient()
 
       // Query users table by student_registration_number, whatsapp_phone, or email
-      const { data: dbUsers, error: dbError } = await admin
-        .from('users')
-        .select('email, whatsapp_phone, student_registration_number')
-        .or(
-          `student_registration_number.ilike.${cleanInput},whatsapp_phone.ilike.%${cleanPhone}%,email.ilike.${cleanInput}`
-        )
+      const { data: dbUsers, error: dbError } = cleanPhone.length >= 4
+        ? await admin
+            .from('users')
+            .select('email, whatsapp_phone, student_registration_number')
+            .or(
+              `student_registration_number.ilike."${cleanInput}",whatsapp_phone.ilike."%${cleanPhone}%",email.ilike."${cleanInput}"`
+            )
+        : await admin
+            .from('users')
+            .select('email, whatsapp_phone, student_registration_number')
+            .or(
+              `student_registration_number.ilike."${cleanInput}",email.ilike."${cleanInput}"`
+            )
 
       if (!dbError && dbUsers && dbUsers.length > 0) {
         // Find exact or best match
         const exactRegMatch = dbUsers.find(
-          (u) => u.student_registration_number?.toUpperCase() === cleanInput
+          (u) => u.student_registration_number?.toUpperCase().trim() === cleanInput
         )
         if (exactRegMatch?.email) {
           return NextResponse.json({ email: exactRegMatch.email })
         }
 
-        const phoneMatch = dbUsers.find((u) => {
-          if (!u.whatsapp_phone) return false
-          const p = cleanPhoneNumber(u.whatsapp_phone)
-          return p.includes(cleanPhone) || cleanPhone.includes(p)
-        })
+        const phoneMatch = cleanPhone
+          ? dbUsers.find((u) => {
+              if (!u.whatsapp_phone) return false
+              const p = cleanPhoneNumber(u.whatsapp_phone)
+              return p.includes(cleanPhone) || cleanPhone.includes(p)
+            })
+          : null
         if (phoneMatch?.email) {
           return NextResponse.json({ email: phoneMatch.email })
         }

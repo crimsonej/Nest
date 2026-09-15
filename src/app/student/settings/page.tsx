@@ -113,10 +113,13 @@ export default function StudentSettingsPage() {
     setSelectedAvatarUrl(user?.avatar_url || options[0] || '')
   }, [user])
 
+  const [saveError, setSaveError] = useState('')
+
   async function handleSave() {
     if (!userId) return
 
     setSaving(true)
+    setSaveError('')
     try {
       const { error } = await supabase
         .from('users')
@@ -139,6 +142,7 @@ export default function StudentSettingsPage() {
       await refreshUser()
     } catch (error) {
       console.error('Save error:', error)
+      setSaveError(error instanceof Error ? error.message : 'Failed to save profile changes. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -344,8 +348,13 @@ export default function StudentSettingsPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit profile" size="md">
+      <Modal isOpen={isEditOpen} onClose={() => { setIsEditOpen(false); setSaveError(''); }} title="Edit profile" size="md">
         <div className="space-y-4">
+          {saveError && (
+            <div className="rounded-xl border border-danger/30 bg-danger-light p-3 text-xs font-semibold text-danger" role="alert">
+              {saveError}
+            </div>
+          )}
           <div className="space-y-2">
             <label className="label">Full name</label>
             <input

@@ -20,7 +20,7 @@ export function isLocalDataMode() {
   return false
 }
 
-export function validateRegNumber(regNo: string, pattern = '^\\d{2}/\\d{1,2}/\\d{3,4}/[A-Z]/\\d{4}$') {
+export function validateRegNumber(regNo: string, pattern = '^\\d{2}/\\d+/\\d{3,4}/[A-Za-z]+/\\d+$') {
   if (!regNo) return false
   try {
     const regex = new RegExp(pattern, 'i')
