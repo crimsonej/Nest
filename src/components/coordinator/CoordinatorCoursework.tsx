@@ -78,6 +78,7 @@ export function CoordinatorCoursework() {
       maxGroupSize: 5,
       minGroupSize: 2,
       allowSelfFormation: true,
+      isPublished: true,
       lockAt: '',
     },
   })
@@ -157,9 +158,35 @@ export function CoordinatorCoursework() {
       maxGroupSize: 5,
       minGroupSize: 2,
       allowSelfFormation: true,
+      isPublished: true,
       lockAt: '',
     })
     setCreateModalOpen(true)
+  }
+
+  const handleTogglePublish = async (cw: any) => {
+    const nextStatus = !cw.is_published
+    let saveError: any = null
+    const { error } = await supabase
+      .from('courseworks')
+      .update({ is_published: nextStatus })
+      .eq('id', cw.id)
+    saveError = error
+
+    if (saveError) {
+      console.warn('Direct publish update failed, trying server API route:', saveError.message)
+      const res = await fetch('/api/coordinator/courseworks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...cw, is_published: nextStatus, id: cw.id })
+      })
+      const apiData = await res.json()
+      if (!res.ok || apiData.error) {
+        alert(apiData.error || saveError.message || 'Unable to update status.')
+        return
+      }
+    }
+    await fetchCourseworks()
   }
 
   const onSubmit = async (values: any) => {
@@ -173,7 +200,7 @@ export function CoordinatorCoursework() {
         max_group_size: isPersonal ? 1 : values.maxGroupSize,
         min_group_size: isPersonal ? 1 : values.minGroupSize,
         allow_self_formation: isPersonal ? false : values.allowSelfFormation,
-        is_published: editModalOpen && selectedCoursework ? selectedCoursework.is_published : false,
+        is_published: values.isPublished ?? true,
         lock_at: values.lockAt || null,
         course_unit_id: values.courseUnitId,
         work_style: values.workStyle,
@@ -231,6 +258,7 @@ export function CoordinatorCoursework() {
     form.setValue('maxGroupSize', workStyle === 'personal' ? 1 : coursework.max_group_size ?? 5)
     form.setValue('minGroupSize', workStyle === 'personal' ? 1 : coursework.min_group_size ?? 2)
     form.setValue('allowSelfFormation', workStyle === 'personal' ? false : coursework.allow_self_formation ?? true)
+    form.setValue('isPublished', coursework.is_published ?? true)
     form.setValue('lockAt', coursework.lock_at ? new Date(coursework.lock_at).toISOString().slice(0, 16) : '')
     setEditModalOpen(true)
   }
@@ -422,13 +450,22 @@ export function CoordinatorCoursework() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(cw)}>
-                      <Pencil className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-between pt-2">
+                    <Button
+                      variant={cw.is_published ? 'outline' : 'primary'}
+                      size="sm"
+                      onClick={() => handleTogglePublish(cw)}
+                    >
+                      {cw.is_published ? 'Unpublish' : 'Publish Now'}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(cw.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(cw)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(cw.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -508,7 +545,7 @@ export function CoordinatorCoursework() {
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <Select
               label="Mode of handing in"
               error={form.formState.errors.submissionMode?.message}
@@ -519,6 +556,16 @@ export function CoordinatorCoursework() {
               ]}
               value={form.watch('submissionMode')}
               onChange={(value) => form.setValue('submissionMode', value as 'email' | 'handwritten_copy' | 'typed_printed', { shouldValidate: true })}
+            />
+
+            <Select
+              label="Publication status"
+              options={[
+                { value: 'true', label: 'Published (Visible to students)' },
+                { value: 'false', label: 'Draft (Hidden from students)' },
+              ]}
+              value={form.watch('isPublished') ? 'true' : 'false'}
+              onChange={(value) => form.setValue('isPublished', value === 'true', { shouldValidate: true })}
             />
 
             <Input

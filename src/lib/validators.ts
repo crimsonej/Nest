@@ -48,6 +48,7 @@ export const courseworkSchema = z.object({
   maxGroupSize: z.number().int().min(1, 'Minimum group size is 1').max(20),
   minGroupSize: z.number().int().min(1, 'Minimum group size is 1').max(10),
   allowSelfFormation: z.boolean().default(true),
+  isPublished: z.boolean().default(false),
   lockAt: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.workStyle === 'personal') {
