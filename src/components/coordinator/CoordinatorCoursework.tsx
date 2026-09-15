@@ -508,7 +508,7 @@ export function CoordinatorCoursework() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <Select
-              label="Status"
+              label="Work style"
               error={form.formState.errors.workStyle?.message}
               options={[
                 { value: 'group_work', label: 'Group work' },
