@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Building2, GraduationCap, LayoutDashboard, LogOut, Menu, Shield, X } from 'lucide-react'
+import { BookOpen, Building2, FileText, GraduationCap, LayoutDashboard, Layers3, LogOut, Menu, Settings, Shield, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,13 @@ import { useAuth } from '@/hooks/useAuth'
 
 const navigation = [
   { name: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Faculties', href: '/admin/faculties', icon: Building2 },
+  { name: 'Courses', href: '/admin/courses', icon: BookOpen },
+  { name: 'Course Units', href: '/admin/course-units', icon: Layers3 },
+  { name: 'Students', href: '/admin/students', icon: GraduationCap },
+  { name: 'Groups', href: '/admin/groups', icon: Users },
+  { name: 'Reports', href: '/admin/reports', icon: FileText },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
 export function AdminSidebar() {

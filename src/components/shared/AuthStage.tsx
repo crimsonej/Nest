@@ -21,7 +21,6 @@ import {
   CheckCircle,
   BookOpen,
   Loader2,
-  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -105,38 +104,6 @@ function getPanelVariants(direction: 'left' | 'right'): Variants {
 
 interface AuthStageProps {
   initialMode: 'login' | 'register'
-}
-
-const avatarIndexes = {
-  male: [1, 3, 5, 8, 12, 15, 18, 20, 22, 25, 28, 30],
-  female: [1, 4, 6, 9, 11, 14, 17, 19, 21, 24, 27, 30],
-  other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
-} as const
-
-const avatarStyles = ['bottts', 'anime', 'adventurer', 'miniavs', 'notionists', 'personas'] as const
-
-function getAvatarOptions(gender: 'male' | 'female' | 'other', excludedUrls: string[] = []) {
-  const source = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'neutral'
-  const excluded = new Set(excludedUrls)
-  const basePool = [...avatarIndexes[gender]]
-  const generated: string[] = []
-  const seen = new Set<string>()
-
-  for (let i = 0; generated.length < 6 && i < 24; i += 1) {
-    const style = avatarStyles[(i + Math.floor(Math.random() * avatarStyles.length)) % avatarStyles.length]
-    const index = basePool[(i + Math.floor(Math.random() * basePool.length)) % basePool.length]
-    const url = `https://api.dicebear.com/9.x/${style}/svg?seed=nest-${source}-${index}`
-
-    if (excluded.has(url) || seen.has(url)) continue
-
-    seen.add(url)
-    generated.push(url)
-  }
-
-  return generated.length > 0 ? generated : basePool
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 6)
-    .map((index) => `https://api.dicebear.com/9.x/bottts/svg?seed=nest-${source}-${index}`)
 }
 
 export function AuthStage({ initialMode }: AuthStageProps) {
@@ -536,8 +503,6 @@ function RegisterFormSection({
   const [pendingRegistration, setPendingRegistration] = useState<any>(null)
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [savingCourseUnits, setSavingCourseUnits] = useState(false)
-  const [avatarOptions, setAvatarOptions] = useState<string[]>([])
-  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
   const universityOptions = getUniversityOptions()
 
   async function fetchAcademicOptions() {
@@ -631,7 +596,7 @@ function RegisterFormSection({
     defaultValues: {
       fullName: '',
       email: '',
-      gender: 'male',
+      gender: '',
       university: defaultUniversity.university,
       password: '',
       confirmPassword: '',
@@ -641,20 +606,6 @@ function RegisterFormSection({
       course: '',
     },
   })
-
-  const selectedGender = form.watch('gender') as 'male' | 'female' | 'other'
-
-  useEffect(() => {
-    const options = getAvatarOptions(selectedGender)
-    setAvatarOptions(options)
-    setSelectedAvatarUrl(options[0] || '')
-  }, [selectedGender])
-
-  function refreshAvatarOptions() {
-    const options = getAvatarOptions(selectedGender, avatarOptions)
-    setAvatarOptions(options)
-    setSelectedAvatarUrl(options[0] || '')
-  }
 
   const selectedUniversity =
     form.watch('university') || defaultUniversity.university
@@ -684,7 +635,8 @@ function RegisterFormSection({
         whatsapp_phone: values.whatsappPhone,
         faculty: values.faculty,
         course: values.course,
-        avatar_url: values.avatar_url || selectedAvatarUrl,
+        faculty_id: values.facultyId || null,
+        course_id: courseId || null,
         role: 'student',
         status: 'normal',
       },
@@ -715,7 +667,8 @@ function RegisterFormSection({
             whatsapp_phone: values.whatsappPhone,
             faculty: values.faculty,
             course: values.course,
-            avatar_url: selectedAvatarUrl,
+            faculty_id: selectedFacultyId || null,
+            course_id: selectedCourseId || null,
           },
         },
       })
@@ -726,10 +679,10 @@ function RegisterFormSection({
         throw new Error('Account registration did not return a valid user.')
 
       if (data.session) {
-        await finishProfileRegistration(authUser, { ...values, avatar_url: selectedAvatarUrl }, selectedCourseId)
+        await finishProfileRegistration(authUser, { ...values, facultyId: selectedFacultyId, courseId: selectedCourseId }, selectedCourseId)
       } else {
         setPendingAuthUserId(authUser.id)
-        setPendingRegistration({ ...values, avatar_url: selectedAvatarUrl, courseId: selectedCourseId })
+        setPendingRegistration({ ...values, facultyId: selectedFacultyId, courseId: selectedCourseId })
         setVerificationEmail(values.email)
         setVerificationCode('')
       }
@@ -974,39 +927,6 @@ function RegisterFormSection({
               form.setValue('university', value, { shouldValidate: true })
             }
           />
-        </motion.div>
-
-        {/* Profile avatar */}
-        <motion.div variants={fieldVariant} className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="label mb-0">Profile picture</p>
-              <p className="text-[11px] text-text-muted">Choose an avatar for your student profile.</p>
-            </div>
-            <button
-              type="button"
-              onClick={refreshAvatarOptions}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-primary/40 hover:text-primary"
-              title="Show new avatars"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {avatarOptions.map((avatarUrl) => (
-              <button
-                key={avatarUrl}
-                type="button"
-                onClick={() => setSelectedAvatarUrl(avatarUrl)}
-                className={`rounded-full p-0.5 transition-all ${selectedAvatarUrl === avatarUrl ? 'bg-primary ring-2 ring-primary/25' : 'bg-border hover:bg-primary/40'}`}
-                aria-label="Choose profile picture"
-                aria-pressed={selectedAvatarUrl === avatarUrl}
-              >
-                <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
-              </button>
-            ))}
-          </div>
         </motion.div>
 
         {/* Row: Reg Number + WhatsApp */}

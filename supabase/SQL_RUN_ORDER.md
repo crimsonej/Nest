@@ -67,6 +67,21 @@ Run:
 
 This enables Realtime for the main collaborative tables and creates the private `group-resources` Storage bucket. Resource files should use a path beginning with the group UUID, for example `GROUP_UUID/report.pdf`.
 
+## 10. Add admin workspace and shared course units
+Run these migrations in order:
+
+`supabase/migrations/20260915000000_add_admin_user_role.sql`
+
+`supabase/migrations/20260915000001_shared_course_unit_faculties.sql`
+
+`supabase/migrations/20260915000002_align_frontend_data_contract.sql`
+
+`supabase/migrations/20260915000003_admin_and_profile_write_policies.sql`
+
+`supabase/migrations/20260915000004_finalize_ndejje_registration_rule.sql`
+
+These migrations add the frontend fields, shared course-unit relationships, and admin/own-profile write policies required by the current application.
+
 ## Important
 
 - Run the schema before the seed files.
