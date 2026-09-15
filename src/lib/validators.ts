@@ -45,13 +45,29 @@ export const courseworkSchema = z.object({
   type: z.enum(['assignment', 'coursework', 'presentation', 'project', 'lab']).default('assignment'),
   workStyle: z.enum(['group_work', 'personal']).default('group_work'),
   submissionMode: z.enum(['email', 'handwritten_copy', 'typed_printed']).default('email'),
-  maxGroupSize: z.number().int().min(2, 'Minimum group size is 2').max(20),
+  maxGroupSize: z.number().int().min(1, 'Minimum group size is 1').max(20),
   minGroupSize: z.number().int().min(1, 'Minimum group size is 1').max(10),
   allowSelfFormation: z.boolean().default(true),
   lockAt: z.string().optional().nullable(),
-}).refine((data) => data.minGroupSize <= data.maxGroupSize, {
-  message: 'Minimum group size cannot exceed maximum group size',
-  path: ['minGroupSize'],
+}).superRefine((data, ctx) => {
+  if (data.workStyle === 'personal') {
+    if (data.minGroupSize !== 1 || data.maxGroupSize !== 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maxGroupSize'],
+        message: 'Personal coursework uses one-person submissions',
+      })
+    }
+    return
+  }
+
+  if (data.minGroupSize > data.maxGroupSize) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['minGroupSize'],
+      message: 'Minimum group size cannot exceed maximum group size',
+    })
+  }
 })
 
 export const groupCreationSchema = z.object({

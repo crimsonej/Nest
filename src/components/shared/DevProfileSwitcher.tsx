@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, Shield, User, ChevronUp, ChevronDown, Check, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { Users, Shield, User, ChevronUp, ChevronDown, Check } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import type { User as UserType } from '@/types'
@@ -72,8 +73,8 @@ export function DevProfileSwitcher() {
         <div className="mb-3 w-80 sm:w-96 rounded-2xl border border-border bg-surface/95 backdrop-blur-lg p-4 shadow-2xl animate-in slide-in-from-bottom-5">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Sparkles className="h-4 w-4" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                <Image src="/logo.png" alt="NEST Logo" width={20} height={20} className="rounded-md" />
               </div>
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">Dev Profile Switcher</h4>

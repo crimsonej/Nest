@@ -20,13 +20,13 @@ export default function ThemeToggle() {
   const currentTheme = theme || 'light'
 
   const options = [
-    { id: 'light', label: 'Light', icon: Sun, color: 'text-amber-500', activeBg: 'bg-white shadow-md text-amber-600' },
-    { id: 'mid', label: 'Crimson', icon: Flame, color: 'text-rose-500', activeBg: 'bg-rose-600 text-white shadow-md shadow-rose-600/30' },
-    { id: 'dark', label: 'Dark', icon: Moon, color: 'text-cyan-400', activeBg: 'bg-slate-800 text-cyan-300 shadow-md' },
+    { id: 'light', label: 'Light', icon: Sun, color: 'text-amber-500', activeBg: 'bg-gradient-to-r from-amber-200 to-yellow-100 text-amber-700 shadow-md shadow-amber-500/20' },
+    { id: 'mid', label: 'Crimson', icon: Flame, color: 'text-rose-500', activeBg: 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-600/30' },
+    { id: 'dark', label: 'Dark', icon: Moon, color: 'text-cyan-400', activeBg: 'bg-gradient-to-r from-slate-800 to-slate-900 text-cyan-300 shadow-md shadow-slate-900/30' },
   ]
 
   return (
-    <div className="relative inline-flex items-center gap-1 rounded-full border border-border/80 bg-surface/80 p-1 shadow-inner backdrop-blur-md transition-colors duration-300">
+    <div className="relative inline-flex items-center gap-1 rounded-full border border-border/80 bg-surface/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-300">
       {options.map((option) => {
         const Icon = option.icon
         const isActive = currentTheme === option.id

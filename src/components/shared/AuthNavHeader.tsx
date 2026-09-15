@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { motion } from 'framer-motion'
-import { SunMedium, MoonStar, Sparkles, LogIn, UserPlus } from 'lucide-react'
+import { SunMedium, MoonStar, Flame, LogIn, UserPlus } from 'lucide-react'
 
 interface AuthNavHeaderProps {
   activeTab: 'login' | 'register'
@@ -75,7 +75,7 @@ export function AuthNavHeader({ activeTab }: AuthNavHeaderProps) {
         {resolvedTheme === 'dark' ? (
           <SunMedium className="h-4 w-4 text-amber-400" />
         ) : resolvedTheme === 'mid' ? (
-          <Sparkles className="h-4 w-4 text-rose-500" />
+          <Flame className="h-4 w-4 text-rose-500" />
         ) : (
           <MoonStar className="h-4 w-4 text-slate-700" />
         )}

@@ -14,17 +14,30 @@ const avatarIndexes = {
   other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
 } as const
 
+const avatarStyles = ['bottts', 'anime', 'adventurer', 'miniavs', 'notionists', 'personas'] as const
+
 function getAvatarOptions(gender: 'male' | 'female' | 'other', excluded: string[] = []) {
-  const source = gender === 'female' ? 'women' : 'men'
+  const source = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'neutral'
   const excludedSet = new Set(excluded)
-  const available = avatarIndexes[gender].filter(
-    (index) => !excludedSet.has(`https://randomuser.me/api/portraits/${source}/${index}.jpg`)
-  )
-  const pool = available.length >= 6 ? available : avatarIndexes[gender]
-  return [...pool]
+  const basePool = [...avatarIndexes[gender]]
+  const generated: string[] = []
+  const seen = new Set<string>()
+
+  for (let i = 0; generated.length < 6 && i < 24; i += 1) {
+    const style = avatarStyles[(i + Math.floor(Math.random() * avatarStyles.length)) % avatarStyles.length]
+    const index = basePool[(i + Math.floor(Math.random() * basePool.length)) % basePool.length]
+    const url = `https://api.dicebear.com/9.x/${style}/svg?seed=nest-${source}-${index}`
+
+    if (excludedSet.has(url) || seen.has(url)) continue
+
+    seen.add(url)
+    generated.push(url)
+  }
+
+  return generated.length > 0 ? generated : basePool
     .sort(() => Math.random() - 0.5)
     .slice(0, 6)
-    .map((index) => `https://randomuser.me/api/portraits/${source}/${index}.jpg`)
+    .map((index) => `https://api.dicebear.com/9.x/bottts/svg?seed=nest-${source}-${index}`)
 }
 
 export default function StudentSettingsPage() {

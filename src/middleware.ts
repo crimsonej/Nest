@@ -72,12 +72,6 @@ export async function middleware(request: NextRequest) {
 
     const isStudentRole = (userRole === 'student' || !userRole) && !isCoordinatorRole
 
-    if (isStudentPage && !isStudentRole && isCoordinatorRole) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/coordinator/dashboard'
-      return NextResponse.redirect(url)
-    }
-
     if (isCoordinatorPage && !isCoordinatorRole && isStudentRole) {
       const url = request.nextUrl.clone()
       url.pathname = '/student/dashboard'

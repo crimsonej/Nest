@@ -113,17 +113,30 @@ const avatarIndexes = {
   other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
 } as const
 
+const avatarStyles = ['bottts', 'anime', 'adventurer', 'miniavs', 'notionists', 'personas'] as const
+
 function getAvatarOptions(gender: 'male' | 'female' | 'other', excludedUrls: string[] = []) {
-  const source = gender === 'female' ? 'women' : 'men'
+  const source = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'neutral'
   const excluded = new Set(excludedUrls)
-  const available = [...avatarIndexes[gender]].filter(
-    (index) => !excluded.has(`https://randomuser.me/api/portraits/${source}/${index}.jpg`)
-  )
-  const pool = available.length >= 6 ? available : [...avatarIndexes[gender]]
-  return pool
+  const basePool = [...avatarIndexes[gender]]
+  const generated: string[] = []
+  const seen = new Set<string>()
+
+  for (let i = 0; generated.length < 6 && i < 24; i += 1) {
+    const style = avatarStyles[(i + Math.floor(Math.random() * avatarStyles.length)) % avatarStyles.length]
+    const index = basePool[(i + Math.floor(Math.random() * basePool.length)) % basePool.length]
+    const url = `https://api.dicebear.com/9.x/${style}/svg?seed=nest-${source}-${index}`
+
+    if (excluded.has(url) || seen.has(url)) continue
+
+    seen.add(url)
+    generated.push(url)
+  }
+
+  return generated.length > 0 ? generated : basePool
     .sort(() => Math.random() - 0.5)
     .slice(0, 6)
-    .map((index) => `https://randomuser.me/api/portraits/${source}/${index}.jpg`)
+    .map((index) => `https://api.dicebear.com/9.x/bottts/svg?seed=nest-${source}-${index}`)
 }
 
 export function AuthStage({ initialMode }: AuthStageProps) {
@@ -379,8 +392,12 @@ function LoginFormSection({
         exit="exit"
         className="space-y-5"
       >
-        {/* Heading */}
-        <motion.div variants={fieldVariant} className="space-y-1.5">
+        {/* Heading & Badge */}
+        <motion.div variants={fieldVariant} className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary-light/50 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md shadow-xs">
+            <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
+            <span>Multi-Identifier Sign In Enabled</span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
             Welcome back
           </h1>
@@ -397,7 +414,7 @@ function LoginFormSection({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex items-start gap-2.5 rounded-2xl border border-danger/25 bg-danger-light p-3.5 text-xs font-semibold text-danger"
+              className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger-light p-3.5 text-xs font-semibold text-danger shadow-sm"
               role="alert"
             >
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -407,7 +424,7 @@ function LoginFormSection({
         </AnimatePresence>
 
         {/* Fields */}
-        <motion.div variants={fieldVariant}>
+        <motion.div variants={fieldVariant} className="space-y-1">
           <Input
             label="Email, Phone, or Reg Number"
             type="text"
@@ -420,7 +437,7 @@ function LoginFormSection({
           />
         </motion.div>
 
-        <motion.div variants={fieldVariant} className="relative">
+        <motion.div variants={fieldVariant} className="relative space-y-1">
           <Input
             label="Password"
             type={showPassword ? 'text' : 'password'}
@@ -434,7 +451,7 @@ function LoginFormSection({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 top-[38px] text-text-muted hover:text-text-primary transition-colors"
+            className="absolute right-3.5 top-[38px] text-text-muted hover:text-text-primary transition-colors p-1"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             <motion.span
@@ -452,16 +469,18 @@ function LoginFormSection({
           </button>
         </motion.div>
 
-        <motion.div variants={fieldVariant}>
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full shadow-lg"
-            loading={loading}
-          >
-            <LogIn className="h-4 w-4 mr-2" />
-            Sign In
-          </Button>
+        <motion.div variants={fieldVariant} className="pt-1">
+          <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full shadow-xl font-bold tracking-wide transition-all duration-300"
+              loading={loading}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Sign In to Workspace
+            </Button>
+          </motion.div>
         </motion.div>
 
         <motion.div
@@ -472,7 +491,7 @@ function LoginFormSection({
           <button
             type="button"
             onClick={onSwitchToRegister}
-            className="font-bold text-primary hover:underline focus:outline-none"
+            className="font-extrabold text-primary hover:underline focus:outline-none"
           >
             Create one now
           </button>

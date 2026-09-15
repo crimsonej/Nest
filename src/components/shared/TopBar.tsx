@@ -13,7 +13,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-background/80 backdrop-blur-xl transition-colors duration-300">
-      <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-3 px-3 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 min-w-0">
           <div className="hidden h-6 w-px bg-border/80 sm:block" />
           <div className="min-w-0 truncate">
@@ -23,7 +23,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                 {role === 'student' ? 'Student Workspace' : 'Coordinator Workspace'}
               </p>
             </div>
-            <p className="mt-0.5 hidden text-xs font-medium text-text-secondary md:block truncate">
+              <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
               {role === 'student' ? 'Stay on top of your coursework and group collaboration' : 'Real-time overview of courses, groups, and assignments'}
             </p>
           </div>

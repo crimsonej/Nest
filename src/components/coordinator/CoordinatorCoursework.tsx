@@ -136,13 +136,14 @@ export function CoordinatorCoursework() {
   const onSubmit = async (values: any) => {
     setSubmitting(true)
     try {
+      const isPersonal = values.workStyle === 'personal'
       const insertData = {
         title: values.title,
         description: values.description || null,
         type: values.type,
-        max_group_size: values.maxGroupSize,
-        min_group_size: values.minGroupSize,
-        allow_self_formation: values.allowSelfFormation,
+        max_group_size: isPersonal ? 1 : values.maxGroupSize,
+        min_group_size: isPersonal ? 1 : values.minGroupSize,
+        allow_self_formation: isPersonal ? false : values.allowSelfFormation,
         is_published: editModalOpen && selectedCoursework ? selectedCoursework.is_published : false,
         lock_at: values.lockAt || null,
         course_unit_id: values.courseUnitId,
@@ -179,11 +180,12 @@ export function CoordinatorCoursework() {
     form.setValue('title', coursework.title)
     form.setValue('description', coursework.description || '')
     form.setValue('type', coursework.type || 'assignment')
-    form.setValue('workStyle', coursework.work_style || 'group_work')
+    const workStyle = coursework.work_style || 'group_work'
+    form.setValue('workStyle', workStyle)
     form.setValue('submissionMode', coursework.submission_mode || 'email')
-    form.setValue('maxGroupSize', coursework.max_group_size ?? 5)
-    form.setValue('minGroupSize', coursework.min_group_size ?? 2)
-    form.setValue('allowSelfFormation', coursework.allow_self_formation ?? true)
+    form.setValue('maxGroupSize', workStyle === 'personal' ? 1 : coursework.max_group_size ?? 5)
+    form.setValue('minGroupSize', workStyle === 'personal' ? 1 : coursework.min_group_size ?? 2)
+    form.setValue('allowSelfFormation', workStyle === 'personal' ? false : coursework.allow_self_formation ?? true)
     form.setValue('lockAt', coursework.lock_at ? new Date(coursework.lock_at).toISOString().slice(0, 16) : '')
     setEditModalOpen(true)
   }
@@ -427,7 +429,19 @@ export function CoordinatorCoursework() {
                 { value: 'personal', label: 'Personal (solo)' },
               ]}
               value={form.watch('workStyle')}
-              onChange={(value) => form.setValue('workStyle', value as 'group_work' | 'personal', { shouldValidate: true })}
+              onChange={(value) => {
+                const nextWorkStyle = value as 'group_work' | 'personal'
+                form.setValue('workStyle', nextWorkStyle, { shouldValidate: true })
+                if (nextWorkStyle === 'personal') {
+                  form.setValue('minGroupSize', 1, { shouldValidate: true })
+                  form.setValue('maxGroupSize', 1, { shouldValidate: true })
+                  form.setValue('allowSelfFormation', false, { shouldValidate: true })
+                } else {
+                  form.setValue('minGroupSize', 2, { shouldValidate: true })
+                  form.setValue('maxGroupSize', 5, { shouldValidate: true })
+                  form.setValue('allowSelfFormation', true, { shouldValidate: true })
+                }
+              }}
             />
 
             <Select
@@ -466,29 +480,33 @@ export function CoordinatorCoursework() {
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label="Min group size"
-              type="number"
-              error={form.formState.errors.minGroupSize?.message}
-              placeholder="2"
-              {...form.register('minGroupSize', { valueAsNumber: true })}
-            />
-            <Input
-              label="Max group size"
-              type="number"
-              error={form.formState.errors.maxGroupSize?.message}
-              placeholder="5"
-              {...form.register('maxGroupSize', { valueAsNumber: true })}
-            />
-          </div>
+          {form.watch('workStyle') === 'group_work' && (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Min group size"
+                  type="number"
+                  error={form.formState.errors.minGroupSize?.message}
+                  placeholder="2"
+                  {...form.register('minGroupSize', { valueAsNumber: true })}
+                />
+                <Input
+                  label="Max group size"
+                  type="number"
+                  error={form.formState.errors.maxGroupSize?.message}
+                  placeholder="5"
+                  {...form.register('maxGroupSize', { valueAsNumber: true })}
+                />
+              </div>
 
-          <Checkbox
-            label="Allow self-formation"
-            description="Students can create and join groups themselves"
-            checked={form.watch('allowSelfFormation')}
-            onCheckedChange={(checked) => form.setValue('allowSelfFormation', checked)}
-          />
+              <Checkbox
+                label="Allow self-formation"
+                description="Students can create and join groups themselves"
+                checked={form.watch('allowSelfFormation')}
+                onCheckedChange={(checked) => form.setValue('allowSelfFormation', checked)}
+              />
+            </>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); }}>

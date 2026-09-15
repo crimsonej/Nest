@@ -32,8 +32,8 @@ export default function HomePage() {
         <div className="hero-orb hero-orb-three" />
       </div>
 
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 backdrop-blur-xl">
+        <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -76,17 +76,17 @@ export default function HomePage() {
             animate="visible"
             className="mx-auto max-w-4xl text-center"
           >
-            <motion.h1 variants={itemVariants} className="text-4xl font-extrabold leading-[1.08] tracking-tight text-text-primary sm:text-6xl lg:text-7xl">
-              The calm center for course groups, tasks, and deadlines.
+            <motion.h1 variants={itemVariants} className="text-4xl font-extrabold leading-[1.06] tracking-[-0.04em] text-text-primary sm:text-5xl lg:text-7xl">
+              The clear home for course groups, tasks, and deadlines.
             </motion.h1>
 
             <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl">
-              NEST gives students and coordinators one clear space to manage course units, group membership, assignments, and campus-wide coordination without duplicate data or stale information.
+              NEST brings students and coordinators into one calm workspace for course units, group formation, assignments, and campus-wide coordination without duplicate data or stale information.
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto shadow-xl px-8">
+                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl shadow-primary/20">
                   Sign In
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -109,11 +109,11 @@ export default function HomePage() {
 
         {/* Features Section */}
         <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-5xl font-extrabold text-text-primary tracking-tight mb-4">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-text-primary lg:text-5xl">
               Built for University Workflows
             </h2>
-            <p className="text-base sm:text-lg text-text-secondary max-w-2xl mx-auto">
+            <p className="mx-auto max-w-2xl text-base text-text-secondary sm:text-lg">
               Purpose-built tools designed for seamless student collaboration and real-time coordinator oversight.
             </p>
           </div>
@@ -141,8 +141,8 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t border-border/80 py-8 bg-surface/40">
-        <div className="container mx-auto px-4 text-center text-xs text-text-muted space-y-2">
+      <footer className="border-t border-border/80 bg-surface/50 py-8 backdrop-blur-sm">
+        <div className="container mx-auto space-y-2 px-4 text-center text-xs text-text-muted">
           <p>© 2026 NEST. Created by Kibirige Joachim Elijah.</p>
           <p>
             GitHub:{' '}
@@ -161,7 +161,7 @@ function FeatureCard({ icon: Icon, title, description, features }: { icon: React
     <motion.div
       whileHover={{ y: -6 }}
       transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-      className="rounded-3xl border border-border/80 bg-surface/90 p-8 shadow-sm backdrop-blur-md hover:shadow-xl hover:border-primary/40 transition-all flex flex-col justify-between"
+      className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/90 p-6 shadow-[0_16px_44px_rgba(15,23,42,0.05)] backdrop-blur-md transition-all hover:border-primary/40 hover:shadow-[0_22px_50px_rgba(15,23,42,0.08)] sm:p-8"
     >
       <div>
         <div className="h-14 w-14 rounded-2xl bg-primary-light flex items-center justify-center mb-6 text-primary shadow-sm">

@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Shield, User, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { Shield, User } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import type { User as UserType } from '@/types'
@@ -36,7 +37,7 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
       <div className="space-y-6 pt-2">
         <div className="flex items-center gap-3.5 rounded-2xl border border-primary/25 bg-primary-light/40 p-4 backdrop-blur-sm">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/30">
-            <Sparkles className="h-5 w-5" />
+            <Image src="/logo.png" alt="NEST Logo" width={24} height={24} className="rounded-lg" />
           </div>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-primary">Assigned Leadership Role</p>
