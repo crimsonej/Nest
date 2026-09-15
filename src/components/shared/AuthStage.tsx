@@ -558,13 +558,16 @@ function RegisterFormSection({
       const { data, error } = await supabase
         .from('course_units')
         .select('id, code, name, course_id')
-        .eq('course_id', courseId)
         .eq('is_active', true)
         .order('code')
 
       if (error) throw error
+
+      const matchingUnits = data?.filter((unit) => !courseId || unit.course_id === courseId) || []
+      const displayUnits = matchingUnits.length > 0 ? matchingUnits : (data || [])
+
       setCourseUnitOptions(
-        data?.map(
+        displayUnits.map(
           (unit: {
             id: string
             code: string
@@ -574,9 +577,9 @@ function RegisterFormSection({
             id: unit.id,
             value: unit.id,
             label: `${unit.code} - ${unit.name}`,
-            courseId: unit.course_id,
+            courseId: unit.course_id || courseId,
           })
-        ) || []
+        )
       )
     } catch (err) {
       setCourseUnitError(
@@ -624,17 +627,18 @@ function RegisterFormSection({
   })
 
   async function finishProfileRegistration(authUser: { id: string }, values: any, courseId: string) {
+    const formattedGender = (values.gender || 'other').toLowerCase()
     const { error: profileError } = await supabase.from('users').upsert(
       {
         id: authUser.id,
-        email: values.email,
-        full_name: values.fullName,
-        gender: values.gender,
-        university: values.university,
-        student_registration_number: values.studentRegistrationNumber,
-        whatsapp_phone: values.whatsappPhone,
-        faculty: values.faculty,
-        course: values.course,
+        email: values.email?.toLowerCase().trim(),
+        full_name: values.fullName?.trim(),
+        gender: formattedGender,
+        university: values.university?.trim(),
+        student_registration_number: values.studentRegistrationNumber?.trim(),
+        whatsapp_phone: values.whatsappPhone?.trim(),
+        faculty: values.faculty?.trim(),
+        course: values.course?.trim(),
         faculty_id: values.facultyId || null,
         course_id: courseId || null,
         role: 'student',
@@ -655,18 +659,18 @@ function RegisterFormSection({
     setError('')
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: values.email,
+        email: values.email?.toLowerCase().trim(),
         password: values.password,
         options: {
           data: {
-            full_name: values.fullName,
+            full_name: values.fullName?.trim(),
             role: 'student',
-            gender: values.gender,
-            university: values.university,
-            student_registration_number: values.studentRegistrationNumber,
-            whatsapp_phone: values.whatsappPhone,
-            faculty: values.faculty,
-            course: values.course,
+            gender: (values.gender || 'other').toLowerCase(),
+            university: values.university?.trim(),
+            student_registration_number: values.studentRegistrationNumber?.trim(),
+            whatsapp_phone: values.whatsappPhone?.trim(),
+            faculty: values.faculty?.trim(),
+            course: values.course?.trim(),
             faculty_id: selectedFacultyId || null,
             course_id: selectedCourseId || null,
           },
@@ -746,7 +750,9 @@ function RegisterFormSection({
   function finishRegistration() {
     setCourseUnitDialogOpen(false)
     setSuccess(true)
-    setTimeout(() => onSwitchToLogin(), 1600)
+    setTimeout(() => {
+      window.location.href = '/student/dashboard'
+    }, 1400)
   }
 
   async function saveCourseUnits() {

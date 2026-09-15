@@ -5,9 +5,15 @@ import { getLocalState } from '@/lib/local-data'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function cleanPhoneNumber(phone: string): string {
-  // Remove non-digit characters except leading plus
-  return phone.replace(/[^\d+]/g, '').trim()
+function normalizeReg(reg: string): string {
+  return reg.replace(/\s+/g, '').toUpperCase().trim()
+}
+
+function normalizePhone(phone: string): string {
+  let digits = phone.replace(/\D/g, '')
+  if (digits.startsWith('256')) digits = digits.slice(3)
+  if (digits.startsWith('0')) digits = digits.slice(1)
+  return digits
 }
 
 export async function POST(request: Request) {
@@ -27,50 +33,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ email: rawIdentifier.toLowerCase() })
     }
 
-    const cleanInput = rawIdentifier.toUpperCase()
-    const cleanPhone = cleanPhoneNumber(rawIdentifier)
+    const normRegInput = normalizeReg(rawIdentifier)
+    const normPhoneInput = normalizePhone(rawIdentifier)
 
     // 2. Query Supabase Database via Admin Client
     try {
       const admin = await createAdminClient()
 
-      // Query users table by student_registration_number, whatsapp_phone, or email
-      const { data: dbUsers, error: dbError } = cleanPhone.length >= 4
-        ? await admin
-            .from('users')
-            .select('email, whatsapp_phone, student_registration_number')
-            .or(
-              `student_registration_number.ilike."${cleanInput}",whatsapp_phone.ilike."%${cleanPhone}%",email.ilike."${cleanInput}"`
-            )
-        : await admin
-            .from('users')
-            .select('email, whatsapp_phone, student_registration_number')
-            .or(
-              `student_registration_number.ilike."${cleanInput}",email.ilike."${cleanInput}"`
-            )
+      const { data: dbUsers, error: dbErr } = await admin
+        .from('users')
+        .select('email, whatsapp_phone, student_registration_number')
 
-      if (!dbError && dbUsers && dbUsers.length > 0) {
-        // Find exact or best match
-        const exactRegMatch = dbUsers.find(
-          (u) => u.student_registration_number?.toUpperCase().trim() === cleanInput
-        )
-        if (exactRegMatch?.email) {
-          return NextResponse.json({ email: exactRegMatch.email })
+      if (!dbErr && dbUsers && dbUsers.length > 0) {
+        // Try Registration Number match
+        const regMatch = dbUsers.find((u) => {
+          if (!u.student_registration_number) return false
+          return normalizeReg(u.student_registration_number) === normRegInput
+        })
+
+        if (regMatch?.email) {
+          return NextResponse.json({ email: regMatch.email })
         }
 
-        const phoneMatch = cleanPhone
-          ? dbUsers.find((u) => {
-              if (!u.whatsapp_phone) return false
-              const p = cleanPhoneNumber(u.whatsapp_phone)
-              return p.includes(cleanPhone) || cleanPhone.includes(p)
-            })
-          : null
-        if (phoneMatch?.email) {
-          return NextResponse.json({ email: phoneMatch.email })
-        }
+        // Try Phone Number match
+        if (normPhoneInput.length >= 4) {
+          const phoneMatch = dbUsers.find((u) => {
+            if (!u.whatsapp_phone) return false
+            const dbPhoneNorm = normalizePhone(u.whatsapp_phone)
+            return dbPhoneNorm.length >= 4 && (dbPhoneNorm === normPhoneInput || dbPhoneNorm.endsWith(normPhoneInput) || normPhoneInput.endsWith(dbPhoneNorm))
+          })
 
-        if (dbUsers[0].email) {
-          return NextResponse.json({ email: dbUsers[0].email })
+          if (phoneMatch?.email) {
+            return NextResponse.json({ email: phoneMatch.email })
+          }
         }
       }
     } catch (adminErr) {
@@ -80,8 +75,8 @@ export async function POST(request: Request) {
     // 3. Fallback to Local Data State (Seed Users)
     const localState = getLocalState()
     const seedMatch = localState.users.find((user) => {
-      const regMatch = user.student_registration_number?.toUpperCase() === cleanInput
-      const phoneMatch = user.whatsapp_phone && cleanPhoneNumber(user.whatsapp_phone).includes(cleanPhone)
+      const regMatch = user.student_registration_number && normalizeReg(user.student_registration_number) === normRegInput
+      const phoneMatch = user.whatsapp_phone && normPhoneInput.length >= 4 && (normalizePhone(user.whatsapp_phone) === normPhoneInput || normalizePhone(user.whatsapp_phone).endsWith(normPhoneInput))
       return regMatch || phoneMatch
     })
 
@@ -92,7 +87,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          'No account found matching that Phone Number or Registration Number. Please verify your details.',
+          'No account found matching that Phone Number or Registration Number. Please verify your details or sign in with your email address.',
       },
       { status: 404 }
     )
