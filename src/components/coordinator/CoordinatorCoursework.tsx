@@ -88,27 +88,56 @@ export function CoordinatorCoursework() {
   }, [user])
 
   async function fetchCourseUnits() {
-    const { data } = await supabase
+    if (!user?.id) return
+    let { data } = await supabase
       .from('course_units')
       .select('id, code, name')
-      .eq('coordinator_id', user?.id)
+      .eq('coordinator_id', user.id)
       .eq('is_active', true)
+
+    if (!data || data.length === 0) {
+      const fallback = await supabase
+        .from('course_units')
+        .select('id, code, name')
+        .eq('is_active', true)
+        .order('code', { ascending: true })
+      data = fallback.data
+    }
     setCourseUnits(data || [])
   }
 
   async function fetchCourseworks() {
     setLoading(true)
     try {
-      const { data } = await supabase
+      if (!user?.id) {
+        setCourseworks([])
+        return
+      }
+
+      const { data, error } = await supabase
         .from('courseworks')
         .select(`
           *,
-          course_unit:course_units(code, name),
+          course_unit:course_units!inner(code, name, coordinator_id),
           groups:groups(count)
         `)
-        .eq('course_unit.coordinator_id', user?.id)
+        .eq('course_unit.coordinator_id', user.id)
         .order('created_at', { ascending: false })
-      setCourseworks(data || [])
+
+      if (error) {
+        // Fallback to fetch all active courseworks if inner join by coordinator_id is restricted
+        const { data: allData } = await supabase
+          .from('courseworks')
+          .select(`
+            *,
+            course_unit:course_units(code, name),
+            groups:groups(count)
+          `)
+          .order('created_at', { ascending: false })
+        setCourseworks(allData || [])
+      } else {
+        setCourseworks(data || [])
+      }
     } catch (error) {
       console.error('Error fetching courseworks:', error)
     } finally {

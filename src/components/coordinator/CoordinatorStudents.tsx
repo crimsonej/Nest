@@ -338,18 +338,22 @@ export function CoordinatorStudents() {
       const isSCActive = scCourseUnitIds.length > 0
       const newStatus = isSCActive ? 'selected_coordinator' : 'normal'
 
-      await supabase.from('users').update({
+      const { error: userUpdateErr } = await supabase.from('users').update({
         status: newStatus,
-        selected_coordinator: isSCActive,
       }).eq('id', scStudent.id)
+      if (userUpdateErr) throw userUpdateErr
 
       await supabase.from('selected_coordinators').delete().eq('user_id', scStudent.id)
       if (scCourseUnitIds.length > 0) {
         const scPayload = scCourseUnitIds.map((cId) => ({
           user_id: scStudent.id,
           course_unit_id: cId,
+          full_name: scStudent.full_name || scStudent.email || 'Coordinator',
+          email: scStudent.email || '',
+          status: 'active',
         }))
-        const { data } = await supabase.from('selected_coordinators').insert(scPayload).select()
+        const { data, error: scInsertErr } = await supabase.from('selected_coordinators').insert(scPayload).select()
+        if (scInsertErr) throw scInsertErr
         if (data) setSelectedCoordinators((prev) => [...prev.filter((sc) => sc.user_id !== scStudent.id), ...data])
       } else {
         setSelectedCoordinators((prev) => prev.filter((sc) => sc.user_id !== scStudent.id))

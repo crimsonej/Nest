@@ -96,7 +96,7 @@ export async function POST(request: Request) {
           action: 'bulk_student_insert',
           entity_type: 'users',
           entity_id: inserted.id,
-          new_data: inserted,
+          new_data: JSON.stringify(inserted),
         })
 
         results.inserted.push(inserted)

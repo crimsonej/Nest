@@ -33,8 +33,13 @@ export function CoordinatorSettings() {
     })
   }, [user])
 
+  const [saveError, setSaveError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
   async function handleSave() {
     setSaving(true)
+    setSaveError('')
+    setSaveSuccess(false)
 
     try {
       if (!user?.id) return
@@ -50,9 +55,11 @@ export function CoordinatorSettings() {
         .eq('id', user.id)
 
       if (error) throw error
+      setSaveSuccess(true)
       await refreshUser()
     } catch (error) {
       console.error('Failed to save profile settings:', error)
+      setSaveError(error instanceof Error ? error.message : 'Unable to save profile settings.')
     } finally {
       setSaving(false)
     }
@@ -77,6 +84,16 @@ export function CoordinatorSettings() {
           <CardDescription>Update your personal information and coordinator details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {saveError && (
+            <div className="rounded-xl border border-danger/30 bg-danger-light p-3 text-xs font-semibold text-danger" role="alert">
+              {saveError}
+            </div>
+          )}
+          {saveSuccess && (
+            <div className="rounded-xl border border-success/30 bg-success/10 p-3 text-xs font-semibold text-success">
+              Profile settings updated successfully.
+            </div>
+          )}
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Users className="h-8 w-8 text-primary" />

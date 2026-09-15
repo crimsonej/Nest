@@ -60,7 +60,8 @@ async function requestProvider(provider: Provider, apiKey: string, model: string
   const system = 'You are Crimson, a university data-import assistant. Return only valid JSON in this shape: {"rows":[{"full_name":"","email":"","student_registration_number":"","gender":"male|female|other","course":"","faculty":"","university":""}]}. Never invent missing emails or registration numbers. Preserve invalid values so they can be rejected by validation.'
 
   if (provider === 'gemini') {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    const cleanModel = model.replace(/^models\//, '')
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: `${system}\n\n${prompt}` }] }] }),
@@ -96,7 +97,8 @@ async function testProviderModel(provider: Provider, apiKey: string, model: stri
   const timeout = setTimeout(() => controller.abort(), 8000)
   try {
     if (provider === 'gemini') {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      const cleanModel = model.replace(/^models\//, '')
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
