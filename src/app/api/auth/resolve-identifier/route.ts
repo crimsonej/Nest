@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLocalState } from '@/lib/local-data'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 function cleanPhoneNumber(phone: string): string {
