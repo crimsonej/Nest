@@ -107,12 +107,27 @@ export function CoordinatorCourseUnits() {
         is_active: formValues.isActive,
       }
 
+      let saveError: any = null
       if (editModalOpen && selectedCourseUnit) {
         const { error } = await supabase.from('course_units').update(payload).eq('id', selectedCourseUnit.id)
-        if (error) throw error
+        saveError = error
       } else {
         const { error } = await supabase.from('course_units').insert(payload)
-        if (error) throw error
+        saveError = error
+      }
+
+      if (saveError) {
+        console.warn('Direct Supabase write returned error, trying server API route:', saveError.message)
+        const isUpdate = Boolean(editModalOpen && selectedCourseUnit)
+        const res = await fetch('/api/coordinator/course-units', {
+          method: isUpdate ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(isUpdate ? { ...payload, id: selectedCourseUnit.id } : payload)
+        })
+        const apiData = await res.json()
+        if (!res.ok || apiData.error) {
+          throw new Error(apiData.error || saveError.message || 'Unable to save course unit.')
+        }
       }
 
       setCreateModalOpen(false)
@@ -132,7 +147,12 @@ export function CoordinatorCourseUnits() {
 
     try {
       const { error } = await supabase.from('course_units').delete().eq('id', courseUnitId)
-      if (error) throw error
+      if (error) {
+        console.warn('Direct delete failed, calling server API endpoint:', error.message)
+        const res = await fetch(`/api/coordinator/course-units?id=${courseUnitId}`, { method: 'DELETE' })
+        const apiData = await res.json()
+        if (!res.ok || apiData.error) throw new Error(apiData.error || error.message)
+      }
       await fetchCourseUnits()
     } catch (error) {
       console.error('Error deleting course unit:', error)

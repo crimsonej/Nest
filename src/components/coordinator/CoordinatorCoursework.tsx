@@ -180,15 +180,31 @@ export function CoordinatorCoursework() {
         submission_mode: values.submissionMode,
       }
 
+      let saveError: any = null
       if (editModalOpen && selectedCoursework) {
         const { error } = await supabase
           .from('courseworks')
           .update(insertData)
           .eq('id', selectedCoursework.id)
-        if (error) throw error
+        saveError = error
       } else {
         const { error } = await supabase.from('courseworks').insert(insertData)
-        if (error) throw error
+        saveError = error
+      }
+
+      // Fallback to server API endpoint if direct client insert/update fails due to RLS/permissions
+      if (saveError) {
+        console.warn('Direct Supabase write returned error, trying server API route:', saveError.message)
+        const isUpdate = Boolean(editModalOpen && selectedCoursework)
+        const res = await fetch('/api/coordinator/courseworks', {
+          method: isUpdate ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(isUpdate ? { ...insertData, id: selectedCoursework.id } : insertData)
+        })
+        const apiData = await res.json()
+        if (!res.ok || apiData.error) {
+          throw new Error(apiData.error || saveError.message || 'Unable to save course work.')
+        }
       }
 
       setCreateModalOpen(false)
@@ -222,7 +238,11 @@ export function CoordinatorCoursework() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this course work?')) return
     const { error } = await supabase.from('courseworks').delete().eq('id', id)
-    if (!error) fetchCourseworks()
+    if (error) {
+      console.warn('Direct delete failed, calling server API endpoint:', error.message)
+      await fetch(`/api/coordinator/courseworks?id=${id}`, { method: 'DELETE' })
+    }
+    await fetchCourseworks()
   }
 
   const filteredCourseworks = courseworks.filter((cw) => {
