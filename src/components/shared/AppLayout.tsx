@@ -4,13 +4,14 @@ import { ReactNode, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { StudentSidebar } from '../student/StudentSidebar'
 import { CoordinatorSidebar } from '../coordinator/CoordinatorSidebar'
+import { AdminSidebar } from '../admin/AdminSidebar'
 import { TopBar } from './TopBar'
 import { RoleSwitchModal } from './RoleSwitchModal'
 import { useAuth } from '@/hooks/useAuth'
 
 interface LayoutProps {
   children: ReactNode
-  role: 'student' | 'coordinator'
+  role: 'student' | 'coordinator' | 'admin'
 }
 
 export function AppLayout({ children, role }: LayoutProps) {
@@ -18,7 +19,7 @@ export function AppLayout({ children, role }: LayoutProps) {
   const [roleModalOpen, setRoleModalOpen] = useState(false)
 
   useEffect(() => {
-    if (user && (user.status === 'coordinator' || user.status === 'selected_coordinator')) {
+    if (user && (user.role === 'admin' || user.status === 'admin' || user.status === 'coordinator' || user.status === 'selected_coordinator')) {
       const hasPrompted = typeof window !== 'undefined' ? window.sessionStorage.getItem(`role-prompted-${user.id}`) : null
       if (!hasPrompted) {
         setRoleModalOpen(true)
@@ -39,8 +40,8 @@ export function AppLayout({ children, role }: LayoutProps) {
     return null
   }
 
-  const Sidebar = role === 'student' ? StudentSidebar : CoordinatorSidebar
-  const canSwitchWorkspace = user.status === 'coordinator' || user.status === 'selected_coordinator'
+  const Sidebar = role === 'student' ? StudentSidebar : role === 'admin' ? AdminSidebar : CoordinatorSidebar
+  const canSwitchWorkspace = user.role === 'admin' || user.status === 'admin' || user.status === 'coordinator' || user.status === 'selected_coordinator'
 
   return (
     <div className="workspace-surface min-h-screen bg-background">

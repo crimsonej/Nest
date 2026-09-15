@@ -37,6 +37,7 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
   const isStudentPage = request.nextUrl.pathname.startsWith('/student')
   const isCoordinatorPage = request.nextUrl.pathname.startsWith('/coordinator')
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
 
   // Allow API routes and auth pages always
@@ -67,10 +68,19 @@ export async function middleware(request: NextRequest) {
     const isCoordinatorRole =
       userRole === 'coordinator' ||
       userRole === 'lecturer' ||
+      userRole === 'admin' ||
       userStatus === 'coordinator' ||
-      userStatus === 'selected_coordinator'
+      userStatus === 'selected_coordinator' ||
+      userStatus === 'admin'
 
     const isStudentRole = (userRole === 'student' || !userRole) && !isCoordinatorRole
+    const isAdminRole = userRole === 'admin' || userStatus === 'admin'
+
+    if (isAdminPage && !isAdminRole) {
+      const url = request.nextUrl.clone()
+      url.pathname = isCoordinatorRole ? '/coordinator/dashboard' : '/student/dashboard'
+      return NextResponse.redirect(url)
+    }
 
     if (isCoordinatorPage && !isCoordinatorRole && isStudentRole) {
       const url = request.nextUrl.clone()
@@ -82,7 +92,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // No session at all — redirect to login
-  if (isStudentPage || isCoordinatorPage) {
+  if (isStudentPage || isCoordinatorPage || isAdminPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)

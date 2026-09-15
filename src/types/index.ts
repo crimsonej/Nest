@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'coordinator' | 'lecturer'
+export type UserRole = 'student' | 'coordinator' | 'lecturer' | 'admin'
 
 export interface User {
   id: string
@@ -12,7 +12,7 @@ export interface User {
   faculty?: string
   course?: string
   avatar_url?: string
-  status?: 'normal' | 'coordinator' | 'selected_coordinator'
+  status?: 'normal' | 'coordinator' | 'selected_coordinator' | 'admin'
   created_at: string
   updated_at: string
 }

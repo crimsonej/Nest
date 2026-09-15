@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Shield, User } from 'lucide-react'
+import { Building2, Shield, User } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import type { User as UserType } from '@/types'
@@ -17,15 +17,17 @@ interface RoleSwitchModalProps {
 export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps) {
   const router = useRouter()
 
-  if (!user || (user.status !== 'coordinator' && user.status !== 'selected_coordinator')) {
+  if (!user || (user.role !== 'admin' && user.status !== 'admin' && user.status !== 'coordinator' && user.status !== 'selected_coordinator')) {
     return null
   }
 
-  const roleTitle = user.status === 'selected_coordinator' ? 'Selected Coordinator (SC)' : 'Faculty Coordinator'
+  const roleTitle = user.role === 'admin' || user.status === 'admin' ? 'System Administrator' : user.status === 'selected_coordinator' ? 'Selected Coordinator (SC)' : 'Faculty Coordinator'
 
-  function handleSelectRole(role: 'student' | 'coordinator') {
+  function handleSelectRole(role: 'student' | 'coordinator' | 'admin') {
     onClose()
-    if (role === 'coordinator') {
+    if (role === 'admin') {
+      router.push('/admin/dashboard')
+    } else if (role === 'coordinator') {
       router.push('/coordinator/dashboard')
     } else {
       router.push('/student/dashboard')
@@ -51,7 +53,7 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
           How would you like to view NEST for this session? You can switch between roles at any time.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <motion.button
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -64,6 +66,19 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
             <h4 className="font-bold text-text-primary text-base">Student Portal</h4>
             <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">Access your group work, assignment tasks, and submission deadlines.</p>
           </motion.button>
+
+          {(user.role === 'admin' || user.status === 'admin') && (
+            <motion.button
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleSelectRole('admin')}
+              className="flex flex-col items-center rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-6 text-center shadow-xs transition-all hover:border-emerald-500 hover:shadow-lg"
+            >
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"><Building2 className="h-7 w-7" /></div>
+              <h4 className="font-bold text-text-primary text-base">Administrator</h4>
+              <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">View and manage all faculties, courses, course units, and students.</p>
+            </motion.button>
+          )}
 
           <motion.button
             whileHover={{ y: -4, scale: 1.02 }}

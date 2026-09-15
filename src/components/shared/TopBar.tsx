@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from './ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator'; onSwitchWorkspace?: () => void }) {
+export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator' | 'admin'; onSwitchWorkspace?: () => void }) {
   const { user, signOut } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -20,11 +20,11 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
               <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary truncate max-w-[130px] sm:max-w-none">
-                {role === 'student' ? 'Student Workspace' : 'Coordinator Workspace'}
+                {role === 'student' ? 'Student Workspace' : role === 'admin' ? 'Admin Workspace' : 'Coordinator Workspace'}
               </p>
             </div>
               <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
-              {role === 'student' ? 'Stay on top of your coursework and group collaboration' : 'Real-time overview of courses, groups, and assignments'}
+              {role === 'student' ? 'Stay on top of your coursework and group collaboration' : role === 'admin' ? 'University-wide overview across faculties and academic data' : 'Real-time overview of courses, groups, and assignments'}
             </p>
           </div>
           <div className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-surface/70 px-3 py-1 text-[11px] font-medium text-text-muted backdrop-blur-sm lg:flex">

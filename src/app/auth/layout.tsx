@@ -3,7 +3,7 @@
 import { ReactNode } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowUpRight, Check, ShieldCheck, Sparkles, Users, Lock, Zap } from 'lucide-react'
+import { ArrowUpRight, Check, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 
 const featurePills = ['Organize units', 'Build groups', 'Track progress']
 
@@ -122,31 +122,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                 One focused platform for students and coordinators to transition from scattered chat messages to organized, verifiable academic progress.
               </motion.p>
             </div>
-
-            {/* Interactive Preview Card Showcase */}
-            <motion.div
-              variants={sidebarItem}
-              className="mt-8 rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-xl shadow-2xl hover:border-white/40 transition-all duration-300"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-white/15">
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs font-bold tracking-wide text-white">Live Group Formation</span>
-                </div>
-                <span className="text-[11px] font-semibold text-white/60">Ndejje University</span>
-              </div>
-              <div className="mt-3.5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-white">CS101 - Code Sprint Crew</p>
-                  <p className="text-[11px] text-white/70 mt-0.5">5 Members Allocated · 1 Deadline Active</p>
-                </div>
-                <div className="flex -space-x-2">
-                  <div className="h-7 w-7 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white">AN</div>
-                  <div className="h-7 w-7 rounded-full bg-rose-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white">DK</div>
-                  <div className="h-7 w-7 rounded-full bg-purple-500 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white">+3</div>
-                </div>
-              </div>
-            </motion.div>
 
             {/* Feature Pills */}
             <motion.div
