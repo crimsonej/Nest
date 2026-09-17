@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Search, Filter, Users, Lock, Globe, LayoutGrid, List, Shuffle, MessageSquare, UserPlus, UserMinus, ShieldCheck, BookCopy, RefreshCw, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Plus, Search, Filter, Users, Lock, Globe, LayoutGrid, List, Shuffle, MessageSquare, UserPlus, UserMinus, ShieldCheck, BookCopy, RefreshCw, ArrowLeft, ArrowRight, ArrowUpDown } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -34,6 +34,7 @@ export function StudentGroups() {
   const [selectedCourseUnitId, setSelectedCourseUnitId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<string>('name-asc')
   const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>('grid')
   const [assignmentTargets, setAssignmentTargets] = useState<Record<string, string>>({})
   const [assigningIds, setAssigningIds] = useState<Record<string, boolean>>({})
@@ -195,6 +196,25 @@ export function StudentGroups() {
     () => groups.filter((group) => group.coursework?.course_unit_id === selectedCourseUnitId),
     [groups, selectedCourseUnitId]
   )
+
+  const sortedGroups = useMemo(() => {
+    const list = [...selectedGroups]
+    return list.sort((a, b) => {
+      const aCount = groupMembers.filter((m) => m.group_id === a.id).length
+      const bCount = groupMembers.filter((m) => m.group_id === b.id).length
+      const aFullness = a.max_members ? aCount / a.max_members : 0
+      const bFullness = b.max_members ? bCount / b.max_members : 0
+
+      if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '')
+      if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '')
+      if (sortBy === 'members-desc') return bFullness - aFullness || bCount - aCount
+      if (sortBy === 'members-asc') return aFullness - bFullness || aCount - bCount
+      if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '')
+      if (sortBy === 'newest') return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      if (sortBy === 'oldest') return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+      return 0
+    })
+  }, [selectedGroups, groupMembers, sortBy])
 
   const selectedCourseworks = useMemo(
     () => courseworks.filter((cw) => cw.course_unit_id === selectedCourseUnitId),
@@ -474,6 +494,12 @@ export function StudentGroups() {
     })
 
     if (!error) {
+      // Auto-update status to 'active' if group capacity is reached
+      const newCount = currentCount + 1
+      if (group.max_members && newCount >= group.max_members && group.status === 'forming') {
+        await supabase.from('groups').update({ status: 'active' }).eq('id', groupId)
+      }
+
       await fetchData()
       setAddMembersModalOpen(false)
       setJoinMessage('Student added to the group.')
@@ -508,6 +534,15 @@ export function StudentGroups() {
           .eq('user_id', studentId)
 
         if (removeError) throw removeError
+
+        // Auto revert conflicting group status to 'forming' if member count drops below capacity
+        for (const confId of conflictingGroupIds) {
+          const confGroup = groups.find((g) => g.id === confId)
+          const remMembersCount = groupMembers.filter((m) => m.group_id === confId && m.user_id !== studentId).length
+          if (confGroup && confGroup.status === 'active' && confGroup.max_members && remMembersCount < confGroup.max_members) {
+            await supabase.from('groups').update({ status: 'forming' }).eq('id', confId)
+          }
+        }
       }
 
       const { error } = await supabase
@@ -518,6 +553,14 @@ export function StudentGroups() {
         )
 
       if (error) throw error
+
+      // Auto-update target group status to 'active' if capacity reached
+      const currentCount = groupMembers.filter((m) => m.group_id === groupId && m.user_id !== studentId).length
+      const newCount = currentCount + 1
+      if (targetGroup.max_members && newCount >= targetGroup.max_members && targetGroup.status === 'forming') {
+        await supabase.from('groups').update({ status: 'active' }).eq('id', groupId)
+      }
+
       await fetchData()
     } catch (error) {
       console.error('Error assigning student to group:', error)
@@ -528,9 +571,18 @@ export function StudentGroups() {
   }
 
   const handleRemoveFromGroup = async (studentId: string, groupId: string) => {
+    const targetGroup = groups.find((g) => g.id === groupId)
     try {
       const { error } = await supabase.from('group_members').delete().eq('user_id', studentId).eq('group_id', groupId)
       if (error) throw error
+
+      // Auto revert status to 'forming' if member count drops below capacity
+      const currentCount = groupMembers.filter((m) => m.group_id === groupId).length
+      const newCount = currentCount - 1
+      if (targetGroup && targetGroup.status === 'active' && targetGroup.max_members && newCount < targetGroup.max_members) {
+        await supabase.from('groups').update({ status: 'forming' }).eq('id', groupId)
+      }
+
       await fetchData()
     } catch (error) {
       console.error('Error removing student from group:', error)
@@ -656,15 +708,36 @@ export function StudentGroups() {
 
         {/* Group Formation Grid / Table */}
         <div>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Groups in {selectedCourseSummary.code}</h2>
-            <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
+            <div className="flex flex-wrap items-center gap-3">
+              {selectedGroups.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-text-muted shrink-0" />
+                  <Select
+                    value={sortBy}
+                    onChange={setSortBy}
+                    options={[
+                      { value: 'name-asc', label: 'Name (A-Z)' },
+                      { value: 'name-desc', label: 'Name (Z-A)' },
+                      { value: 'members-desc', label: 'Capacity: Most Full' },
+                      { value: 'members-asc', label: 'Capacity: Least Full' },
+                      { value: 'status', label: 'Status' },
+                      { value: 'newest', label: 'Date: Newest First' },
+                      { value: 'oldest', label: 'Date: Oldest First' },
+                    ]}
+                    className="w-48 text-xs"
+                  />
+                </div>
+              )}
+              <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
+            </div>
           </div>
 
           {layoutMode === 'table' ? (
             <DataTable
               columns={columns}
-              data={selectedGroups}
+              data={sortedGroups}
               keyExtractor={(row) => row.id}
               loading={loading}
               emptyMessage="No groups formed yet in this course unit"
@@ -678,7 +751,7 @@ export function StudentGroups() {
             </Card>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {selectedGroups.map((group) => {
+              {sortedGroups.map((group) => {
                 const members = groupMembers.filter((m) => m.group_id === group.id)
                 const isMember = myGroupIds.has(group.id)
                 const isLeader = group.leader_id === user?.id

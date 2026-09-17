@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil, Shuffle } from 'lucide-react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil, Shuffle, ArrowUpDown, Crown } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -42,12 +42,14 @@ export function CoordinatorGroups() {
   const [groupEditDescription, setGroupEditDescription] = useState('')
   const [groupEditStatus, setGroupEditStatus] = useState('forming')
   const [groupEditMaxMembers, setGroupEditMaxMembers] = useState('5')
+  const [groupEditLeaderId, setGroupEditLeaderId] = useState('')
   const [groupEditMemberId, setGroupEditMemberId] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
   const [bulkMaxMembers, setBulkMaxMembers] = useState('')
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [sortBy, setSortBy] = useState<string>('name-asc')
 
   const form = useForm({
     resolver: zodResolver(groupCreationSchema),
@@ -110,6 +112,25 @@ export function CoordinatorGroups() {
     () => groups.filter((group) => group.coursework?.course_unit_id === selectedCourseUnitId),
     [groups, selectedCourseUnitId]
   )
+
+  const sortedGroups = useMemo(() => {
+    const list = [...selectedGroups]
+    return list.sort((a, b) => {
+      const aCount = groupMembers.filter((m) => m.group_id === a.id).length
+      const bCount = groupMembers.filter((m) => m.group_id === b.id).length
+      const aFullness = a.max_members ? aCount / a.max_members : 0
+      const bFullness = b.max_members ? bCount / b.max_members : 0
+
+      if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '')
+      if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '')
+      if (sortBy === 'members-desc') return bFullness - aFullness || bCount - aCount
+      if (sortBy === 'members-asc') return aFullness - bFullness || aCount - bCount
+      if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '')
+      if (sortBy === 'newest') return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      if (sortBy === 'oldest') return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+      return 0
+    })
+  }, [selectedGroups, groupMembers, sortBy])
 
   const selectedCourseworks = useMemo(
     () => courseworks.filter((item) => item.course_unit_id === selectedCourseUnitId),
@@ -310,17 +331,20 @@ export function CoordinatorGroups() {
 
     setRandomizing(true)
     try {
-      const groupRows = chunks.map((members, index) => ({
-        coursework_id: selectedCoursework.id,
-        name: `${selectedCourseUnit?.code || 'Course'} Random Group ${index + 1}`,
-        description: requestedSize
-          ? `Randomly assigned group with ${requestedSize} member target.`
-          : 'Randomly assigned and balanced group.',
-        leader_id: members[0].id,
-        is_private: false,
-        max_members: capacity,
-        status: 'forming',
-      }))
+      const groupRows = chunks.map((members, index) => {
+        const isFull = members.length >= capacity
+        return {
+          coursework_id: selectedCoursework.id,
+          name: `${selectedCourseUnit?.code || 'Course'} Random Group ${index + 1}`,
+          description: requestedSize
+            ? `Randomly assigned group with ${requestedSize} member target.`
+            : 'Randomly assigned and balanced group.',
+          leader_id: members[0].id,
+          is_private: false,
+          max_members: capacity,
+          status: isFull ? 'active' : 'forming',
+        }
+      })
       const { data: createdGroups, error: groupError } = await supabase
         .from('groups')
         .insert(groupRows)
@@ -375,6 +399,15 @@ export function CoordinatorGroups() {
           .eq('user_id', studentId)
 
         if (removeError) throw removeError
+
+        // Revert any conflicting group that drops below max_members back to 'forming'
+        for (const confId of conflictingGroupIds) {
+          const confGroup = groups.find((g) => g.id === confId)
+          const remMembersCount = groupMembers.filter((m) => m.group_id === confId && m.user_id !== studentId).length
+          if (confGroup && confGroup.status === 'active' && confGroup.max_members && remMembersCount < confGroup.max_members) {
+            await supabase.from('groups').update({ status: 'forming' }).eq('id', confId)
+          }
+        }
       }
 
       const { error } = await supabase
@@ -385,6 +418,14 @@ export function CoordinatorGroups() {
         )
 
       if (error) throw error
+
+      // Automatically update group status to 'active' if max members capacity is reached
+      const currentCount = groupMembers.filter((m) => m.group_id === groupId && m.user_id !== studentId).length
+      const newCount = currentCount + 1
+      if (group.max_members && newCount >= group.max_members && group.status === 'forming') {
+        await supabase.from('groups').update({ status: 'active' }).eq('id', groupId)
+      }
+
       await fetchData()
     } catch (error) {
       console.error('Error assigning student to group:', error)
@@ -406,6 +447,14 @@ export function CoordinatorGroups() {
     try {
       const { error } = await supabase.from('group_members').delete().eq('user_id', studentId).eq('group_id', groupId)
       if (error) throw error
+
+      // Automatically update group status back to 'forming' if member count drops below max_members
+      const currentCount = groupMembers.filter((m) => m.group_id === groupId).length
+      const newCount = currentCount - 1
+      if (group && group.status === 'active' && group.max_members && newCount < group.max_members) {
+        await supabase.from('groups').update({ status: 'forming' }).eq('id', groupId)
+      }
+
       await fetchData()
     } catch (error) {
       console.error('Error removing student from group:', error)
@@ -415,12 +464,65 @@ export function CoordinatorGroups() {
     }
   }
 
+  const handleChangeGroupLeader = async (groupId: string, newLeaderId: string) => {
+    if (!groupId || !newLeaderId) return
+    const targetGroup = groups.find((g) => g.id === groupId)
+    if (!targetGroup) return
+
+    const oldLeaderId = targetGroup.leader_id
+
+    try {
+      // 1. Ensure new leader is in group_members with role 'leader'
+      const isMember = groupMembers.some((m) => m.group_id === groupId && m.user_id === newLeaderId)
+      if (!isMember) {
+        const { error: memberInsertError } = await supabase
+          .from('group_members')
+          .upsert(
+            { group_id: groupId, user_id: newLeaderId, role: 'leader' },
+            { onConflict: 'group_id,user_id' }
+          )
+        if (memberInsertError) throw memberInsertError
+      } else {
+        const { error: updateNewLeaderError } = await supabase
+          .from('group_members')
+          .update({ role: 'leader' })
+          .eq('group_id', groupId)
+          .eq('user_id', newLeaderId)
+
+        if (updateNewLeaderError) throw updateNewLeaderError
+      }
+
+      // 2. Set previous leader's role to 'member' if they remain in group
+      if (oldLeaderId && oldLeaderId !== newLeaderId) {
+        await supabase
+          .from('group_members')
+          .update({ role: 'member' })
+          .eq('group_id', groupId)
+          .eq('user_id', oldLeaderId)
+      }
+
+      // 3. Update leader_id on group record
+      const { error: groupUpdateError } = await supabase
+        .from('groups')
+        .update({ leader_id: newLeaderId })
+        .eq('id', groupId)
+
+      if (groupUpdateError) throw groupUpdateError
+
+      await fetchData()
+    } catch (error) {
+      console.error('Error changing group leader:', error)
+      alert(error instanceof Error ? error.message : 'Unable to change group leader.')
+    }
+  }
+
   const openGroupEditor = (group: any) => {
     setEditingGroup(group)
     setGroupEditName(group.name || '')
     setGroupEditDescription(group.description || '')
     setGroupEditStatus(group.status || 'forming')
     setGroupEditMaxMembers(String(group.max_members || 5))
+    setGroupEditLeaderId(group.leader_id || '')
     setGroupEditMemberId('')
   }
 
@@ -445,15 +547,28 @@ export function CoordinatorGroups() {
       return
     }
 
+    // Auto-update status if count reaches nextMaxMembers or falls below
+    let targetStatus = groupEditStatus
+    if (currentMemberCount >= nextMaxMembers && groupEditStatus === 'forming') {
+      targetStatus = 'active'
+    } else if (currentMemberCount < nextMaxMembers && groupEditStatus === 'active') {
+      targetStatus = 'forming'
+    }
+
     setSavingGroup(true)
     try {
+      if (groupEditLeaderId && groupEditLeaderId !== editingGroup.leader_id) {
+        await handleChangeGroupLeader(editingGroup.id, groupEditLeaderId)
+      }
+
       const { error } = await supabase
         .from('groups')
         .update({
           name: groupEditName.trim(),
           description: groupEditDescription.trim() || null,
-          status: groupEditStatus,
+          status: targetStatus,
           max_members: nextMaxMembers,
+          leader_id: groupEditLeaderId || editingGroup.leader_id,
         })
         .eq('id', editingGroup.id)
 
@@ -587,24 +702,45 @@ export function CoordinatorGroups() {
 
         {/* Group Formation Tiles */}
         <div>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Groups in {selectedCourseSummary.code}</h2>
               <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
             </div>
-            {currentUnitManagers && selectedGroups.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-xs text-text-muted">
-                  <input
-                    type="checkbox"
-                    checked={selectedGroupIds.length === selectedGroups.length}
-                    onChange={(event) => setSelectedGroupIds(event.target.checked ? selectedGroups.map((group) => group.id) : [])}
-                    className="h-4 w-4 rounded border-border text-primary"
+            <div className="flex flex-wrap items-center gap-3">
+              {selectedGroups.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-text-muted shrink-0" />
+                  <Select
+                    value={sortBy}
+                    onChange={setSortBy}
+                    options={[
+                      { value: 'name-asc', label: 'Name (A-Z)' },
+                      { value: 'name-desc', label: 'Name (Z-A)' },
+                      { value: 'members-desc', label: 'Capacity: Most Full' },
+                      { value: 'members-asc', label: 'Capacity: Least Full' },
+                      { value: 'status', label: 'Status' },
+                      { value: 'newest', label: 'Date: Newest First' },
+                      { value: 'oldest', label: 'Date: Oldest First' },
+                    ]}
+                    className="w-48 text-xs"
                   />
-                  Select all
-                </label>
-              </div>
-            )}
+                </div>
+              )}
+              {currentUnitManagers && selectedGroups.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-xs text-text-muted">
+                    <input
+                      type="checkbox"
+                      checked={selectedGroupIds.length === selectedGroups.length}
+                      onChange={(event) => setSelectedGroupIds(event.target.checked ? selectedGroups.map((group) => group.id) : [])}
+                      className="h-4 w-4 rounded border-border text-primary"
+                    />
+                    Select all
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
 
           {currentUnitManagers && selectedGroupIds.length > 0 && (
@@ -650,7 +786,7 @@ export function CoordinatorGroups() {
             </Card>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-              {selectedGroups.map((group) => {
+              {sortedGroups.map((group) => {
                 const members = groupMembers.filter((member) => member.group_id === group.id)
                 const leaderName = group.leader?.full_name || 'Unassigned'
                 const isFull = members.length >= group.max_members
@@ -712,26 +848,50 @@ export function CoordinatorGroups() {
                           {members.length === 0 ? (
                             <p className="text-xs text-text-muted italic">No students assigned yet.</p>
                           ) : (
-                            members.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between rounded-xl border border-border bg-surface-hover px-3 py-2">
-                                <div>
-                                  <p className="text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
-                                  <p className="text-[10px] text-text-muted">{member.user?.student_registration_number || 'No Reg No'}</p>
+                            members.map((member) => {
+                              const isLeader = group.leader_id === member.user_id
+                              return (
+                                <div key={member.id} className="flex items-center justify-between rounded-xl border border-border bg-surface-hover px-3 py-2">
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <p className="text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
+                                      {isLeader && (
+                                        <Badge variant="primary" className="px-1.5 py-0 text-[9px] gap-0.5">
+                                          <Crown className="h-2.5 w-2.5" /> Leader
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-text-muted">{member.user?.student_registration_number || 'No Reg No'}</p>
+                                  </div>
+                                  {currentUnitManagers && (
+                                    <div className="flex items-center gap-1">
+                                      {!isLeader && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0 text-amber-500 hover:bg-amber-500/10"
+                                          title="Make this student Group Leader"
+                                          onClick={() => handleChangeGroupLeader(group.id, member.user_id)}
+                                        >
+                                          <Crown className="h-3.5 w-3.5" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 shrink-0 p-0 text-danger hover:bg-danger/10"
+                                        title={isLeader ? 'Assign another leader before removing this student' : 'Remove student from group'}
+                                        disabled={isLeader}
+                                        loading={!!removingIds[`${member.user_id}-${group.id}`]}
+                                        onClick={() => handleRemoveFromGroup(member.user_id, group.id)}
+                                      >
+                                        <UserMinus className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
-                                {currentUnitManagers && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 w-7 p-0 text-danger hover:bg-danger/10"
-                                    title="Remove student from group"
-                                    onClick={() => handleRemoveFromGroup(member.user_id, group.id)}
-                                    loading={!!removingIds[`${member.user_id}-${group.id}`]}
-                                  >
-                                    <UserMinus className="h-3.5 w-3.5" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))
+                              )
+                            })
                           )}
                         </div>
                       </div>
@@ -856,6 +1016,20 @@ export function CoordinatorGroups() {
                 { value: 'locked', label: 'Locked - no further changes' },
               ]}
             />
+            {editingGroup && (
+              <Select
+                label="Group Leader"
+                value={groupEditLeaderId}
+                onChange={setGroupEditLeaderId}
+                options={groupMembers
+                  .filter((member) => member.group_id === editingGroup.id)
+                  .map((member) => ({
+                    value: member.user_id,
+                    label: member.user?.full_name ? `${member.user.full_name} (${member.user.email || 'No email'})` : 'Student',
+                  }))}
+                placeholder="Select group leader..."
+              />
+            )}
             {editingGroup && (
               <div className="space-y-3 rounded-xl border border-border bg-surface-hover/60 p-3">
                 <div className="flex items-center justify-between gap-3">
