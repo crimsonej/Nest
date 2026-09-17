@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import { CourseworkDetailModal } from './CourseworkDetailModal'
+import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
 function daysUntil(dateStr: string) {
   return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000))
@@ -56,6 +57,8 @@ export function StudentTasks() {
       setLoading(true)
 
       try {
+        const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
+        const allowedIds = new Set(allowedCourseUnitIds)
         // 1. Fetch enrolled course units
         const { data: enrollments } = await supabase
           .from('student_course_units')
@@ -63,7 +66,9 @@ export function StudentTasks() {
           .eq('user_id', user.id)
           .eq('status', 'active')
 
-        const unitSet = new Set((enrollments || []).map((e: any) => e.course_unit_id))
+        const unitSet = new Set((enrollments || [])
+          .map((e: any) => e.course_unit_id)
+          .filter((id: string) => allowedIds.has(id)))
         setEnrolledUnitIds(unitSet)
 
         // 2. Fetch published courseworks
@@ -71,6 +76,7 @@ export function StudentTasks() {
           .from('courseworks')
           .select('*, course_unit:course_units(code, name)')
           .eq('is_published', true)
+          .in('course_unit_id', allowedCourseUnitIds.length ? allowedCourseUnitIds : ['00000000-0000-0000-0000-000000000000'])
           .order('lock_at', { ascending: true })
 
         setCourseworks(cwData || [])

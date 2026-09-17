@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { CourseworkDetailModal } from './CourseworkDetailModal'
+import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
 export function StudentCoursework() {
   const { user } = useAuth()
@@ -56,6 +57,11 @@ export function StudentCoursework() {
   async function fetchCourseworks() {
     setLoading(true)
     try {
+      if (!user) {
+        setCourseworks([])
+        return
+      }
+      const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
       const { data } = await supabase
         .from('courseworks')
         .select(`
@@ -65,6 +71,7 @@ export function StudentCoursework() {
           groups:groups(count)
         `)
         .eq('is_published', true)
+        .in('course_unit_id', allowedCourseUnitIds.length ? allowedCourseUnitIds : ['00000000-0000-0000-0000-000000000000'])
         .order('created_at', { ascending: false })
 
       setCourseworks(data || [])

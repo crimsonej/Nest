@@ -563,8 +563,7 @@ function RegisterFormSection({
 
       if (error) throw error
 
-      const matchingUnits = data?.filter((unit) => !courseId || unit.course_id === courseId) || []
-      const displayUnits = matchingUnits.length > 0 ? matchingUnits : (data || [])
+      const displayUnits = data?.filter((unit) => !courseId || unit.course_id === courseId) || []
 
       setCourseUnitOptions(
         displayUnits.map(

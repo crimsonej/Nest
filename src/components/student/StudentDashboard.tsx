@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
 interface MetricCardProps {
   title: string
@@ -159,10 +160,14 @@ export function StudentDashboard() {
       if (!user) return
 
       try {
+        const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
+        const courseUnitFilter = allowedCourseUnitIds.length
+          ? allowedCourseUnitIds
+          : ['00000000-0000-0000-0000-000000000000']
         const [groupsRes, tasksRes, enrollmentsRes, cwRes, allUnitsRes] = await Promise.all([
           supabase
             .from('group_members')
-            .select('group:groups!inner(id, name, status, coursework:courseworks(title, course_unit:course_units(code)))')
+            .select('group:groups!inner(id, name, status, coursework:courseworks(title, course_unit_id, course_unit:course_units(code)))')
             .eq('user_id', user.id)
             .in('groups.status', ['forming', 'active']),
           supabase
@@ -180,8 +185,9 @@ export function StudentDashboard() {
             .from('courseworks')
             .select('*, course_unit:course_units(name, code)')
             .eq('is_published', true)
+            .in('course_unit_id', courseUnitFilter)
             .order('lock_at', { ascending: true }),
-          supabase.from('course_units').select('*').eq('is_active', true),
+          supabase.from('course_units').select('*').eq('is_active', true).in('id', courseUnitFilter),
         ])
 
         const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error || cwRes.error || allUnitsRes.error
@@ -189,9 +195,12 @@ export function StudentDashboard() {
           throw queryError
         }
 
-        const groups = groupsRes.data || []
+        const allowedIds = new Set(allowedCourseUnitIds)
+        const groups = (groupsRes.data || []).filter((row: any) => allowedIds.has(row.group?.coursework?.course_unit_id))
         const tasks = tasksRes.data || []
-        const enrolledIds = Array.from(new Set((enrollmentsRes.data || []).map((e: any) => e.course_unit_id).filter(Boolean)))
+        const enrolledIds = Array.from(new Set((enrollmentsRes.data || [])
+          .map((e: any) => e.course_unit_id)
+          .filter((id: string) => id && allowedIds.has(id))))
         const relevantCourseworks = (cwRes.data || []).filter((coursework: any) => {
           if (!coursework.course_unit_id) return true
           return enrolledIds.includes(coursework.course_unit_id)

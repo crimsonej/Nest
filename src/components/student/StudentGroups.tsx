@@ -14,6 +14,7 @@ import { groupCreationSchema } from '@/lib/validators'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DataTable } from '../ui/DataTable'
+import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
 export function StudentGroups() {
   const { user } = useAuth()
@@ -69,6 +70,8 @@ export function StudentGroups() {
   async function fetchData() {
     setLoading(true)
     try {
+      const allowedCourseUnitIds = user ? await getStudentCourseUnitIds(supabase, user) : []
+      const allowedIds = new Set(allowedCourseUnitIds)
       const [unitsRes, cwRes, groupsRes, membersRes, usersRes, enrollmentsRes, scRes] = await Promise.all([
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
         supabase.from('courseworks').select('id, title, course_unit_id, min_group_size, max_group_size, allow_self_formation, lock_at, course_unit:course_units(code, name, whatsapp_group_link)').eq('is_published', true).order('created_at', { ascending: false }),
@@ -89,13 +92,14 @@ export function StudentGroups() {
         supabase.from('selected_coordinators').select('*'),
       ])
 
-      const units = unitsRes.data || []
-      const cws = cwRes.data || []
-      const grps = groupsRes.data || []
-      const mbrs = membersRes.data || []
-      const stus = usersRes.data || []
-      const enrs = enrollmentsRes.data || []
-      const scs = scRes.data || []
+      const units = (unitsRes.data || []).filter((unit: any) => allowedIds.has(unit.id))
+      const cws = (cwRes.data || []).filter((coursework: any) => allowedIds.has(coursework.course_unit_id))
+      const grps = (groupsRes.data || []).filter((group: any) => allowedIds.has(group.coursework?.course_unit_id))
+      const groupIds = new Set(grps.map((group: any) => group.id))
+      const mbrs = (membersRes.data || []).filter((member: any) => groupIds.has(member.group_id))
+      const stus = (usersRes.data || []).filter((student: any) => !student.faculty_id || student.faculty_id === user?.faculty_id)
+      const enrs = (enrollmentsRes.data || []).filter((enrollment: any) => allowedIds.has(enrollment.course_unit_id))
+      const scs = (scRes.data || []).filter((selection: any) => allowedIds.has(selection.course_unit_id))
 
       setCourseUnits(units)
       setCourseworks(cws)
@@ -114,7 +118,7 @@ export function StudentGroups() {
         for (const m of mbrs) {
           if (m.user_id === user.id) {
             nextGroupIds.add(m.group_id)
-            const groupObj = grps.find((g) => g.id === m.group_id)
+            const groupObj = grps.find((g: any) => g.id === m.group_id)
             if (groupObj?.coursework_id) {
               nextMyCourseworkGroups[groupObj.coursework_id] = [
                 ...(nextMyCourseworkGroups[groupObj.coursework_id] || []),
