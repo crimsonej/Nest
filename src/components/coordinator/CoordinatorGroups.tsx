@@ -41,6 +41,8 @@ export function CoordinatorGroups() {
   const [groupEditName, setGroupEditName] = useState('')
   const [groupEditDescription, setGroupEditDescription] = useState('')
   const [groupEditStatus, setGroupEditStatus] = useState('forming')
+  const [groupEditMaxMembers, setGroupEditMaxMembers] = useState('5')
+  const [groupEditMemberId, setGroupEditMemberId] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
 
   const form = useForm({
@@ -384,6 +386,12 @@ export function CoordinatorGroups() {
   }
 
   const handleRemoveFromGroup = async (studentId: string, groupId: string) => {
+    const group = groups.find((item) => item.id === groupId)
+    if (group?.leader_id === studentId) {
+      alert('The group leader cannot be removed. Assign another leader first.')
+      return
+    }
+
     setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: true }))
 
     try {
@@ -403,10 +411,30 @@ export function CoordinatorGroups() {
     setGroupEditName(group.name || '')
     setGroupEditDescription(group.description || '')
     setGroupEditStatus(group.status || 'forming')
+    setGroupEditMaxMembers(String(group.max_members || 5))
+    setGroupEditMemberId('')
   }
 
   const saveGroupEdits = async () => {
     if (!editingGroup || !groupEditName.trim()) return
+
+    const nextMaxMembers = Number(groupEditMaxMembers)
+    const currentMemberCount = groupMembers.filter((member) => member.group_id === editingGroup.id).length
+    const coursework = courseworks.find((item) => item.id === editingGroup.coursework_id)
+    const courseworkMax = Number(coursework?.max_group_size || 20)
+
+    if (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1) {
+      alert('Maximum members must be a whole number of at least 1.')
+      return
+    }
+    if (nextMaxMembers < currentMemberCount) {
+      alert(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
+      return
+    }
+    if (nextMaxMembers > courseworkMax) {
+      alert(`This coursework allows a maximum of ${courseworkMax} members per group.`)
+      return
+    }
 
     setSavingGroup(true)
     try {
@@ -416,6 +444,7 @@ export function CoordinatorGroups() {
           name: groupEditName.trim(),
           description: groupEditDescription.trim() || null,
           status: groupEditStatus,
+          max_members: nextMaxMembers,
         })
         .eq('id', editingGroup.id)
 
@@ -427,6 +456,19 @@ export function CoordinatorGroups() {
     } finally {
       setSavingGroup(false)
     }
+  }
+
+  const addMemberFromEditor = async () => {
+    if (!editingGroup || !groupEditMemberId) return
+    const currentMemberCount = groupMembers.filter((member) => member.group_id === editingGroup.id).length
+    const capacity = Number(groupEditMaxMembers)
+    if (currentMemberCount >= capacity) {
+      alert('The group is already at its maximum capacity.')
+      return
+    }
+
+    await handleAssignStudentToGroup(groupEditMemberId, editingGroup.id)
+    setGroupEditMemberId('')
   }
 
   const selectedCourseSummary = unitSummaries.find((unit) => unit.id === selectedCourseUnitId)
@@ -661,6 +703,15 @@ export function CoordinatorGroups() {
           <div className="space-y-4">
             <Input label="Group name" value={groupEditName} onChange={(event) => setGroupEditName(event.target.value)} />
             <Textarea label="Group description" value={groupEditDescription} onChange={(event) => setGroupEditDescription(event.target.value)} />
+            <Input
+              label="Maximum members"
+              type="number"
+              min={1}
+              max={20}
+              value={groupEditMaxMembers}
+              onChange={(event) => setGroupEditMaxMembers(event.target.value)}
+              helperText="The value cannot be lower than the current number of members or higher than the coursework limit."
+            />
             <Select
               label="Group status"
               value={groupEditStatus}
@@ -671,6 +722,61 @@ export function CoordinatorGroups() {
                 { value: 'locked', label: 'Locked - no further changes' },
               ]}
             />
+            {editingGroup && (
+              <div className="space-y-3 rounded-xl border border-border bg-surface-hover/60 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary">Members</p>
+                    <p className="text-xs text-text-muted">
+                      {groupMembers.filter((member) => member.group_id === editingGroup.id).length} / {groupEditMaxMembers || '0'} assigned
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {groupMembers.filter((member) => member.group_id === editingGroup.id).map((member) => (
+                    <div key={member.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
+                        {editingGroup.leader_id === member.user_id && (
+                          <p className="text-[10px] text-primary">Group leader</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 shrink-0 p-0 text-danger hover:bg-danger/10"
+                        title={editingGroup.leader_id === member.user_id ? 'Assign another leader before removing this student' : 'Remove student from group'}
+                        disabled={editingGroup.leader_id === member.user_id}
+                        loading={!!removingIds[`${member.user_id}-${editingGroup.id}`]}
+                        onClick={() => handleRemoveFromGroup(member.user_id, editingGroup.id)}
+                      >
+                        <UserMinus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={groupEditMemberId}
+                    onChange={setGroupEditMemberId}
+                    options={students
+                      .filter((student) => student.role === 'student')
+                      .filter((student) => !groupMembers.some((member) => member.group_id === editingGroup.id && member.user_id === student.id))
+                      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+                      .map((student) => ({ value: student.id, label: student.full_name }))}
+                    placeholder="Add a student..."
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={addMemberFromEditor}
+                    disabled={!groupEditMemberId || groupMembers.filter((member) => member.group_id === editingGroup.id).length >= Number(groupEditMaxMembers || 0)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setEditingGroup(null)}>Cancel</Button>
               <Button onClick={saveGroupEdits} loading={savingGroup} disabled={!groupEditName.trim()}>Save changes</Button>
