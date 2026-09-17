@@ -44,6 +44,10 @@ export function CoordinatorGroups() {
   const [groupEditMaxMembers, setGroupEditMaxMembers] = useState('5')
   const [groupEditMemberId, setGroupEditMemberId] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [bulkMaxMembers, setBulkMaxMembers] = useState('')
+  const [bulkStatus, setBulkStatus] = useState('')
+  const [bulkSaving, setBulkSaving] = useState(false)
 
   const form = useForm({
     resolver: zodResolver(groupCreationSchema),
@@ -111,6 +115,11 @@ export function CoordinatorGroups() {
     () => courseworks.filter((item) => item.course_unit_id === selectedCourseUnitId),
     [courseworks, selectedCourseUnitId]
   )
+
+  useEffect(() => {
+    const visibleGroupIds = new Set(selectedGroups.map((group) => group.id))
+    setSelectedGroupIds((current) => current.filter((groupId) => visibleGroupIds.has(groupId)))
+  }, [selectedCourseUnitId, groups])
 
   const unitSummaries = useMemo(() => {
     return courseUnits
@@ -471,6 +480,69 @@ export function CoordinatorGroups() {
     setGroupEditMemberId('')
   }
 
+  const toggleGroupSelection = (groupId: string) => {
+    setSelectedGroupIds((current) => current.includes(groupId)
+      ? current.filter((id) => id !== groupId)
+      : [...current, groupId])
+  }
+
+  const saveBulkGroupEdits = async () => {
+    if (selectedGroupIds.length === 0) return
+
+    const nextMaxMembers = bulkMaxMembers.trim() ? Number(bulkMaxMembers) : null
+    if (nextMaxMembers !== null && (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1 || nextMaxMembers > 20)) {
+      alert('Maximum members must be a whole number between 1 and 20.')
+      return
+    }
+    if (!nextMaxMembers && !bulkStatus) {
+      alert('Choose a new capacity, a new status, or both.')
+      return
+    }
+
+    const selectedGroupsToUpdate = selectedGroups.filter((group) => selectedGroupIds.includes(group.id))
+    if (nextMaxMembers !== null) {
+      const tooSmall = selectedGroupsToUpdate.find((group) => (
+        groupMembers.filter((member) => member.group_id === group.id).length > nextMaxMembers
+      ))
+      if (tooSmall) {
+        alert(`${tooSmall.name} already has more members than the requested capacity. Remove members first.`)
+        return
+      }
+
+      const exceedsCoursework = selectedGroupsToUpdate.find((group) => {
+        const coursework = courseworks.find((item) => item.id === group.coursework_id)
+        return nextMaxMembers > Number(coursework?.max_group_size || 20)
+      })
+      if (exceedsCoursework) {
+        const coursework = courseworks.find((item) => item.id === exceedsCoursework.coursework_id)
+        alert(`${exceedsCoursework.name} cannot exceed the coursework limit of ${coursework?.max_group_size || 20}.`)
+        return
+      }
+    }
+
+    const updates: Record<string, number | string> = {}
+    if (nextMaxMembers !== null) updates.max_members = nextMaxMembers
+    if (bulkStatus) updates.status = bulkStatus
+
+    setBulkSaving(true)
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update(updates)
+        .in('id', selectedGroupIds)
+
+      if (error) throw error
+      setSelectedGroupIds([])
+      setBulkMaxMembers('')
+      setBulkStatus('')
+      await fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Unable to update the selected groups.')
+    } finally {
+      setBulkSaving(false)
+    }
+  }
+
   const selectedCourseSummary = unitSummaries.find((unit) => unit.id === selectedCourseUnitId)
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
@@ -516,9 +588,59 @@ export function CoordinatorGroups() {
         {/* Group Formation Tiles */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Groups in {selectedCourseSummary.code}</h2>
-            <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Groups in {selectedCourseSummary.code}</h2>
+              <span className="text-xs text-text-muted">{selectedGroups.length} groups found</span>
+            </div>
+            {currentUnitManagers && selectedGroups.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-xs text-text-muted">
+                  <input
+                    type="checkbox"
+                    checked={selectedGroupIds.length === selectedGroups.length}
+                    onChange={(event) => setSelectedGroupIds(event.target.checked ? selectedGroups.map((group) => group.id) : [])}
+                    className="h-4 w-4 rounded border-border text-primary"
+                  />
+                  Select all
+                </label>
+              </div>
+            )}
           </div>
+
+          {currentUnitManagers && selectedGroupIds.length > 0 && (
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                  Bulk edit {selectedGroupIds.length} group{selectedGroupIds.length === 1 ? '' : 's'}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    label="Set maximum members"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={bulkMaxMembers}
+                    onChange={(event) => setBulkMaxMembers(event.target.value)}
+                    placeholder="Leave unchanged"
+                  />
+                  <Select
+                    label="Set status"
+                    value={bulkStatus}
+                    onChange={setBulkStatus}
+                    options={[
+                      { value: 'forming', label: 'Forming' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'locked', label: 'Locked' },
+                    ]}
+                    placeholder="Leave unchanged"
+                  />
+                </div>
+              </div>
+              <Button onClick={saveBulkGroupEdits} loading={bulkSaving}>
+                Save selected
+              </Button>
+            </div>
+          )}
 
           {selectedGroups.length === 0 ? (
             <Card>
@@ -532,12 +654,24 @@ export function CoordinatorGroups() {
                 const members = groupMembers.filter((member) => member.group_id === group.id)
                 const leaderName = group.leader?.full_name || 'Unassigned'
                 const isFull = members.length >= group.max_members
+                const isSelected = selectedGroupIds.includes(group.id)
 
                 return (
                   <Card key={group.id} className="flex flex-col justify-between hover:border-primary/40 transition-all">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-3">
-                        <CardTitle className="text-lg font-bold">{group.name}</CardTitle>
+                        <div className="flex min-w-0 items-center gap-2">
+                          {currentUnitManagers && (
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleGroupSelection(group.id)}
+                              aria-label={`Select ${group.name}`}
+                              className="h-4 w-4 shrink-0 rounded border-border text-primary"
+                            />
+                          )}
+                          <CardTitle className="truncate text-lg font-bold">{group.name}</CardTitle>
+                        </div>
                         <div className="flex items-center gap-2">
                           {currentUnitManagers && (
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openGroupEditor(group)} title="Edit group">
