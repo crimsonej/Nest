@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus, Search, Pencil, Trash2, FolderOpen, LayoutGrid, List } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -36,6 +36,8 @@ export function CoordinatorCourses() {
     isActive: true,
   })
 
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({})
+
   useEffect(() => {
     fetchFaculties()
     fetchCourses()
@@ -49,12 +51,28 @@ export function CoordinatorCourses() {
   async function fetchCourses() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*, faculty:faculties(code, name)')
-        .order('name')
-      if (error) throw error
-      setCourses(data || [])
+      const [coursesRes, studentsRes] = await Promise.all([
+        supabase.from('courses').select('*, faculty:faculties(id, code, name)').order('name'),
+        supabase.from('users').select('id, course, faculty_id'),
+      ])
+
+      if (coursesRes.error) throw coursesRes.error
+
+      const rawCourses = coursesRes.data || []
+      const rawStudents = (studentsRes.data || []).filter((s: any) => s.role === 'student' || s.status === 'normal' || s.status === 'selected_coordinator')
+
+      const counts: Record<string, number> = {}
+      rawCourses.forEach((c: any) => {
+        const count = rawStudents.filter((s: any) => {
+          if (!s.course) return false
+          const sc = s.course.toLowerCase().trim()
+          return sc === c.code?.toLowerCase().trim() || sc === c.name?.toLowerCase().trim()
+        }).length
+        counts[c.id] = count
+      })
+
+      setStudentCounts(counts)
+      setCourses(rawCourses)
     } catch (error) {
       console.error('Error fetching courses:', error)
     } finally {
@@ -62,11 +80,39 @@ export function CoordinatorCourses() {
     }
   }
 
-  const resetForm = () => setFormValues({ facultyId: '', code: '', name: '', description: '', isActive: true })
+  const userFacultyId = user?.faculty_id
+  const isAdmin = user?.role === 'admin' || user?.status === 'admin'
+
+  const availableFaculties = useMemo(() => {
+    if (isAdmin) return faculties
+    if (userFacultyId) {
+      const matched = faculties.filter((f) => f.id === userFacultyId)
+      if (matched.length > 0) return matched
+    }
+    if (user?.faculty) {
+      const matched = faculties.filter((f) => f.name === user.faculty || f.code === user.faculty)
+      if (matched.length > 0) return matched
+    }
+    return faculties
+  }, [faculties, isAdmin, userFacultyId, user?.faculty])
+
+  const resetForm = () => setFormValues({
+    facultyId: availableFaculties[0]?.id || '',
+    code: '',
+    name: '',
+    description: '',
+    isActive: true,
+  })
 
   const openCreateModal = () => {
     setSelectedCourse(null)
-    resetForm()
+    setFormValues({
+      facultyId: availableFaculties[0]?.id || '',
+      code: '',
+      name: '',
+      description: '',
+      isActive: true,
+    })
     setCreateModalOpen(true)
   }
 
@@ -165,6 +211,15 @@ export function CoordinatorCourses() {
       key: 'faculty',
       header: 'Faculty',
       render: (row: any) => row.faculty?.name || row.faculty_id || 'Unassigned',
+    },
+    {
+      key: 'students_count',
+      header: 'Enrolled Students',
+      render: (row: any) => (
+        <Badge variant="primary" className="font-mono text-xs">
+          {studentCounts[row.id] || 0} {studentCounts[row.id] === 1 ? 'Student' : 'Students'}
+        </Badge>
+      ),
     },
     {
       key: 'status',
@@ -276,9 +331,14 @@ export function CoordinatorCourses() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Faculty</p>
-                    <p className="mt-1 text-sm text-text-primary">{course.faculty?.name || 'Unassigned faculty'}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Faculty</p>
+                      <p className="mt-0.5 text-sm text-text-primary">{course.faculty?.name || 'Unassigned faculty'}</p>
+                    </div>
+                    <Badge variant="primary" className="font-mono text-xs">
+                      {studentCounts[course.id] || 0} {studentCounts[course.id] === 1 ? 'Student' : 'Students'}
+                    </Badge>
                   </div>
                   <p className="text-sm text-text-secondary">
                     {course.description || 'No description provided for this course.'}
@@ -319,10 +379,12 @@ export function CoordinatorCourses() {
         <div className="space-y-4">
           <Select
             label="Faculty"
-            options={faculties.map((faculty) => ({ value: faculty.id, label: `${faculty.code} - ${faculty.name}` }))}
+            options={availableFaculties.map((faculty) => ({ value: faculty.id, label: `${faculty.code} - ${faculty.name}` }))}
             placeholder="Select faculty"
             value={formValues.facultyId}
             onChange={(value) => setFormValues((prev) => ({ ...prev, facultyId: value }))}
+            disabled={!isAdmin && availableFaculties.length === 1}
+            helperText={!isAdmin && availableFaculties.length === 1 ? 'Coordinators can only create courses within their assigned faculty.' : undefined}
           />
           <div className="grid gap-4 md:grid-cols-2">
             <Input

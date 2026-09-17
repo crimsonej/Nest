@@ -14,6 +14,7 @@ import {
   ClipboardList,
   GraduationCap,
   Layers3,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -21,7 +22,7 @@ import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import * as XLSX from 'xlsx'
 
@@ -62,6 +63,7 @@ export function CoordinatorReports() {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [overviewData, setOverviewData] = useState<Record<string, any[]>>({})
   const [loading, setLoading] = useState(true)
+  const [selectedColumnKeys, setSelectedColumnKeys] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchOverviewData()
@@ -73,14 +75,16 @@ export function CoordinatorReports() {
       const [studentsRes, courseUnitsRes, coursesRes, groupsRes, groupMembersRes, courseworksRes, enrollmentsRes] = await Promise.all([
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
-        supabase.from('courses').select('*').order('name'),
+        supabase.from('courses').select('*, faculty:faculties(code, name)').order('name'),
         supabase.from('groups').select('id, name, description, status, max_members, leader_id, created_at, leader:users!groups_leader_id_fkey(full_name, email), coursework:courseworks(id, title, course_unit:course_units(code, name))').order('created_at', { ascending: false }),
         supabase.from('group_members').select('id, group_id, user_id, role, joined_at, user:users(full_name, email, student_registration_number)').order('joined_at', { ascending: false }),
         supabase.from('courseworks').select('id, title, description, type, min_group_size, max_group_size, allow_self_formation, is_published, lock_at, created_at, course_unit:course_units(id, code, name)').order('created_at', { ascending: false }),
         supabase.from('student_course_units').select('id, user_id, course_unit_id, status, course_unit:course_units(code, name)').eq('status', 'active'),
       ])
 
-      const allStudents = (studentsRes.data || []).filter((student: any) => student.role === 'student')
+      const allStudents = (studentsRes.data || []).filter(
+        (student: any) => student.role === 'student' || student.status === 'normal' || student.status === 'selected_coordinator'
+      )
       const allGroups = groupsRes.data || []
       const allMembers = groupMembersRes.data || []
       const allCourseUnits = courseUnitsRes.data || []
@@ -93,16 +97,20 @@ export function CoordinatorReports() {
 
       const courseStudentMap = new Map<string, any[]>()
       allStudents.forEach((student: any) => {
-        const courseName = student.course || 'Unassigned'
-        if (!courseStudentMap.has(courseName)) {
-          courseStudentMap.set(courseName, [])
+        const rawCourse = (student.course || '').trim()
+        const matchedCourse = allCourses.find((c: any) =>
+          c.code?.toLowerCase() === rawCourse.toLowerCase() || c.name?.toLowerCase() === rawCourse.toLowerCase()
+        )
+        const key = matchedCourse ? `${matchedCourse.code} - ${matchedCourse.name}` : (rawCourse || 'Unassigned')
+        if (!courseStudentMap.has(key)) {
+          courseStudentMap.set(key, [])
         }
-        courseStudentMap.get(courseName)!.push({
+        courseStudentMap.get(key)!.push({
           id: student.id,
           student_name: student.full_name,
           email: student.email,
           registration_number: student.student_registration_number,
-          course: courseName,
+          course: key,
         })
       })
 
@@ -183,7 +191,7 @@ export function CoordinatorReports() {
           code: course.code,
           name: course.name,
           description: course.description || '—',
-          faculty: course.faculty_id || '—',
+          faculty: course.faculty?.name || course.faculty?.code || 'Unassigned',
           is_active: course.is_active ? 'Active' : 'Inactive',
           created_at: course.created_at,
         })),
@@ -287,106 +295,14 @@ export function CoordinatorReports() {
     }
   }
 
-  const selectedDataset = selectedCategory ? overviewData[selectedCategory] || [] : []
-  const tableColumns = selectedCategory ? getColumnsForCategory(selectedCategory).map((column) => ({
-    key: column.key,
-    header: column.header,
-    render: (row: any) => <span className="whitespace-nowrap">{column.value(row)}</span>,
-  })) : []
-
-  const handleExportCsv = () => {
-    if (!selectedCategory) return
-
-    const columns = getColumnsForCategory(selectedCategory)
-    const rows = overviewData[selectedCategory] || []
-
-    if (rows.length === 0) return
-
-    const escapeValue = (value: unknown) => {
-      const text = value === null || value === undefined ? '' : String(value)
-      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  useEffect(() => {
+    if (selectedCategory) {
+      const cols = getColumnsForCategory(selectedCategory)
+      const map: Record<string, boolean> = {}
+      cols.forEach((col) => (map[col.key] = true))
+      setSelectedColumnKeys(map)
     }
-
-    const csvRows = [
-      columns.map((col) => escapeValue(col.header)).join(','),
-      ...rows.map((row) => columns.map((col) => escapeValue(col.value(row))).join(',')),
-    ]
-
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${selectedCategory}-overview-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleExportXlsx = () => {
-    if (!selectedCategory) return
-
-    const columns = getColumnsForCategory(selectedCategory)
-    const rows = overviewData[selectedCategory] || []
-    if (rows.length === 0) return
-
-    const worksheet = XLSX.utils.json_to_sheet(
-      rows.map((row) => Object.fromEntries(columns.map((column) => [column.header, column.value(row)])))
-    )
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report')
-    XLSX.writeFile(workbook, `${selectedCategory}-overview-${new Date().toISOString().split('T')[0]}.xlsx`)
-  }
-
-  const handleExportPdf = () => {
-    if (!selectedCategory) return
-
-    const columns = getColumnsForCategory(selectedCategory)
-    const rows = overviewData[selectedCategory] || []
-
-    if (rows.length === 0) return
-
-    const printWindow = window.open('', '_blank', 'width=1200,height=800')
-    if (!printWindow) return
-
-    const rowsHtml = rows
-      .slice(0, 250)
-      .map((row) => {
-        const cells = columns
-          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${column.value(row)}</td>`)
-          .join('')
-        return `<tr>${cells}</tr>`
-      })
-      .join('')
-
-    const headerHtml = columns
-      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${column.header}</th>`)
-      .join('')
-
-    printWindow.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>${selectedCategory} overview</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <h2>${selectedCategory.replace('_', ' ')} overview</h2>
-          <table>
-            <thead><tr>${headerHtml}</tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
-  }
+  }, [selectedCategory])
 
   const courseUnitOptions = overviewData.course_units || []
   const courseOptions = overviewData.courses || []
@@ -404,10 +320,166 @@ export function CoordinatorReports() {
   const selectedCourse = courseOptions.find((course: any) => course.id === selectedCourseId) || null
   const filteredStudentsForCourse = selectedCourse
     ? (overviewData.course_students || []).filter((student: any) => {
-        const courseName = student.course || ''
-        return courseName === selectedCourse.code || courseName === selectedCourse.name || courseName.includes(selectedCourse.code || '')
+        const courseName = (student.course || '').toLowerCase()
+        const code = (selectedCourse.code || '').toLowerCase()
+        const name = (selectedCourse.name || '').toLowerCase()
+        return courseName.includes(code) || courseName.includes(name) || courseName === `${code} - ${name}`
       })
     : []
+
+  const getActiveRows = () => {
+    if (!selectedCategory) return []
+    if (selectedCategory === 'groups') {
+      if (selectedGroup) {
+        return (selectedGroup.members || []).map((m: any) => {
+          if (typeof m === 'string') {
+            return {
+              student_name: m,
+              full_name: m,
+              email: '—',
+              registration_number: '—',
+              name: selectedGroup.name,
+              course_unit: selectedGroup.course_unit || '—',
+              coursework: selectedGroup.coursework || '—',
+              leader: selectedGroup.leader || '—',
+              status: selectedGroup.status || '—',
+            }
+          }
+          return m
+        })
+      }
+      if (selectedCourseUnitId) {
+        return filteredGroupsForUnit
+      }
+      return overviewData.groups || []
+    }
+    if (selectedCategory === 'course_unit_students') {
+      if (selectedCourseUnitId) return selectedUnitStudents
+      return overviewData.course_unit_students || []
+    }
+    if (selectedCategory === 'course_students') {
+      if (selectedCourseId) return filteredStudentsForCourse
+      return overviewData.course_students || []
+    }
+    return overviewData[selectedCategory] || []
+  }
+
+  const getActiveColumns = () => {
+    if (!selectedCategory) return []
+    let baseCols = getColumnsForCategory(selectedCategory)
+    if (selectedCategory === 'groups' && selectedGroup) {
+      baseCols = [
+        { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || row.full_name || '—' },
+        { key: 'name', header: 'Group Name', value: (row) => row.name || selectedGroup.name || '—' },
+        { key: 'leader', header: 'Leader', value: (row) => row.leader || selectedGroup.leader || '—' },
+        { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || selectedGroup.coursework || '—' },
+        { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || selectedGroup.course_unit || '—' },
+      ]
+    }
+    return baseCols.filter((col) => selectedColumnKeys[col.key] !== false)
+  }
+
+  const handleExportCsv = () => {
+    if (!selectedCategory) return
+    const columns = getActiveColumns()
+    const rows = getActiveRows()
+
+    if (rows.length === 0 || columns.length === 0) {
+      alert('No matching records or columns selected for export.')
+      return
+    }
+
+    const escapeValue = (value: unknown) => {
+      const text = value === null || value === undefined ? '' : String(value)
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+    }
+
+    const csvRows = [
+      columns.map((col) => escapeValue(col.header)).join(','),
+      ...rows.map((row: any) => columns.map((col) => escapeValue(col.value(row))).join(',')),
+    ]
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${selectedCategory}_filtered_report_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportXlsx = () => {
+    if (!selectedCategory) return
+    const columns = getActiveColumns()
+    const rows = getActiveRows()
+
+    if (rows.length === 0 || columns.length === 0) {
+      alert('No matching records or columns selected for export.')
+      return
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      rows.map((row: any) => Object.fromEntries(columns.map((column) => [column.header, column.value(row)])))
+    )
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Report')
+    XLSX.writeFile(workbook, `${selectedCategory}_filtered_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const handleExportPdf = () => {
+    if (!selectedCategory) return
+    const columns = getActiveColumns()
+    const rows = getActiveRows()
+
+    if (rows.length === 0 || columns.length === 0) {
+      alert('No matching records or columns selected for export.')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=800')
+    if (!printWindow) return
+
+    const rowsHtml = rows
+      .slice(0, 500)
+      .map((row: any) => {
+        const cells = columns
+          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${column.value(row)}</td>`)
+          .join('')
+        return `<tr>${cells}</tr>`
+      })
+      .join('')
+
+    const headerHtml = columns
+      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${column.header}</th>`)
+      .join('')
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${selectedCategory} Filtered Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+            table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+            th, td { font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <h2>${selectedCategory.replace(/_/g, ' ').toUpperCase()} Filtered Report</h2>
+          <p style="font-size: 12px; color: #6b7280;">Exporting ${rows.length} matching records across ${columns.length} selected columns.</p>
+          <table>
+            <thead><tr>${headerHtml}</tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+  }
 
   const renderTile = (tile: (typeof reportTiles)[number]) => {
     const Icon = tile.icon
@@ -546,274 +618,202 @@ export function CoordinatorReports() {
           setSelectedGroupId(null)
           setSelectedCourseId(null)
         }}
-        title={selectedCategory ? reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'List details' : 'List details'}
-        description={selectedCategory ? `${selectedDataset.length} records in this list` : 'Database list details'}
+        title={selectedCategory ? reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report Details' : 'Report Details'}
+        description={selectedCategory ? 'Filter records, select custom columns, and live preview before downloading' : 'Report Details'}
         size="xl"
       >
-        {selectedCategory === 'groups' ? (
-          <div className="space-y-5">
+        <div className="space-y-5">
+          {/* Category Specific Filters */}
+          {selectedCategory === 'groups' && (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Course unit</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course unit</label>
                 <select
                   value={selectedCourseUnitId || ''}
                   onChange={(event) => {
                     setSelectedCourseUnitId(event.target.value || null)
                     setSelectedGroupId(null)
                   }}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
                 >
-                  <option value="">Select a course unit</option>
+                  <option value="">All Course Units</option>
                   {courseUnitOptions.map((unit: any) => (
                     <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Group</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Group</label>
                 <select
                   value={selectedGroupId || ''}
                   onChange={(event) => setSelectedGroupId(event.target.value || null)}
                   disabled={!selectedCourseUnitId || filteredGroupsForUnit.length === 0}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none disabled:opacity-50"
                 >
-                  <option value="">Select a group</option>
+                  <option value="">All Groups in Unit</option>
                   {filteredGroupsForUnit.map((group: any) => (
                     <option key={group.id} value={group.id}>{group.name}</option>
                   ))}
                 </select>
               </div>
             </div>
+          )}
 
-            {selectedCourseUnitId && (
-              <div className="rounded-xl border border-border bg-surface-hover/30 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.12em] text-text-muted">Course unit</p>
-                    <h3 className="text-base font-semibold text-text-primary">
-                      {courseUnitOptions.find((unit: any) => unit.id === selectedCourseUnitId)?.code || 'Selected'}
-                      {' - '}
-                      {courseUnitOptions.find((unit: any) => unit.id === selectedCourseUnitId)?.name || 'Course unit'}
-                    </h3>
-                  </div>
-                  <Badge variant="secondary">{filteredGroupsForUnit.length} groups</Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {filteredGroupsForUnit.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-text-secondary">
-                      No groups found for this course unit.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredGroupsForUnit.map((group: any) => (
-                        <button
-                          key={group.id}
-                          type="button"
-                          onClick={() => setSelectedGroupId(group.id)}
-                          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors ${selectedGroupId === group.id ? 'border-primary bg-primary/5' : 'border-border bg-surface hover:bg-surface-hover'}`}
-                        >
-                          <span className="font-medium text-text-primary">{group.name}</span>
-                          <span className="text-sm text-text-secondary">{group.members?.length || 0} students</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h4 className="text-lg font-semibold text-text-primary">
-                  {selectedGroup ? `Students in ${selectedGroup.name}` : selectedCourseUnitId ? 'Students in this course unit' : 'Student list'}
-                </h4>
-                <Button variant="outline" onClick={handleExportCsv} disabled={selectedDataset.length === 0}>
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </Button>
-                <Button variant="outline" onClick={handleExportXlsx} disabled={selectedDataset.length === 0}>
-                  <Download className="h-4 w-4" />
-                  Export Excel
-                </Button>
-              </div>
-
-              {selectedGroup ? (
-                selectedGroup.members?.length ? (
-                  <DataTable
-                    columns={[
-                      { key: 'full_name', header: 'Student', render: (row: any) => <span>{row.full_name || '—'}</span> },
-                      { key: 'email', header: 'Email', render: (row: any) => <span>{row.email || '—'}</span> },
-                      { key: 'student_registration_number', header: 'Reg No.', render: (row: any) => <span>{row.student_registration_number || '—'}</span> },
-                    ]}
-                    data={selectedGroup.members.map((member: string) => ({ full_name: member, email: '—', student_registration_number: '—' }))}
-                    keyExtractor={(row: any) => `${row.full_name || 'student'}-${row.email || 'no-email'}-${row.student_registration_number || 'no-reg'}`}
-                    emptyMessage="No students in this group"
-                  />
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                    No students assigned to this group yet.
-                  </div>
-                )
-              ) : selectedCourseUnitId ? (
-                selectedUnitStudents.length ? (
-                  <DataTable
-                    columns={[
-                      { key: 'student_name', header: 'Student', render: (row: any) => <span>{row.student_name || '—'}</span> },
-                      { key: 'email', header: 'Email', render: (row: any) => <span>{row.email || '—'}</span> },
-                      { key: 'registration_number', header: 'Reg No.', render: (row: any) => <span>{row.registration_number || '—'}</span> },
-                    ]}
-                    data={selectedUnitStudents}
-                    keyExtractor={(row) => row.id || `${row.student_name}-${Math.random()}`}
-                    emptyMessage="No students in this course unit"
-                  />
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                    No students assigned to this course unit.
-                  </div>
-                )
-              ) : (
-                <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                  Select a course unit to view its student roster.
-                </div>
-              )}
-            </div>
-          </div>
-        ) : selectedCategory === 'course_unit_students' ? (
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-secondary">Course unit</label>
+          {selectedCategory === 'course_unit_students' && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course unit</label>
               <select
                 value={selectedCourseUnitId || ''}
                 onChange={(event) => setSelectedCourseUnitId(event.target.value || null)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
               >
-                <option value="">Select a course unit</option>
+                <option value="">All Course Units</option>
                 {courseUnitOptions.map((unit: any) => (
                   <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
                 ))}
               </select>
             </div>
+          )}
 
-            {selectedCourseUnitId && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <h4 className="text-lg font-semibold text-text-primary">
-                    Students in {courseUnitOptions.find((unit: any) => unit.id === selectedCourseUnitId)?.code || 'selected unit'}
-                  </h4>
-                  <Button variant="outline" onClick={handleExportCsv} disabled={selectedUnitStudents.length === 0}>
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
-                  <Button variant="outline" onClick={handleExportXlsx} disabled={selectedUnitStudents.length === 0}>
-                    <Download className="h-4 w-4" />
-                    Export Excel
-                  </Button>
-                </div>
-
-                {selectedUnitStudents.length ? (
-                  <DataTable
-                    columns={[
-                      { key: 'student_name', header: 'Student', render: (row: any) => <span>{row.student_name || '—'}</span> },
-                      { key: 'email', header: 'Email', render: (row: any) => <span>{row.email || '—'}</span> },
-                      { key: 'registration_number', header: 'Reg No.', render: (row: any) => <span>{row.registration_number || '—'}</span> },
-                    ]}
-                    data={selectedUnitStudents}
-                    keyExtractor={(row: any) => row.id || `${row.student_name}-${row.registration_number || 'no-reg'}`}
-                    emptyMessage="No students in this course unit"
-                  />
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                    No students assigned to this course unit.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : selectedCategory === 'course_students' ? (
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-secondary">Course</label>
+          {selectedCategory === 'course_students' && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course Programme</label>
               <select
                 value={selectedCourseId || ''}
                 onChange={(event) => setSelectedCourseId(event.target.value || null)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
               >
-                <option value="">Select a course</option>
+                <option value="">All Course Programmes</option>
                 {courseOptions.map((course: any) => (
                   <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
                 ))}
               </select>
             </div>
+          )}
 
-            {selectedCourseId && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <h4 className="text-lg font-semibold text-text-primary">
-                    Students in {selectedCourse?.code || 'selected course'}
-                  </h4>
-                  <Button variant="outline" onClick={handleExportCsv} disabled={filteredStudentsForCourse.length === 0}>
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
-                  <Button variant="outline" onClick={handleExportXlsx} disabled={filteredStudentsForCourse.length === 0}>
-                    <Download className="h-4 w-4" />
-                    Export Excel
-                  </Button>
+          {/* Column Customizer Checklist Toolbar */}
+          {selectedCategory && (
+            <div className="rounded-xl border border-border bg-surface-hover/60 p-3.5 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-muted">
+                  <SlidersHorizontal className="h-4 w-4 text-primary" />
+                  <span>Customize Export & Preview Columns ({getActiveColumns().length} / {getColumnsForCategory(selectedCategory).length} Included)</span>
                 </div>
-
-                {filteredStudentsForCourse.length ? (
-                  <DataTable
-                    columns={[
-                      { key: 'student_name', header: 'Student', render: (row: any) => <span>{row.student_name || '—'}</span> },
-                      { key: 'email', header: 'Email', render: (row: any) => <span>{row.email || '—'}</span> },
-                      { key: 'registration_number', header: 'Reg No.', render: (row: any) => <span>{row.registration_number || '—'}</span> },
-                      { key: 'course', header: 'Course', render: (row: any) => <span>{row.course || '—'}</span> },
-                    ]}
-                    data={filteredStudentsForCourse}
-                    keyExtractor={(row: any) => row.id || `${row.student_name}-${row.registration_number || 'no-reg'}`}
-                    emptyMessage="No students in this course"
-                  />
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                    No students assigned to this course.
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allCols = getColumnsForCategory(selectedCategory)
+                      const map: Record<string, boolean> = {}
+                      allCols.forEach((c) => (map[c.key] = true))
+                      setSelectedColumnKeys(map)
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-text-muted">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedColumnKeys({})}
+                    className="text-text-muted hover:underline"
+                  >
+                    Clear All
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button variant="outline" onClick={handleExportCsv} disabled={selectedDataset.length === 0}>
-                <Download className="h-4 w-4" />
+
+              <div className="flex flex-wrap gap-2 text-xs">
+                {getColumnsForCategory(selectedCategory).map((col) => {
+                  const isChecked = selectedColumnKeys[col.key] !== false
+                  return (
+                    <label
+                      key={col.key}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-lg border px-2.5 py-1 cursor-pointer transition-colors select-none',
+                        isChecked ? 'border-primary/40 bg-primary/10 text-primary font-semibold' : 'border-border bg-surface text-text-muted'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => setSelectedColumnKeys((prev) => ({ ...prev, [col.key]: e.target.checked }))}
+                        className="h-3.5 w-3.5 rounded border-border text-primary"
+                      />
+                      <span>{col.header}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Export Action Bar & Record Counter */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-y border-border py-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" className="font-mono text-xs">
+                {getActiveRows().length} {getActiveRows().length === 1 ? 'Record' : 'Records'}
+              </Badge>
+              <span className="text-xs text-text-muted">matching active filter criteria</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCsv}
+                disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
+              >
+                <Download className="h-4 w-4 mr-1.5 text-emerald-600" />
                 Download CSV
               </Button>
-              <Button variant="outline" onClick={handleExportXlsx} disabled={selectedDataset.length === 0}>
-                <Download className="h-4 w-4" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportXlsx}
+                disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
+              >
+                <Download className="h-4 w-4 mr-1.5 text-blue-600" />
                 Download Excel
               </Button>
-              <Button variant="outline" onClick={handleExportPdf} disabled={selectedDataset.length === 0}>
-                <FileText className="h-4 w-4" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPdf}
+                disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
+              >
+                <FileText className="h-4 w-4 mr-1.5 text-rose-600" />
                 Export PDF
               </Button>
             </div>
+          </div>
 
-            {selectedDataset.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-surface-hover/30 p-6 text-center text-text-secondary">
-                No records in this dataset.
+          {/* Live Preview Table */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted">Live Export Preview</h4>
+            {getActiveRows().length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-surface-hover/30 p-8 text-center text-sm text-text-muted">
+                No matching records found for the selected filter criteria.
+              </div>
+            ) : getActiveColumns().length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-surface-hover/30 p-8 text-center text-sm text-text-muted">
+                Please check at least one column above to display in the export preview.
               </div>
             ) : (
               <DataTable
-                columns={tableColumns}
-                data={selectedDataset}
-                keyExtractor={(row) => row.id || `${row.full_name || row.name || row.title}-${Math.random()}`}
+                columns={getActiveColumns().map((col) => ({
+                  key: col.key,
+                  header: col.header,
+                  render: (row: any) => <span className="whitespace-nowrap">{col.value(row)}</span>,
+                }))}
+                data={getActiveRows()}
+                keyExtractor={(row: any) => row.id || row.student_name || row.full_name || row.name || row.title || row.code || String(Math.random())}
                 emptyMessage="No records available"
               />
             )}
           </div>
-        )}
+        </div>
       </Modal>
     </div>
   )

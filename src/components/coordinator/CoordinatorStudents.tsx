@@ -92,6 +92,9 @@ export function CoordinatorStudents() {
   })
   const [formError, setFormError] = useState('')
 
+  const [studentEnrollments, setStudentEnrollments] = useState<any[]>([])
+  const [savingSc, setSavingSc] = useState(false)
+
   useEffect(() => {
     fetchData()
   }, [dataVersion])
@@ -99,11 +102,12 @@ export function CoordinatorStudents() {
   async function fetchData() {
     setLoading(true)
     try {
-      const [usersRes, unitsRes, membersRes, scRes] = await Promise.all([
+      const [usersRes, unitsRes, membersRes, scRes, enrollmentsRes] = await Promise.all([
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('course_units').select('*').eq('is_active', true),
         supabase.from('group_members').select('*, group:groups(id, name, coursework:courseworks(course_unit_id))'),
         supabase.from('selected_coordinators').select('*'),
+        supabase.from('student_course_units').select('*').eq('status', 'active'),
       ])
 
       if (usersRes.data) {
@@ -115,6 +119,7 @@ export function CoordinatorStudents() {
       if (unitsRes.data) setCourseUnits(unitsRes.data)
       if (membersRes.data) setGroupMembers(membersRes.data)
       if (scRes.data) setSelectedCoordinators(scRes.data)
+      if (enrollmentsRes.data) setStudentEnrollments(enrollmentsRes.data)
     } catch (err) {
       console.error('Error loading student data:', err)
     } finally {
@@ -145,6 +150,16 @@ export function CoordinatorStudents() {
     })
     return map
   }, [selectedCoordinators])
+
+  // Student ID -> Enrolled active course units count map
+  const studentEnrollmentCountMap = useMemo(() => {
+    const map = new Map<string, number>()
+    studentEnrollments.forEach((scu) => {
+      const uId = scu.user_id
+      map.set(uId, (map.get(uId) || 0) + 1)
+    })
+    return map
+  }, [studentEnrollments])
 
   // Filtered student list
   const filteredStudents = useMemo(() => {
@@ -333,6 +348,7 @@ export function CoordinatorStudents() {
 
   const handleSaveSC = async () => {
     if (!scStudent) return
+    setSavingSc(true)
 
     try {
       const isSCActive = scCourseUnitIds.length > 0
@@ -340,10 +356,13 @@ export function CoordinatorStudents() {
 
       const { error: userUpdateErr } = await supabase.from('users').update({
         status: newStatus,
+        selected_coordinator: isSCActive,
       }).eq('id', scStudent.id)
       if (userUpdateErr) throw userUpdateErr
 
-      await supabase.from('selected_coordinators').delete().eq('user_id', scStudent.id)
+      const { error: deleteErr } = await supabase.from('selected_coordinators').delete().eq('user_id', scStudent.id)
+      if (deleteErr) throw deleteErr
+
       if (scCourseUnitIds.length > 0) {
         const scPayload = scCourseUnitIds.map((cId) => ({
           user_id: scStudent.id,
@@ -363,8 +382,41 @@ export function CoordinatorStudents() {
         prev.map((s) => (s.id === scStudent.id ? { ...s, status: newStatus, selected_coordinator: isSCActive } : s))
       )
       setScStudent(null)
-    } catch (err) {
+      await fetchData()
+    } catch (err: any) {
       console.error('Error saving SC assignments:', err)
+      alert(err.message || 'Unable to save SC powers.')
+    } finally {
+      setSavingSc(false)
+    }
+  }
+
+  const handleUnassignSC = async (student: any) => {
+    if (!student) return
+    if (!confirm(`Unassign SC powers for ${student.full_name}?`)) return
+
+    setSavingSc(true)
+    try {
+      const { error: userUpdateErr } = await supabase.from('users').update({
+        status: 'normal',
+        selected_coordinator: false,
+      }).eq('id', student.id)
+      if (userUpdateErr) throw userUpdateErr
+
+      const { error: deleteErr } = await supabase.from('selected_coordinators').delete().eq('user_id', student.id)
+      if (deleteErr) throw deleteErr
+
+      setSelectedCoordinators((prev) => prev.filter((sc) => sc.user_id !== student.id))
+      setStudents((prev) =>
+        prev.map((s) => (s.id === student.id ? { ...s, status: 'normal', selected_coordinator: false } : s))
+      )
+      if (scStudent?.id === student.id) setScStudent(null)
+      await fetchData()
+    } catch (err: any) {
+      console.error('Error unassigning SC powers:', err)
+      alert(err.message || 'Unable to unassign SC powers.')
+    } finally {
+      setSavingSc(false)
     }
   }
 
@@ -870,16 +922,16 @@ export function CoordinatorStudents() {
                       header: 'Group Status',
                       render: (row: any) => {
                         const groups = studentGroupMap.get(row.id) || []
-                        if (groups.length === 0) {
-                          return <Badge variant="danger" dot>Orphan</Badge>
-                        }
+                        const enrolledCount = studentEnrollmentCountMap.get(row.id) || (courseUnits.length > 0 ? courseUnits.length : 1)
+                        const groupCount = groups.length
                         return (
                           <div className="flex flex-col gap-1">
-                            {groups.map((g, idx) => (
-                              <Badge key={idx} variant="success" className="text-[11px]">
-                                {g.groupName}
-                              </Badge>
-                            ))}
+                            <Badge
+                              variant={groupCount > 0 ? 'success' : 'warning'}
+                              className="font-mono text-xs font-semibold"
+                            >
+                              {groupCount} / {enrolledCount} {enrolledCount === 1 ? 'Group' : 'Groups'}
+                            </Badge>
                           </div>
                         )
                       },
@@ -887,43 +939,55 @@ export function CoordinatorStudents() {
                     {
                       key: 'actions',
                       header: 'Actions',
-                      render: (row: any) => (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setDetailStudent(row)}
-                            className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary"
-                            title="View Full Profile"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(row)}
-                            className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-primary"
-                            title="Edit Student Record"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenSCModal(row)}
-                            className={cn(
-                              'p-1.5 rounded-lg transition-colors',
-                              (studentSCMap.get(row.id) || []).length > 0
-                                ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                                : 'text-text-secondary hover:bg-surface-hover'
+                      render: (row: any) => {
+                        const isSC = (studentSCMap.get(row.id) || []).length > 0
+                        return (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setDetailStudent(row)}
+                              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                              title="View Full Profile"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditModal(row)}
+                              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-primary"
+                              title="Edit Student Record"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenSCModal(row)}
+                              className={cn(
+                                'p-1.5 rounded-lg transition-colors',
+                                isSC
+                                  ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                                  : 'text-text-secondary hover:bg-surface-hover'
+                              )}
+                              title="Configure SC Powers"
+                            >
+                              <ShieldCheck className="h-4 w-4" />
+                            </button>
+                            {isSC && (
+                              <button
+                                onClick={() => handleUnassignSC(row)}
+                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
+                                title="Unassign SC Powers"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
                             )}
-                            title="Assign Course-Unit SC Powers"
-                          >
-                            <ShieldCheck className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingStudent(row)}
-                            className="p-1.5 rounded-lg text-danger hover:bg-danger-light hover:text-danger"
-                            title="Remove/Delete Student"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ),
+                            <button
+                              onClick={() => setDeletingStudent(row)}
+                              className="p-1.5 rounded-lg text-danger hover:bg-danger-light hover:text-danger"
+                              title="Remove/Delete Student"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )
+                      },
                     },
                   ]}
                   data={filteredStudents}
@@ -1361,14 +1425,26 @@ export function CoordinatorStudents() {
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-text-muted">
-                {scCourseUnitIds.length} course unit{scCourseUnitIds.length === 1 ? '' : 's'} assigned
-              </span>
+              <div className="flex items-center gap-2">
+                {(studentSCMap.get(scStudent.id) || []).length > 0 && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleUnassignSC(scStudent)}
+                    loading={savingSc}
+                  >
+                    Unassign SC
+                  </Button>
+                )}
+                <span className="text-xs text-text-muted">
+                  {scCourseUnitIds.length} course unit{scCourseUnitIds.length === 1 ? '' : 's'} assigned
+                </span>
+              </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setScStudent(null)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSaveSC} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={handleSaveSC} loading={savingSc} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                   Save SC Powers
                 </Button>
               </div>

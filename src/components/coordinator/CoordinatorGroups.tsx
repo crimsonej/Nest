@@ -185,7 +185,7 @@ export function CoordinatorGroups() {
 
     return students
       .filter((student) => {
-        if (student.role !== 'student' && student.status !== 'normal' && student.status !== 'selected_coordinator') {
+        if (student.role === 'admin' || student.role === 'coordinator' || student.status === 'admin') {
           return false
         }
         const isEnrolled = enrolledUserIds.size > 0 ? enrolledUserIds.has(student.id) : true
@@ -196,7 +196,7 @@ export function CoordinatorGroups() {
 
   const currentUnitManagers = useMemo(() => {
     if (!selectedCourseUnitId) return false
-    if (user?.role === 'coordinator') return true
+    if (user?.role === 'coordinator' || user?.role === 'admin' || user?.status === 'admin' || user?.status === 'coordinator') return true
     return selectedCoordinators.some(
       (sc) => sc.user_id === user?.id && sc.course_unit_id === selectedCourseUnitId
     )
