@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil, Shuffle, ArrowUpDown, Crown } from 'lucide-react'
+import { Search, Users, UserPlus, UserMinus, RefreshCw, BookCopy, ShieldCheck, ArrowLeft, ArrowRight, Plus, Pencil, Shuffle, ArrowUpDown, Crown, Trash2 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -48,6 +48,7 @@ export function CoordinatorGroups() {
   const [groupEditLeaderId, setGroupEditLeaderId] = useState('')
   const [groupEditMemberId, setGroupEditMemberId] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
   const [bulkMaxMembers, setBulkMaxMembers] = useState('')
   const [bulkStatus, setBulkStatus] = useState('')
@@ -661,6 +662,33 @@ export function CoordinatorGroups() {
     }
   }
 
+  const deleteGroup = async (group: any) => {
+    if (!group?.id || deletingGroupId) return
+
+    const memberCount = groupMembers.filter((member) => member.group_id === group.id).length
+    const confirmed = window.confirm(
+      `Delete ${group.name || 'this group'}? This will remove the group and its ${memberCount} member assignment${memberCount === 1 ? '' : 's'}. This cannot be undone.`
+    )
+    if (!confirmed) return
+
+    setDeletingGroupId(group.id)
+    try {
+      const { error: memberError } = await supabase.from('group_members').delete().eq('group_id', group.id)
+      if (memberError) throw memberError
+
+      const { error: groupError } = await supabase.from('groups').delete().eq('id', group.id)
+      if (groupError) throw groupError
+
+      setSelectedGroupIds((current) => current.filter((groupId) => groupId !== group.id))
+      await fetchData()
+    } catch (error) {
+      console.error('Error deleting group:', error)
+      alert(error instanceof Error ? error.message : 'Unable to delete the group.')
+    } finally {
+      setDeletingGroupId(null)
+    }
+  }
+
   const selectedCourseSummary = unitSummaries.find((unit) => unit.id === selectedCourseUnitId)
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
@@ -815,6 +843,19 @@ export function CoordinatorGroups() {
                           {currentUnitManagers && (
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openGroupEditor(group)} title="Edit group">
                               <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {currentUnitManagers && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-danger hover:bg-danger/10"
+                              onClick={() => deleteGroup(group)}
+                              title="Delete group"
+                              disabled={deletingGroupId === group.id}
+                              loading={deletingGroupId === group.id}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
                           <Badge variant={group.status === 'active' ? 'success' : group.status === 'forming' ? 'warning' : 'secondary'}>

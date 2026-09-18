@@ -161,6 +161,12 @@ export function CoordinatorStudents() {
     return map
   }, [studentEnrollments])
 
+  const getCourseUnit = (courseUnitId?: string) => courseUnits.find((courseUnit) => courseUnit.id === courseUnitId)
+
+  const formatDate = (value?: string) => value
+    ? new Intl.DateTimeFormat('en-UG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+    : 'Not available'
+
   // Filtered student list
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -1005,7 +1011,11 @@ export function CoordinatorStudents() {
                 const groups = studentGroupMap.get(student.id) || []
                 const scUnits = studentSCMap.get(student.id) || []
                 return (
-                  <Card key={student.id} className="hover:border-primary/30 transition-all">
+                  <Card
+                    key={student.id}
+                    className="hover:border-primary/30 transition-all cursor-pointer"
+                    onClick={() => setDetailStudent(student)}
+                  >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -1067,13 +1077,13 @@ export function CoordinatorStudents() {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenEditModal(student)}>
+                          <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); handleOpenEditModal(student) }}>
                             <Edit3 className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenSCModal(student)}>
+                          <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); handleOpenSCModal(student) }}>
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeletingStudent(student)}>
+                          <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); setDeletingStudent(student) }}>
                             <Trash2 className="h-3.5 w-3.5 text-danger" />
                           </Button>
                         </div>
@@ -1162,7 +1172,7 @@ export function CoordinatorStudents() {
       {/* DETAIL MODAL */}
       {detailStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-base">
@@ -1208,7 +1218,82 @@ export function CoordinatorStudents() {
                 <span className="text-text-muted font-medium">University & Campus</span>
                 <p className="font-semibold text-text-primary">{detailStudent.university || 'Ndejje University - Kampala Campus'}</p>
               </div>
+              <div className="rounded-xl border border-border p-3 space-y-1">
+                <span className="text-text-muted font-medium">Course</span>
+                <p className="font-semibold text-text-primary">{detailStudent.course || 'Not available'}</p>
+              </div>
+              <div className="rounded-xl border border-border p-3 space-y-1">
+                <span className="text-text-muted font-medium">Faculty</span>
+                <p className="font-semibold text-text-primary">{detailStudent.faculty || 'Not available'}</p>
+              </div>
+              <div className="col-span-2 rounded-xl border border-border p-3 space-y-1">
+                <span className="text-text-muted font-medium">Signed up for NEST</span>
+                <p className="font-semibold text-text-primary">{formatDate(detailStudent.created_at)}</p>
+              </div>
             </div>
+
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text-primary">Course units added</h4>
+                <Badge variant="secondary" className="text-[11px]">
+                  {(studentEnrollments.filter((enrollment) => enrollment.user_id === detailStudent.id)).length}
+                </Badge>
+              </div>
+              <div className="rounded-xl border border-border divide-y divide-border">
+                {studentEnrollments.filter((enrollment) => enrollment.user_id === detailStudent.id).length > 0 ? (
+                  studentEnrollments
+                    .filter((enrollment) => enrollment.user_id === detailStudent.id)
+                    .map((enrollment) => {
+                      const courseUnit = getCourseUnit(enrollment.course_unit_id)
+                      return (
+                        <div key={enrollment.id || enrollment.course_unit_id} className="flex items-center justify-between gap-3 p-3 text-xs">
+                          <div>
+                            <p className="font-semibold text-text-primary">{courseUnit?.code || 'Course unit'}</p>
+                            <p className="text-text-muted">{courseUnit?.name || 'Course unit details unavailable'}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={enrollment.status === 'active' ? 'success' : 'secondary'} className="text-[10px] capitalize">
+                              {enrollment.status || 'active'}
+                            </Badge>
+                            {enrollment.created_at && <p className="mt-1 text-[10px] text-text-muted">Added {formatDate(enrollment.created_at)}</p>}
+                          </div>
+                        </div>
+                      )
+                    })
+                ) : (
+                  <p className="p-3 text-xs text-text-muted">No course units added yet.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text-primary">Groups</h4>
+                <Badge variant="secondary" className="text-[11px]">{(studentGroupMap.get(detailStudent.id) || []).length}</Badge>
+              </div>
+              <div className="rounded-xl border border-border divide-y divide-border">
+                {(studentGroupMap.get(detailStudent.id) || []).length > 0 ? (
+                  (studentGroupMap.get(detailStudent.id) || []).map((group) => {
+                    const membership = groupMembers.find((member) => member.user_id === detailStudent.id && member.group_id === group.groupId)
+                    const courseUnit = getCourseUnit(group.courseUnitId)
+                    return (
+                      <div key={`${group.groupId}-${group.courseUnitId}`} className="flex items-center justify-between gap-3 p-3 text-xs">
+                        <div>
+                          <p className="font-semibold text-text-primary">{group.groupName}</p>
+                          <p className="text-text-muted">{courseUnit?.code || 'Course unit'}{courseUnit?.name ? ` · ${courseUnit.name}` : ''}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="success" className="text-[10px]">Member</Badge>
+                          {membership?.joined_at && <p className="mt-1 text-[10px] text-text-muted">Joined {formatDate(membership.joined_at)}</p>}
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="p-3 text-xs text-text-muted">Not in any group.</p>
+                )}
+              </div>
+            </section>
 
             <div className="flex items-center justify-between pt-2">
               <Button
