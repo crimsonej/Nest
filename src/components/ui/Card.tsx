@@ -41,26 +41,26 @@ export function Card({ children, className, hover = false, onClick, ...props }: 
 }
 
 export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('card-header border-b border-border/60 px-6 py-4', className)}>{children}</div>
+  return <div className={cn('card-header border-b border-border/60 px-4 sm:px-6 py-3.5 sm:py-4', className)}>{children}</div>
 }
 
 export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={cn('text-lg font-bold tracking-tight text-text-primary', className)}>{children}</h3>
+  return <h3 className={cn('text-base sm:text-lg font-bold tracking-tight text-text-primary', className)}>{children}</h3>
 }
 
 export function CardDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <p className={cn('text-sm text-text-secondary mt-1 leading-relaxed', className)}>{children}</p>
+  return <p className={cn('text-xs sm:text-sm text-text-secondary mt-1 leading-relaxed', className)}>{children}</p>
 }
 
 export function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('card-content px-6 py-5', className)}>{children}</div>
+  return <div className={cn('card-content px-4 sm:px-6 py-4 sm:py-5', className)}>{children}</div>
 }
 
 export function CardFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(
-        'px-6 py-4 border-t border-border/60 bg-surface-hover/40 rounded-b-2xl',
+        'px-4 sm:px-6 py-3.5 sm:py-4 border-t border-border/60 bg-surface-hover/40 rounded-b-2xl',
         className
       )}
     >

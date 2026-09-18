@@ -3,75 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #087f73;
-  --color-primary-hover: #06665d;
-  --color-primary-light: #d6f5ee;
-  --color-secondary: #d05a3c;
-  --color-secondary-hover: #b8472d;
-  --color-success: #15803d;
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-light: #ccfbf1;
+  --color-secondary: #ea580c;
+  --color-secondary-hover: #c2410c;
+  --color-success: #16a34a;
   --color-success-light: #dcfce7;
-  --color-warning: #b45309;
+  --color-warning: #d97706;
   --color-warning-light: #fef3c7;
-  --color-danger: #b91c1c;
+  --color-danger: #dc2626;
   --color-danger-light: #fee2e2;
-  --color-background: #f4f7f5;
+  --color-background: #f8faf9;
   --color-surface: #ffffff;
-  --color-surface-hover: #edf2ee;
-  --color-border: #d5e1dc;
-  --color-text-primary: #17221d;
-  --color-text-secondary: #405047;
-  --color-text-muted: #708078;
-  --sidebar-bg: #123d39;
-  --sidebar-text: #f2fbf7;
-  --sidebar-border: #2c5b54;
+  --color-surface-hover: #f1f5f3;
+  --color-border: #d1ded9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --sidebar-bg: #0f2b28;
+  --sidebar-text: #f0fdfa;
+  --sidebar-border: #1e4540;
 }
 
 html.mid {
-  --color-primary: #9f1239;
-  --color-primary-hover: #881337;
-  --color-primary-light: #fce7f3;
-  --color-secondary: #c2410c;
-  --color-secondary-hover: #9a3412;
-  --color-success: #166534;
+  --color-primary: #e11d48;
+  --color-primary-hover: #be123c;
+  --color-primary-light: #ffe4e6;
+  --color-secondary: #f97316;
+  --color-secondary-hover: #ea580c;
+  --color-success: #15803d;
   --color-success-light: #dcfce7;
-  --color-warning: #a16207;
+  --color-warning: #b45309;
   --color-warning-light: #fef9c3;
-  --color-danger: #be123c;
+  --color-danger: #e11d48;
   --color-danger-light: #ffe4e6;
-  --color-background: #fffaf7;
+  --color-background: #fff7f6;
   --color-surface: #ffffff;
-  --color-surface-hover: #fff1eb;
-  --color-border: #f1d8ce;
-  --color-text-primary: #3c1824;
-  --color-text-secondary: #6e3545;
-  --color-text-muted: #a06b77;
-  --sidebar-bg: #461b2a;
-  --sidebar-text: #fff7f5;
-  --sidebar-border: #73354a;
+  --color-surface-hover: #fff1f2;
+  --color-border: #fecdd3;
+  --color-text-primary: #4c0519;
+  --color-text-secondary: #881337;
+  --color-text-muted: #9f1239;
+  --sidebar-bg: #4c0519;
+  --sidebar-text: #fff1f2;
+  --sidebar-border: #881337;
 }
 
 html.dark {
-  --color-primary: #5eead4;
-  --color-primary-hover: #99f6e4;
-  --color-primary-light: rgba(45, 212, 191, 0.16);
-  --color-secondary: #c4b5fd;
-  --color-secondary-hover: #ddd6fe;
-  --color-success: #86efac;
-  --color-success-light: rgba(34, 197, 94, 0.16);
-  --color-warning: #fcd34d;
-  --color-warning-light: rgba(245, 158, 11, 0.16);
-  --color-danger: #fda4af;
-  --color-danger-light: rgba(244, 63, 94, 0.16);
-  --color-background: #101716;
-  --color-surface: #182321;
-  --color-surface-hover: #22322e;
-  --color-border: #2f4540;
-  --color-text-primary: #edf8f3;
-  --color-text-secondary: #c0d2ca;
-  --color-text-muted: #8ba29a;
-  --sidebar-bg: #0b2522;
-  --sidebar-text: #edf8f3;
-  --sidebar-border: #21433d;
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --color-primary-light: rgba(45, 212, 191, 0.15);
+  --color-secondary: #a78bfa;
+  --color-secondary-hover: #c4b5fd;
+  --color-success: #4ade80;
+  --color-success-light: rgba(74, 222, 128, 0.15);
+  --color-warning: #fbbf24;
+  --color-warning-light: rgba(251, 191, 36, 0.15);
+  --color-danger: #f87171;
+  --color-danger-light: rgba(248, 113, 113, 0.15);
+  --color-background: #090d16;
+  --color-surface: #111827;
+  --color-surface-hover: #1f2937;
+  --color-border: #1f293d;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --sidebar-bg: #070e17;
+  --sidebar-text: #f8fafc;
+  --sidebar-border: #1e293b;
 }
 
 @layer base {
@@ -299,6 +299,54 @@ html.dark {
 
   .content-wrap {
     @apply min-w-0 max-w-full;
+  }
+
+  .settings-page {
+    position: relative;
+  }
+
+  .settings-heading {
+    @apply relative overflow-hidden rounded-3xl px-5 py-6 shadow-lg backdrop-blur-md sm:px-8 sm:py-7;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-surface) 75%, transparent);
+    background-image: linear-gradient(120deg, color-mix(in srgb, var(--color-primary) 10%, var(--color-surface)), color-mix(in srgb, var(--color-secondary) 7%, var(--color-surface)));
+  }
+
+  .settings-heading::after,
+  .settings-hero-glow {
+    content: '';
+    position: absolute;
+    right: -4rem;
+    top: -6rem;
+    width: 15rem;
+    height: 15rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-secondary) 22%, transparent);
+    filter: blur(42px);
+    opacity: 0.55;
+    pointer-events: none;
+    animation: float-orb 12s ease-in-out infinite alternate;
+  }
+
+  .settings-card {
+    position: relative;
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  }
+
+  .settings-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    opacity: 0.8;
+  }
+
+  .settings-stat {
+    border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)), var(--color-surface));
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-primary) 8%, transparent);
   }
 
   .crimson-glow {

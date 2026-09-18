@@ -111,8 +111,9 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-border/80 bg-surface shadow-sm scrollbar-thin">
-      <table className="w-full text-sm text-left" role="grid">
+    <div className="w-full rounded-2xl border border-border/80 bg-surface shadow-sm overflow-hidden">
+      <div className="w-full overflow-x-auto scrollbar-thin">
+        <table className="w-full min-w-[600px] text-sm text-left border-collapse" role="grid">
         <thead>
           <tr className="border-b border-border/70 bg-surface-hover/60 text-xs font-bold uppercase tracking-wider text-text-secondary">
             {selection && (
@@ -192,6 +193,7 @@ export function DataTable<T extends { id: string }>({
           )}
         </tbody>
       </table>
+      </div>
       {pagination && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-border/60 bg-surface-hover/30 text-xs sm:text-sm">
           <div className="text-text-secondary">

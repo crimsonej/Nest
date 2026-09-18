@@ -897,7 +897,7 @@ function RegisterFormSection({
         {/* Row: Full Name + Email */}
         <motion.div
           variants={fieldVariant}
-          className="grid gap-3.5 md:grid-cols-2"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
           <Input
             label="Full Name *"
@@ -920,7 +920,7 @@ function RegisterFormSection({
         {/* Row: Gender + University */}
         <motion.div
           variants={fieldVariant}
-          className="grid gap-3.5 md:grid-cols-2"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
           <Select
             label="Gender *"
@@ -953,7 +953,7 @@ function RegisterFormSection({
         {/* Row: Reg Number + WhatsApp */}
         <motion.div
           variants={fieldVariant}
-          className="grid gap-3.5 md:grid-cols-2"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
           <Input
             label="Registration Number *"
@@ -977,7 +977,7 @@ function RegisterFormSection({
         {/* Row: Faculty + Course */}
         <motion.div
           variants={fieldVariant}
-          className="grid gap-3.5 md:grid-cols-2"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
           <Select
             label="Faculty *"
@@ -1006,7 +1006,7 @@ function RegisterFormSection({
         {/* Row: Password + Confirm */}
         <motion.div
           variants={fieldVariant}
-          className="grid gap-3.5 md:grid-cols-2"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
           <div className="relative">
             <Input

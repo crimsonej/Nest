@@ -41,12 +41,18 @@ module.exports = {
         sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      screens: {
+        xs: '420px',
+      },
       boxShadow: {
+        xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         sm: '0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04)',
         md: '0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
         lg: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
         xl: '0 20px 30px -10px rgba(0, 0, 0, 0.12), 0 10px 15px -5px rgba(0, 0, 0, 0.06)',
+        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         'glow-primary': '0 0 25px -5px color-mix(in srgb, var(--color-primary) 40%, transparent)',
+        'glow-secondary': '0 0 25px -5px color-mix(in srgb, var(--color-secondary) 35%, transparent)',
         'glow-crimson': '0 0 30px -5px rgba(225, 29, 72, 0.35)',
       },
       borderRadius: {
@@ -61,6 +67,7 @@ module.exports = {
         'spin-slow': 'spin 12s linear infinite',
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float-slow': 'float-orb 10s ease-in-out infinite alternate',
+        shimmer: 'shimmer 2.5s infinite',
       },
     },
   },

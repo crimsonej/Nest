@@ -12,22 +12,22 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/80 bg-background/80 backdrop-blur-xl transition-colors duration-300">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-3 pl-16 pr-3 py-2 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 border-b border-border/80 bg-background/85 backdrop-blur-xl transition-colors duration-300">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-2 pl-16 pr-3 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 min-w-0">
           <div className="hidden h-6 w-px bg-border/80 sm:block" />
           <div className="min-w-0 truncate">
             <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary truncate max-w-[130px] sm:max-w-none">
+              <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-primary truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                 {role === 'student' ? 'Student Workspace' : role === 'admin' ? 'Admin Workspace' : 'Coordinator Workspace'}
               </p>
             </div>
-              <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
+            <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
               {role === 'student' ? 'Stay on top of your coursework and group collaboration' : role === 'admin' ? 'University-wide overview across faculties and academic data' : 'Real-time overview of courses, groups, and assignments'}
             </p>
           </div>
-          <div className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-surface/70 px-3 py-1 text-[11px] font-medium text-text-muted backdrop-blur-sm lg:flex">
+          <div className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-surface/70 px-3 py-1 text-[11px] font-medium text-text-muted backdrop-blur-sm lg:flex shrink-0">
             <MapPin className="h-3 w-3 text-primary" />Kampala Campus
           </div>
         </div>

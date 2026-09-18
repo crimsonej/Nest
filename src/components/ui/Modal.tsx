@@ -64,7 +64,7 @@ export function Modal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pointer-events-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? 'modal-title' : undefined}
@@ -88,21 +88,21 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
-              'relative z-10 w-full rounded-2xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto',
+              'relative z-10 w-full rounded-3xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto',
               sizeClasses[size]
             )}
             onClick={(e) => e.stopPropagation()}
           >
             {(title || showCloseButton) && (
-              <div className="flex items-start justify-between p-6 border-b border-border/70 bg-surface-hover/30">
+              <div className="flex items-start justify-between p-4 sm:p-6 border-b border-border/70 bg-surface-hover/30">
                 <div>
                   {title && (
-                    <h2 id="modal-title" className="text-xl font-bold tracking-tight text-text-primary">
+                    <h2 id="modal-title" className="text-lg sm:text-xl font-bold tracking-tight text-text-primary">
                       {title}
                     </h2>
                   )}
                   {description && (
-                    <p id="modal-description" className="mt-1 text-sm text-text-secondary">
+                    <p id="modal-description" className="mt-1 text-xs sm:text-sm text-text-secondary">
                       {description}
                     </p>
                   )}
@@ -112,7 +112,7 @@ export function Modal({
                     whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={onClose}
-                    className="p-1.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+                    className="p-1.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors shrink-0 ml-2"
                     aria-label="Close modal"
                   >
                     <X className="h-5 w-5" />
@@ -120,7 +120,7 @@ export function Modal({
                 )}
               </div>
             )}
-            <div className="p-6 max-h-[75vh] overflow-y-auto scrollbar-thin">{children}</div>
+            <div className="p-4 sm:p-6 max-h-[80dvh] overflow-y-auto scrollbar-thin">{children}</div>
           </motion.div>
         </div>
       )}

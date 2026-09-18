@@ -236,17 +236,18 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+    <div className="settings-page max-w-5xl space-y-6">
+      <div className="settings-hero relative overflow-hidden rounded-3xl border border-primary/20 px-5 py-6 shadow-lg sm:px-8 sm:py-7">
+        <div className="settings-hero-glow" aria-hidden="true" />
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary ring-4 ring-primary/5">
               {user?.avatar_url ? <img src={user.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="h-8 w-8" />}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Student profile</p>
-              <h1 className="mt-1 text-2xl font-semibold text-text-primary">{formData.fullName || 'Student name'}</h1>
-              <p className="text-sm text-text-muted">{formData.email || 'No email provided'}</p>
+              <h1 className="mt-1 break-words text-2xl font-semibold text-text-primary">{formData.fullName || 'Student name'}</h1>
+              <p className="break-words text-sm text-text-muted">{formData.email || 'No email provided'}</p>
             </div>
           </div>
 
@@ -256,24 +257,24 @@ export default function StudentSettingsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="settings-stat rounded-2xl p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">Course</p>
           <p className="mt-2 text-lg font-semibold text-text-primary">{formData.course || 'Not provided'}</p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="settings-stat rounded-2xl p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">Registration number</p>
           <p className="mt-2 text-lg font-semibold text-text-primary">{formData.studentRegistrationNumber || 'Not provided'}</p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="settings-stat rounded-2xl p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">WhatsApp</p>
           <p className="mt-2 text-lg font-semibold text-text-primary">{formData.whatsappPhone || 'Not added'}</p>
         </div>
       </div>
 
-      <Card>
+      <Card className="settings-card">
         <CardHeader className="border-b border-border pb-4">
           <CardTitle>Profile details</CardTitle>
         </CardHeader>
@@ -297,7 +298,7 @@ export default function StudentSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="settings-card">
         <CardHeader className="border-b border-border pb-4">
           <CardTitle>Course units</CardTitle>
         </CardHeader>
@@ -327,10 +328,10 @@ export default function StudentSettingsPage() {
                 return (
                   <div
                     key={unit.id}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                    className="flex min-w-0 flex-col items-stretch gap-4 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-primary/40 hover:bg-surface-hover sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
                           {unit.code}
                         </span>
@@ -340,9 +341,9 @@ export default function StudentSettingsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-2 truncate font-semibold text-text-primary">{unit.name}</p>
+                      <p className="mt-2 break-words font-semibold text-text-primary">{unit.name}</p>
                       {unit.description && (
-                        <p className="mt-1 truncate text-xs text-text-muted">{unit.description}</p>
+                        <p className="mt-1 break-words text-xs text-text-muted">{unit.description}</p>
                       )}
                     </div>
 
@@ -352,6 +353,7 @@ export default function StudentSettingsPage() {
                       onClick={() => toggleCourseUnitEnrollment(unit.id)}
                       loading={updatingCourseUnits}
                       disabled={updatingCourseUnits}
+                      className="w-full shrink-0 sm:w-auto"
                     >
                       {isEnrolled ? 'Delete' : 'Add'}
                     </Button>
@@ -363,7 +365,7 @@ export default function StudentSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-danger/20 bg-danger/5">
+      <Card className="settings-card border-danger/30 bg-danger/5">
         <CardHeader>
           <CardTitle className="text-danger">Danger zone</CardTitle>
         </CardHeader>

@@ -44,14 +44,14 @@ export function AppLayout({ children, role }: LayoutProps) {
   const canSwitchWorkspace = user.role === 'admin' || user.status === 'admin' || user.status === 'coordinator' || user.status === 'selected_coordinator'
 
   return (
-    <div className="workspace-surface min-h-screen bg-background">
+    <div className="workspace-surface min-h-screen bg-background overflow-x-hidden">
       <Sidebar />
       <div className={cn('min-h-screen min-w-0 transition-all duration-300', 'lg:pl-[17rem]')}>
         <TopBar
           role={role}
           onSwitchWorkspace={canSwitchWorkspace ? () => setRoleModalOpen(true) : undefined}
         />
-        <main className="mx-auto w-full max-w-[1500px] min-w-0 px-4 pb-8 pt-5 sm:px-7 sm:py-8 lg:px-10 lg:py-10" role="main">
+        <main className="mx-auto w-full max-w-[1500px] min-w-0 px-3.5 pb-10 pt-4 sm:px-6 sm:py-8 lg:px-8 lg:py-8" role="main">
           {children}
         </main>
       </div>

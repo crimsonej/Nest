@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, BookOpen, Target, TrendingUp, Clock, ArrowRight, Plus, Check } from 'lucide-react'
+import { Users, BookOpen, Target, ArrowRight, Plus, Check } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -113,11 +113,11 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
               Deadline Expired
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
               {segments.map((segment) => (
                 <div
                   key={segment.label}
-                  className="flex min-w-[80px] flex-col items-center rounded-2xl border border-border/80 bg-surface/95 px-3.5 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+                  className="flex w-full sm:w-auto sm:min-w-[80px] flex-col items-center rounded-2xl border border-border/80 bg-surface/95 px-3 py-2 sm:px-3.5 sm:py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
                 >
                   <span className="text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
                     {String(segment.value).padStart(2, '0')}
@@ -142,8 +142,6 @@ export function StudentDashboard() {
     myGroups: 0,
     registeredCourseUnits: 0,
     activeTasks: 0,
-    completedTasks: 0,
-    upcomingDeadlines: 0,
   })
   const [loading, setLoading] = useState(true)
   const [dataError, setDataError] = useState('')
@@ -210,8 +208,6 @@ export function StudentDashboard() {
           myGroups: groups.length,
           registeredCourseUnits: enrolledIds.length,
           activeTasks: tasks.filter((t: { status: string }) => t.status === 'in_progress').length,
-          completedTasks: tasks.filter((t: { status: string }) => t.status === 'completed' || t.status === 'submitted').length,
-          upcomingDeadlines: tasks.filter((t: { status: string; due_date?: string | null }) => t.due_date && new Date(t.due_date) > new Date() && t.status !== 'completed').length,
         })
 
         setRecentGroups(groups.slice(0, 5))
@@ -321,8 +317,6 @@ export function StudentDashboard() {
       <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="My Groups" value={metrics.myGroups} icon={<Users className="h-6 w-6" />} color="primary" />
         <MetricCard title="Course Units" value={metrics.registeredCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" onClick={() => setIsModalOpen(true)} />
-        <MetricCard title="Completed Tasks" value={metrics.completedTasks} icon={<TrendingUp className="h-6 w-6" />} color="success" />
-        <MetricCard title="Upcoming Deadlines" value={metrics.upcomingDeadlines} icon={<Clock className="h-6 w-6" />} color="danger" />
       </motion.div>
 
       {/* Lists Grid */}

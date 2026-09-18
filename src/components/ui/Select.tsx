@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronUp, Check, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Check } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 

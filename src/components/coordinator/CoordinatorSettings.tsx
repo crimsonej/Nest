@@ -99,13 +99,14 @@ export function CoordinatorSettings() {
   ]
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+    <div className="settings-page max-w-5xl space-y-6">
+      <div className="settings-heading">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Workspace preferences</p>
+        <h1 className="mt-1 text-3xl font-black tracking-tight text-text-primary">Settings</h1>
         <p className="text-text-secondary mt-1">Manage your coordinator profile and appearance.</p>
       </div>
 
-      <Card>
+      <Card className="settings-card">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>Update your personal information and coordinator details.</CardDescription>
@@ -121,13 +122,13 @@ export function CoordinatorSettings() {
               Profile settings updated successfully.
             </div>
           )}
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-lg font-medium text-text-primary">{profile.full_name || 'Coordinator profile'}</p>
-              <p className="text-text-muted">{profile.email || user?.email}</p>
+              <p className="break-words text-text-muted">{profile.email || user?.email}</p>
               <Badge variant="primary" className="mt-1">Coordinator</Badge>
             </div>
           </div>
@@ -174,7 +175,7 @@ export function CoordinatorSettings() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="settings-card">
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
           <CardDescription>Choose how the portal looks across the coordinator workspace.</CardDescription>
@@ -195,7 +196,7 @@ export function CoordinatorSettings() {
         </CardContent>
       </Card>
 
-      <Card className="border-danger/20">
+      <Card className="settings-card border-danger/30">
         <CardHeader>
           <CardTitle className="text-danger">Danger Zone</CardTitle>
           <CardDescription>Permanent actions that cannot be undone.</CardDescription>
