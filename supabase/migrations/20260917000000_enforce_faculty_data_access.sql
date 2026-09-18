@@ -11,12 +11,12 @@ set search_path = public
 as $$
   select exists (
     select 1
-    from public.users current_user
-    where current_user.id = auth.uid()
+    from public.users usr
+    where usr.id = auth.uid()
       and (
-        current_user.role = 'admin'
-        or current_user.status = 'admin'
-        or current_user.faculty_id = target_faculty_id
+        usr.role = 'admin'
+        or usr.status = 'admin'
+        or usr.faculty_id = target_faculty_id
       )
   );
 $$;
@@ -38,9 +38,9 @@ as $$
         or exists (
           select 1
           from public.course_unit_faculties shared
-          join public.users current_user on current_user.id = auth.uid()
+          join public.users usr on usr.id = auth.uid()
           where shared.course_unit_id = unit.id
-            and shared.faculty_id = current_user.faculty_id
+            and shared.faculty_id = usr.faculty_id
         )
       )
   );
@@ -172,13 +172,13 @@ create policy "Users can read permitted profiles"
     or public.is_admin_user()
     or exists (
       select 1
-      from public.users current_user
-      where current_user.id = auth.uid()
+      from public.users usr
+      where usr.id = auth.uid()
         and (
-          current_user.role = 'coordinator'
-          or current_user.status in ('coordinator', 'selected_coordinator')
+          usr.role = 'coordinator'
+          or usr.status in ('coordinator', 'selected_coordinator')
         )
-        and current_user.faculty_id = users.faculty_id
+        and usr.faculty_id = users.faculty_id
     )
     or exists (
       select 1

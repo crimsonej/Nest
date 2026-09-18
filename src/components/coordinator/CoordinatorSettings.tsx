@@ -73,14 +73,14 @@ export function CoordinatorSettings() {
 
     setDeletingAccount(true)
     try {
-      await supabase.from('student_course_units').delete().eq('user_id', user.id)
-      await supabase.from('group_members').delete().eq('user_id', user.id)
-      await supabase.from('group_join_requests').delete().eq('user_id', user.id)
-      await supabase.from('selected_coordinators').delete().eq('user_id', user.id)
-      await supabase.from('tasks').delete().eq('user_id', user.id)
-
-      const { error } = await supabase.from('users').delete().eq('id', user.id)
-      if (error) throw error
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to delete user account.')
+      }
 
       await supabase.auth.signOut()
       window.location.href = '/auth/login'

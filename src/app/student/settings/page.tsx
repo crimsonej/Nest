@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { User, Save, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
 const avatarIndexes = {
   male: [1, 3, 5, 8, 12, 15, 18, 20, 22, 25, 28, 30],
@@ -58,6 +59,7 @@ export default function StudentSettingsPage() {
   const [updatingCourseUnits, setUpdatingCourseUnits] = useState(false)
   const [avatarOptions, setAvatarOptions] = useState<string[]>([])
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
+  const [unitActionError, setUnitActionError] = useState('')
   const [formData, setFormData] = useState({
     fullName: user?.full_name || '',
     email: user?.email || '',
@@ -71,14 +73,14 @@ export default function StudentSettingsPage() {
 
     setDeletingAccount(true)
     try {
-      await supabase.from('student_course_units').delete().eq('user_id', userId)
-      await supabase.from('group_members').delete().eq('user_id', userId)
-      await supabase.from('group_join_requests').delete().eq('user_id', userId)
-      await supabase.from('selected_coordinators').delete().eq('user_id', userId)
-      await supabase.from('tasks').delete().eq('user_id', userId)
-
-      const { error } = await supabase.from('users').delete().eq('id', userId)
-      if (error) throw error
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to delete user account.')
+      }
 
       await supabase.auth.signOut()
       window.location.href = '/auth/login'
@@ -91,22 +93,30 @@ export default function StudentSettingsPage() {
   }
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !user) {
       setLoadingCourseUnits(false)
       return
     }
 
     async function fetchCourseUnits() {
       try {
+        const allowedUnitIds = await getStudentCourseUnitIds(supabase, user!)
+        const allowedSet = new Set(allowedUnitIds)
+
         const [unitsRes, enrollmentsRes] = await Promise.all([
-          supabase.from('course_units').select('*').eq('is_active', true).order('name', { ascending: true }),
+          supabase.from('course_units').select('*, course:courses(code, name, faculty_id)').eq('is_active', true).order('name', { ascending: true }),
           supabase.from('student_course_units').select('course_unit_id').eq('user_id', userId).eq('status', 'active'),
         ])
 
         if (unitsRes.error) throw unitsRes.error
         if (enrollmentsRes.error) throw enrollmentsRes.error
 
-        setCourseUnits(unitsRes.data || [])
+        const allUnits = unitsRes.data || []
+        const filteredUnits = allowedSet.size > 0
+          ? allUnits.filter((u: any) => allowedSet.has(u.id))
+          : allUnits
+
+        setCourseUnits(filteredUnits)
         setEnrolledUnitIds((enrollmentsRes.data || []).map((item: any) => item.course_unit_id))
       } catch (error) {
         console.error('Error fetching registered course units:', error)
@@ -179,6 +189,7 @@ export default function StudentSettingsPage() {
 
     const isEnrolled = enrolledUnitIds.includes(unitId)
     setUpdatingCourseUnits(true)
+    setUnitActionError('')
 
     try {
       if (isEnrolled) {
@@ -194,33 +205,19 @@ export default function StudentSettingsPage() {
         return
       }
 
-      const { data: existingEnrollment, error: lookupError } = await supabase
+      const { error } = await supabase
         .from('student_course_units')
-        .select('id, status')
-        .eq('user_id', userId)
-        .eq('course_unit_id', unitId)
-        .maybeSingle()
+        .upsert(
+          { user_id: userId, course_unit_id: unitId, status: 'active' },
+          { onConflict: 'user_id,course_unit_id' }
+        )
 
-      if (lookupError) throw lookupError
-
-      if (existingEnrollment) {
-        const { error } = await supabase
-          .from('student_course_units')
-          .update({ status: 'active' })
-          .eq('id', existingEnrollment.id)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('student_course_units')
-          .insert({ user_id: userId, course_unit_id: unitId, status: 'active' })
-
-        if (error) throw error
-      }
+      if (error) throw error
 
       setEnrolledUnitIds((current) => Array.from(new Set([...current, unitId])))
     } catch (error) {
       console.error('Error updating course unit enrollment:', error)
+      setUnitActionError(error instanceof Error ? error.message : 'Unable to update course unit enrollment.')
     } finally {
       setUpdatingCourseUnits(false)
     }
@@ -308,6 +305,13 @@ export default function StudentSettingsPage() {
           <p className="text-sm text-text-secondary">
             Add or remove the course units you are currently taking. This keeps your groups, coursework, and dashboard aligned to your actual registrations.
           </p>
+
+          {unitActionError && (
+            <div className="rounded-xl border border-danger/30 bg-danger-light p-3 text-xs font-semibold text-danger flex items-center justify-between">
+              <span>{unitActionError}</span>
+              <button onClick={() => setUnitActionError('')} className="text-xs hover:underline">Dismiss</button>
+            </div>
+          )}
 
           {loadingCourseUnits ? (
             <div className="space-y-3">

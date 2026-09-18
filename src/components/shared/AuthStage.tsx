@@ -551,28 +551,35 @@ function RegisterFormSection({
     }
   }
 
-  async function fetchCourseUnits(courseId: string) {
+  async function fetchCourseUnits(courseId: string, facultyId?: string) {
     setCourseUnitsLoading(true)
     setCourseUnitError('')
     try {
-      const { data, error } = await supabase
-        .from('course_units')
-        .select('id, code, name, course_id')
-        .eq('is_active', true)
-        .order('code')
+      const [unitsResult, sharedResult] = await Promise.all([
+        supabase
+          .from('course_units')
+          .select('id, code, name, course_id, course:courses(faculty_id)')
+          .eq('is_active', true)
+          .order('code'),
+        facultyId
+          ? supabase.from('course_unit_faculties').select('course_unit_id').eq('faculty_id', facultyId)
+          : Promise.resolve({ data: [] as any[] }),
+      ])
 
-      if (error) throw error
+      if (unitsResult.error) throw unitsResult.error
 
-      const displayUnits = data?.filter((unit) => !courseId || unit.course_id === courseId) || []
+      const sharedUnitIds = new Set((sharedResult.data || []).map((s: any) => s.course_unit_id))
+
+      const displayUnits = (unitsResult.data || []).filter((unit: any) => {
+        if (courseId && unit.course_id === courseId) return true
+        if (sharedUnitIds.has(unit.id)) return true
+        if (!courseId && facultyId && unit.course?.faculty_id === facultyId) return true
+        return !courseId && !facultyId
+      })
 
       setCourseUnitOptions(
         displayUnits.map(
-          (unit: {
-            id: string
-            code: string
-            name: string
-            course_id: string
-          }) => ({
+          (unit: any) => ({
             id: unit.id,
             value: unit.id,
             label: `${unit.code} - ${unit.name}`,
@@ -638,7 +645,7 @@ function RegisterFormSection({
         whatsapp_phone: values.whatsappPhone?.trim(),
         faculty: values.faculty?.trim(),
         course: values.course?.trim(),
-        faculty_id: values.facultyId || null,
+        faculty_id: values.facultyId || selectedFacultyId || null,
         course_id: courseId || null,
         role: 'student',
         status: 'normal',
@@ -650,7 +657,7 @@ function RegisterFormSection({
     setPendingAuthUserId(authUser.id)
     setSelectedCourseUnitIds([])
     setCourseUnitDialogOpen(true)
-    await fetchCourseUnits(courseId)
+    await fetchCourseUnits(courseId, values.facultyId || selectedFacultyId)
   }
 
   async function onSubmit(values: any) {
