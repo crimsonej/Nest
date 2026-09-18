@@ -3,75 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #0d9488;
-  --color-primary-hover: #0f766e;
-  --color-primary-light: #ccfbf1;
-  --color-secondary: #ea580c;
-  --color-secondary-hover: #c2410c;
-  --color-success: #16a34a;
-  --color-success-light: #dcfce7;
-  --color-warning: #d97706;
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #e0e7ff;
+  --color-secondary: #7c3aed;
+  --color-secondary-hover: #6d28d9;
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;
-  --color-danger: #dc2626;
+  --color-danger: #ef4444;
   --color-danger-light: #fee2e2;
-  --color-background: #f8faf9;
+  --color-background: #faf9fe;
   --color-surface: #ffffff;
-  --color-surface-hover: #f1f5f3;
-  --color-border: #d1ded9;
+  --color-surface-hover: #f3f0ff;
+  --color-border: #e2e8f0;
   --color-text-primary: #0f172a;
-  --color-text-secondary: #334155;
+  --color-text-secondary: #475569;
   --color-text-muted: #64748b;
-  --sidebar-bg: #0f2b28;
-  --sidebar-text: #f0fdfa;
-  --sidebar-border: #1e4540;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #f8fafc;
+  --sidebar-border: #1e293b;
 }
 
 html.mid {
-  --color-primary: #e11d48;
-  --color-primary-hover: #be123c;
-  --color-primary-light: #ffe4e6;
+  --color-primary: #f43f5e;
+  --color-primary-hover: #e11d48;
+  --color-primary-light: rgba(244, 63, 94, 0.2);
   --color-secondary: #f97316;
   --color-secondary-hover: #ea580c;
-  --color-success: #15803d;
-  --color-success-light: #dcfce7;
-  --color-warning: #b45309;
-  --color-warning-light: #fef9c3;
-  --color-danger: #e11d48;
-  --color-danger-light: #ffe4e6;
-  --color-background: #fff7f6;
-  --color-surface: #ffffff;
-  --color-surface-hover: #fff1f2;
-  --color-border: #fecdd3;
-  --color-text-primary: #4c0519;
-  --color-text-secondary: #881337;
-  --color-text-muted: #9f1239;
-  --sidebar-bg: #4c0519;
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.2);
+  --color-warning: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.2);
+  --color-danger: #f43f5e;
+  --color-danger-light: rgba(244, 63, 94, 0.2);
+  --color-background: #18040c;
+  --color-surface: #240815;
+  --color-surface-hover: #330d1f;
+  --color-border: #4c0d29;
+  --color-text-primary: #fff1f2;
+  --color-text-secondary: #fecdd3;
+  --color-text-muted: #fb7185;
+  --sidebar-bg: #120208;
   --sidebar-text: #fff1f2;
-  --sidebar-border: #881337;
+  --sidebar-border: #330d1f;
 }
 
 html.dark {
-  --color-primary: #2dd4bf;
-  --color-primary-hover: #5eead4;
-  --color-primary-light: rgba(45, 212, 191, 0.15);
-  --color-secondary: #a78bfa;
-  --color-secondary-hover: #c4b5fd;
-  --color-success: #4ade80;
-  --color-success-light: rgba(74, 222, 128, 0.15);
+  --color-primary: #06b6d4;
+  --color-primary-hover: #22d3ee;
+  --color-primary-light: rgba(6, 182, 212, 0.16);
+  --color-secondary: #8b5cf6;
+  --color-secondary-hover: #a78bfa;
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.18);
   --color-warning: #fbbf24;
-  --color-warning-light: rgba(251, 191, 36, 0.15);
+  --color-warning-light: rgba(251, 191, 36, 0.18);
   --color-danger: #f87171;
-  --color-danger-light: rgba(248, 113, 113, 0.15);
-  --color-background: #090d16;
-  --color-surface: #111827;
-  --color-surface-hover: #1f2937;
-  --color-border: #1f293d;
+  --color-danger-light: rgba(248, 113, 113, 0.18);
+  --color-background: #030712;
+  --color-surface: #0b1329;
+  --color-surface-hover: #131e3a;
+  --color-border: #1e293b;
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: #94a3b8;
-  --sidebar-bg: #070e17;
+  --sidebar-bg: #020617;
   --sidebar-text: #f8fafc;
-  --sidebar-border: #1e293b;
+  --sidebar-border: #0f172a;
 }
 
 @layer base {
@@ -81,12 +81,12 @@ html.dark {
 
   html {
     scroll-behavior: smooth;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     color-scheme: light;
   }
 
   html.mid {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   html.dark {
@@ -99,14 +99,15 @@ html.dark {
     min-width: 320px;
     overflow-x: hidden;
     background-image:
-      radial-gradient(ellipse at 8% -10%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 34%),
-      radial-gradient(ellipse at 96% 6%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 28%),
-      linear-gradient(135deg, color-mix(in srgb, var(--color-background) 88%, white), var(--color-background));
-    background-size: 140% 140%, 130% 130%, 100% 100%;
-    background-position: 0% 0%, 100% 0%, 0% 0%;
+      radial-gradient(ellipse at 15% 10%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 45%),
+      radial-gradient(ellipse at 85% 20%, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 40%),
+      radial-gradient(ellipse at 50% 85%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 50%),
+      linear-gradient(180deg, var(--color-background), var(--color-background));
+    background-size: 150% 150%, 140% 140%, 130% 130%, 100% 100%;
+    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 0%;
     background-attachment: fixed;
-    animation: ambient-drift 24s ease-in-out infinite alternate;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    animation: ambient-drift 26s ease-in-out infinite alternate;
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
 
   body::before {
@@ -114,16 +115,15 @@ html.dark {
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background-image: linear-gradient(color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px);
-    background-size: 28px 28px;
-    mask-image: radial-gradient(circle at center, black 40%, transparent 90%);
-    opacity: 0.42;
+    background-image:
+      radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--color-primary) 8%, transparent) 0%, transparent 60%);
+    opacity: 0.85;
   }
 
   .workspace-surface {
     background-image:
-      linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 22%, transparent), transparent 22rem),
-      radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--color-secondary) 8%, transparent), transparent 24rem);
+      radial-gradient(ellipse at 80% -10%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 30rem),
+      radial-gradient(ellipse at 10% 25%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 26rem);
   }
 
   :focus-visible {
@@ -133,39 +133,39 @@ html.dark {
   .hero-orb {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(64px);
-    opacity: 0.18;
+    filter: blur(80px);
+    opacity: 0.35;
     transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;
     contain: layout style;
-    animation: float-orb 14s ease-in-out infinite alternate;
+    animation: float-orb 16s ease-in-out infinite alternate;
   }
 
   .hero-orb-one {
-    top: -4%;
-    left: 2%;
-    height: 22rem;
-    width: 22rem;
-    background: color-mix(in srgb, var(--color-primary) 70%, #ec4899);
+    top: -6%;
+    left: 4%;
+    height: 28rem;
+    width: 28rem;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 90%, #8b5cf6), transparent 70%);
   }
 
   .hero-orb-two {
     right: 4%;
-    top: 8%;
-    height: 24rem;
-    width: 24rem;
-    background: color-mix(in srgb, var(--color-primary) 40%, #8b5cf6);
-    animation-delay: 2.5s;
+    top: 6%;
+    height: 30rem;
+    width: 30rem;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-secondary) 85%, #ec4899), transparent 70%);
+    animation-delay: 3s;
   }
 
   .hero-orb-three {
-    bottom: 4%;
-    left: 25%;
-    height: 18rem;
-    width: 18rem;
-    background: color-mix(in srgb, var(--color-primary) 50%, #3b82f6);
-    animation-delay: 5s;
+    bottom: 2%;
+    left: 30%;
+    height: 22rem;
+    width: 22rem;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 70%, #06b6d4), transparent 70%);
+    animation-delay: 6s;
   }
 
   .hero-orb-bg-pane {
@@ -253,8 +253,8 @@ html.dark {
   }
 
   .card {
-    @apply rounded-2xl border border-border shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)];
-    background-color: color-mix(in srgb, var(--color-surface) 95%, transparent);
+    @apply rounded-2xl border border-border shadow-[0_8px_24px_rgba(16,42,67,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(16,42,67,0.1)];
+    background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
   }
 
   .card:hover {
@@ -300,6 +300,18 @@ html.dark {
   .content-wrap {
     @apply min-w-0 max-w-full;
   }
+
+  .page-enter {
+    animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .reveal-stagger > * {
+    animation: page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .reveal-stagger > *:nth-child(2) { animation-delay: 45ms; }
+  .reveal-stagger > *:nth-child(3) { animation-delay: 90ms; }
+  .reveal-stagger > *:nth-child(4) { animation-delay: 135ms; }
 
   .settings-page {
     position: relative;
@@ -367,6 +379,17 @@ html.dark {
   }
   100% {
     background-position: 12% 8%, 88% 14%, 0% 0%;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

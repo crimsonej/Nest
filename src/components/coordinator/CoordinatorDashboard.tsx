@@ -24,27 +24,28 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, change, changeType = 'neutral', icon, color, href }: MetricCardProps) {
   const colorClasses = {
-    primary: 'bg-primary-light text-primary border border-primary/20',
-    success: 'bg-success-light text-success border border-success/20',
-    warning: 'bg-warning-light text-warning border border-warning/20',
-    danger: 'bg-danger-light text-danger border border-danger/20',
+    primary: 'bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/30',
+    success: 'bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30',
+    warning: 'bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30',
+    danger: 'bg-gradient-to-tr from-rose-600 to-red-600 text-white shadow-md shadow-rose-500/30',
   }
 
   const content = (
-    <Card hover={Boolean(href)}>
+    <Card hover={Boolean(href)} className="group">
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80 group-hover:opacity-100 transition-opacity" />
       <CardContent className="p-5 sm:p-6">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{title}</p>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-text-primary tracking-tight">{value}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-text-muted">{title}</p>
+            <p className="mt-2 text-3xl sm:text-4xl font-black text-text-primary tracking-tight">{value}</p>
             {change && (
               <div className="mt-1.5 flex items-center gap-1">
-                {changeType === 'increase' && <ArrowUpRight className="h-4 w-4 text-success" />}
-                {changeType === 'decrease' && <ArrowDownRight className="h-4 w-4 text-danger" />}
+                {changeType === 'increase' && <ArrowUpRight className="h-4 w-4 text-emerald-500" />}
+                {changeType === 'decrease' && <ArrowDownRight className="h-4 w-4 text-rose-500" />}
                 <p
                   className={cn('text-xs font-semibold', {
-                    'text-success': changeType === 'increase',
-                    'text-danger': changeType === 'decrease',
+                    'text-emerald-500': changeType === 'increase',
+                    'text-rose-500': changeType === 'decrease',
                     'text-text-muted': changeType === 'neutral',
                   })}
                 >
@@ -53,7 +54,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color,
               </div>
             )}
           </div>
-          <div className={cn('p-3 rounded-2xl shadow-xs', colorClasses[color])}>{icon}</div>
+          <div className={cn('p-3 rounded-2xl shrink-0', colorClasses[color])}>{icon}</div>
         </div>
       </CardContent>
     </Card>

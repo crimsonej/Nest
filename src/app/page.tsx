@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { Users, BookOpen, Shield, CheckCircle, LogIn, UserPlus, ArrowRight } from 'lucide-react'
+import { Users, BookOpen, Shield, CheckCircle, LogIn, UserPlus, ArrowRight, Sparkles } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 import { motion } from 'framer-motion'
 
@@ -76,24 +76,32 @@ export default function HomePage() {
             animate="visible"
             className="mx-auto max-w-4xl text-center"
           >
-            <motion.h1 variants={itemVariants} className="text-4xl font-extrabold leading-[1.06] tracking-[-0.04em] text-text-primary sm:text-5xl lg:text-7xl">
-              The clear home for course groups, tasks, and deadlines.
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary-light/40 px-4 py-1.5 text-xs font-bold text-primary backdrop-blur-md shadow-xs mb-6">
+              <Sparkles className="h-4 w-4 text-amber-400 animate-spin-slow" />
+              <span>Next-Gen University Collaboration Workspace</span>
+            </motion.div>
+
+            <motion.h1 variants={itemVariants} className="text-4xl font-black leading-[1.05] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
+              The clear home for{' '}
+              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                course groups, tasks, & deadlines.
+              </span>
             </motion.h1>
 
-            <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl">
-              NEST brings students and coordinators into one calm workspace for course units, group formation, assignments, and campus-wide coordination without duplicate data or stale information.
+            <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl font-medium">
+              NEST brings students and coordinators into one calm, high-performance workspace for course units, group formation, assignments, and campus coordination without stale data.
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl shadow-primary/20">
-                  Sign In
+                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl">
+                  Sign In to Workspace
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/auth/register" className="w-full sm:w-auto">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
-                  Create an Account
+                  Create Account
                 </Button>
               </Link>
             </motion.div>
@@ -111,7 +119,7 @@ export default function HomePage() {
         <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
           <div className="mb-16 text-center">
             <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-text-primary lg:text-5xl">
-              Built for University Workflows
+              Built for Modern University Workflows
             </h2>
             <p className="mx-auto max-w-2xl text-base text-text-secondary sm:text-lg">
               Purpose-built tools designed for seamless student collaboration and real-time coordinator oversight.
@@ -159,12 +167,12 @@ export default function HomePage() {
 function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; features: string[] }) {
   return (
     <motion.div
-      whileHover={{ y: -6 }}
+      whileHover={{ y: -6, scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-      className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/90 p-6 shadow-[0_16px_44px_rgba(15,23,42,0.05)] backdrop-blur-md transition-all hover:border-primary/40 hover:shadow-[0_22px_50px_rgba(15,23,42,0.08)] sm:p-8"
+      className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/85 p-6 shadow-lg backdrop-blur-xl transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 sm:p-8"
     >
       <div>
-        <div className="h-14 w-14 rounded-2xl bg-primary-light flex items-center justify-center mb-6 text-primary shadow-sm">
+        <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center mb-6 text-white shadow-md shadow-indigo-500/30">
           <Icon className="h-7 w-7" />
         </div>
         <h3 className="text-xl font-bold text-text-primary mb-3">{title}</h3>
@@ -172,8 +180,8 @@ function FeatureCard({ icon: Icon, title, description, features }: { icon: React
       </div>
       <ul className="space-y-2.5 border-t border-border/60 pt-6">
         {features.map((feature, i) => (
-          <li key={i} className="flex items-center gap-2.5 text-xs font-medium text-text-secondary">
-            <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+          <li key={i} className="flex items-center gap-2.5 text-xs font-semibold text-text-secondary">
+            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
             {feature}
           </li>
         ))}

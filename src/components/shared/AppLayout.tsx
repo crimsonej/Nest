@@ -51,7 +51,7 @@ export function AppLayout({ children, role }: LayoutProps) {
           role={role}
           onSwitchWorkspace={canSwitchWorkspace ? () => setRoleModalOpen(true) : undefined}
         />
-        <main className="mx-auto w-full max-w-[1500px] min-w-0 px-3.5 pb-10 pt-4 sm:px-6 sm:py-8 lg:px-8 lg:py-8" role="main">
+        <main className="page-enter mx-auto w-full max-w-[1500px] min-w-0 px-3.5 pb-10 pt-4 sm:px-6 sm:py-8 lg:px-8 lg:py-8" role="main">
           {children}
         </main>
       </div>
