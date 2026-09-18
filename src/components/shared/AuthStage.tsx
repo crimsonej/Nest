@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import {
@@ -434,6 +435,14 @@ function LoginFormSection({
               )}
             </motion.span>
           </button>
+          <div className="flex justify-end pt-1">
+            <Link
+              href="/auth/forgot-password"
+              className="text-xs font-bold text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </motion.div>
 
         <motion.div variants={fieldVariant} className="pt-1">
