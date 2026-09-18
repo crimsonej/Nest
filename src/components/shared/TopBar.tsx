@@ -13,7 +13,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-background/80 backdrop-blur-xl transition-colors duration-300">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-3 px-3 py-2 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-3 pl-16 pr-3 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 min-w-0">
           <div className="hidden h-6 w-px bg-border/80 sm:block" />
           <div className="min-w-0 truncate">

@@ -3,25 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #0f766e;
-  --color-primary-hover: #115e59;
-  --color-primary-light: #ccfbf1;
-  --color-secondary: #7c3aed;
-  --color-secondary-hover: #6d28d9;
+  --color-primary: #087f73;
+  --color-primary-hover: #06665d;
+  --color-primary-light: #d6f5ee;
+  --color-secondary: #d05a3c;
+  --color-secondary-hover: #b8472d;
   --color-success: #15803d;
   --color-success-light: #dcfce7;
   --color-warning: #b45309;
   --color-warning-light: #fef3c7;
   --color-danger: #b91c1c;
   --color-danger-light: #fee2e2;
-  --color-background: #f5f7f4;
+  --color-background: #f4f7f5;
   --color-surface: #ffffff;
   --color-surface-hover: #edf2ee;
-  --color-border: #d7e0da;
+  --color-border: #d5e1dc;
   --color-text-primary: #17221d;
   --color-text-secondary: #405047;
   --color-text-muted: #708078;
-  --sidebar-bg: #173b37;
+  --sidebar-bg: #123d39;
   --sidebar-text: #f2fbf7;
   --sidebar-border: #2c5b54;
 }
@@ -99,10 +99,13 @@ html.dark {
     min-width: 320px;
     overflow-x: hidden;
     background-image:
-      radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 28%),
-      radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-secondary) 14%, transparent), transparent 26%),
-      linear-gradient(135deg, color-mix(in srgb, var(--color-background) 92%, white), var(--color-background));
+      radial-gradient(ellipse at 8% -10%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 34%),
+      radial-gradient(ellipse at 96% 6%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 28%),
+      linear-gradient(135deg, color-mix(in srgb, var(--color-background) 88%, white), var(--color-background));
+    background-size: 140% 140%, 130% 130%, 100% 100%;
+    background-position: 0% 0%, 100% 0%, 0% 0%;
     background-attachment: fixed;
+    animation: ambient-drift 24s ease-in-out infinite alternate;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
@@ -114,7 +117,13 @@ html.dark {
     background-image: linear-gradient(color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px);
     background-size: 28px 28px;
     mask-image: radial-gradient(circle at center, black 40%, transparent 90%);
-    opacity: 0.6;
+    opacity: 0.42;
+  }
+
+  .workspace-surface {
+    background-image:
+      linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 22%, transparent), transparent 22rem),
+      radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--color-secondary) 8%, transparent), transparent 24rem);
   }
 
   :focus-visible {
@@ -288,6 +297,10 @@ html.dark {
     @apply rounded-3xl border border-white/20 bg-surface shadow-xl backdrop-blur-xl transition-all;
   }
 
+  .content-wrap {
+    @apply min-w-0 max-w-full;
+  }
+
   .crimson-glow {
     box-shadow: 0 0 25px -5px rgba(225, 29, 72, 0.4);
   }
@@ -298,6 +311,15 @@ html.dark {
   33%  { transform: translate3d(14px, -20px, 0) scale(1.05); }
   66%  { transform: translate3d(-10px, 12px, 0) scale(0.95); }
   100% { transform: translate3d(8px, -8px, 0) scale(1.02); }
+}
+
+@keyframes ambient-drift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 0% 0%;
+  }
+  100% {
+    background-position: 12% 8%, 88% 14%, 0% 0%;
+  }
 }
 
 @keyframes pulse-glow {
@@ -403,6 +425,16 @@ html.dark {
   .site-grid,
   .auth-stage {
     min-height: 100dvh;
+  }
+
+  .workspace-surface main {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (min-width: 641px) {
+  .workspace-surface main {
+    overflow-wrap: normal;
   }
 }
 

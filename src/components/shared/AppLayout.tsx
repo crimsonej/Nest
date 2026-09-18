@@ -46,12 +46,12 @@ export function AppLayout({ children, role }: LayoutProps) {
   return (
     <div className="workspace-surface min-h-screen bg-background">
       <Sidebar />
-      <div className={cn('min-h-screen transition-all duration-300', 'lg:pl-[17rem]')}>
+      <div className={cn('min-h-screen min-w-0 transition-all duration-300', 'lg:pl-[17rem]')}>
         <TopBar
           role={role}
           onSwitchWorkspace={canSwitchWorkspace ? () => setRoleModalOpen(true) : undefined}
         />
-        <main className="mx-auto w-full max-w-[1500px] p-4 sm:p-7 lg:p-10" role="main">
+        <main className="mx-auto w-full max-w-[1500px] min-w-0 px-4 pb-8 pt-5 sm:px-7 sm:py-8 lg:px-10 lg:py-10" role="main">
           {children}
         </main>
       </div>
