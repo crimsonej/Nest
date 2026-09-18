@@ -15,6 +15,9 @@ import { groupCreationSchema } from '@/lib/validators'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
+const compareGroupNames = (firstName: string = '', secondName: string = '') =>
+  firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
+
 export function CoordinatorGroups() {
   const { user } = useAuth()
   const supabase = createClient()
@@ -121,8 +124,8 @@ export function CoordinatorGroups() {
       const aFullness = a.max_members ? aCount / a.max_members : 0
       const bFullness = b.max_members ? bCount / b.max_members : 0
 
-      if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '')
-      if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '')
+      if (sortBy === 'name-asc') return compareGroupNames(a.name || '', b.name || '')
+      if (sortBy === 'name-desc') return compareGroupNames(b.name || '', a.name || '')
       if (sortBy === 'members-desc') return bFullness - aFullness || bCount - aCount
       if (sortBy === 'members-asc') return aFullness - bFullness || aCount - bCount
       if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '')
@@ -1067,12 +1070,17 @@ export function CoordinatorGroups() {
                   <Select
                     value={groupEditMemberId}
                     onChange={setGroupEditMemberId}
+                    searchable
                     options={students
                       .filter((student) => student.role === 'student')
                       .filter((student) => !groupMembers.some((member) => member.group_id === editingGroup.id && member.user_id === student.id))
                       .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
-                      .map((student) => ({ value: student.id, label: student.full_name }))}
-                    placeholder="Add a student..."
+                      .map((student) => ({
+                        value: student.id,
+                        label: `${student.full_name}${student.student_registration_number ? ` (${student.student_registration_number})` : ''}`,
+                        searchText: `${student.full_name || ''} ${student.student_registration_number || ''} ${student.email || ''}`,
+                      }))}
+                    placeholder="Search and add a student..."
                     className="flex-1"
                   />
                   <Button

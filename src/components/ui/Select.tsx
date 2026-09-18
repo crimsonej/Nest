@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom'
 interface SelectOption {
   value: string
   label: string
+  searchText?: string
   disabled?: boolean
 }
 
@@ -47,6 +48,7 @@ export function Select({
     ? options.filter(
         (opt) =>
           opt.label.toLowerCase().includes(searchQuery.toLowerCase()) && !opt.disabled
+          || opt.searchText?.toLowerCase().includes(searchQuery.toLowerCase()) && !opt.disabled
       )
     : options.filter((opt) => !opt.disabled)
 
@@ -84,6 +86,7 @@ export function Select({
     } else {
       onChange(option.value)
       setIsOpen(false)
+      setSearchQuery('')
     }
   }
 

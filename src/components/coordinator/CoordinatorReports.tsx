@@ -26,6 +26,9 @@ import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import * as XLSX from 'xlsx'
 
+const compareGroupNames = (firstName: string = '', secondName: string = '') =>
+  firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
+
 type ReportCategory =
   | 'students'
   | 'orphan_students'
@@ -43,14 +46,14 @@ type ReportColumn = {
 }
 
 const reportTiles = [
-  { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-blue-500 to-cyan-500' },
-  { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-amber-500 to-orange-500' },
-  { id: 'groups', label: 'Group list', description: 'All groups with member rosters', icon: Layers3, color: 'from-violet-500 to-purple-500' },
-  { id: 'course_units', label: 'Course units', description: 'Unit roster and structure', icon: BookOpen, color: 'from-emerald-500 to-teal-500' },
-  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-pink-500 to-rose-500' },
-  { id: 'coursework', label: 'Coursework', description: 'Assignments, projects and presentations', icon: NotebookText, color: 'from-sky-500 to-indigo-500' },
-  { id: 'course_unit_students', label: 'Students per course unit', description: 'Roster by unit', icon: FolderOpen, color: 'from-green-500 to-emerald-500' },
-  { id: 'course_students', label: 'Students per course', description: 'Roster by programme', icon: Grid3X3, color: 'from-cyan-500 to-blue-500' },
+  { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-blue-500 to-cyan-500', showCount: true },
+  { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-amber-500 to-orange-500', showCount: true },
+  { id: 'groups', label: 'Group list', description: 'All groups with member rosters', icon: Layers3, color: 'from-violet-500 to-purple-500', showCount: true },
+  { id: 'course_units', label: 'Course units', description: 'Unit roster and structure', icon: BookOpen, color: 'from-emerald-500 to-teal-500', showCount: true },
+  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-pink-500 to-rose-500', showCount: true },
+  { id: 'coursework', label: 'Coursework', description: 'Assignments, projects and presentations', icon: NotebookText, color: 'from-sky-500 to-indigo-500', showCount: true },
+  { id: 'course_unit_students', label: 'Students per course unit', description: 'Roster by unit', icon: FolderOpen, color: 'from-green-500 to-emerald-500', showCount: false },
+  { id: 'course_students', label: 'Students per course', description: 'Roster by programme', icon: Grid3X3, color: 'from-cyan-500 to-blue-500', showCount: false },
 ] as const
 
 export function CoordinatorReports() {
@@ -76,8 +79,8 @@ export function CoordinatorReports() {
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
         supabase.from('courses').select('*, faculty:faculties(code, name)').order('name'),
-        supabase.from('groups').select('id, name, description, status, max_members, leader_id, created_at, leader:users!groups_leader_id_fkey(full_name, email), coursework:courseworks(id, title, course_unit:course_units(code, name))').order('created_at', { ascending: false }),
-        supabase.from('group_members').select('id, group_id, user_id, role, joined_at, user:users(full_name, email, student_registration_number)').order('joined_at', { ascending: false }),
+        supabase.from('groups').select('id, name, description, status, max_members, leader_id, created_at, leader:users!groups_leader_id_fkey(full_name, email), coursework:courseworks(id, title, course_unit:course_units(id, code, name))').order('created_at', { ascending: false }),
+        supabase.from('group_members').select('id, group_id, user_id, role, joined_at, user:users(full_name, email, student_registration_number, whatsapp_phone, course, gender)').order('joined_at', { ascending: false }),
         supabase.from('courseworks').select('id, title, description, type, min_group_size, max_group_size, allow_self_formation, is_published, lock_at, created_at, course_unit:course_units(id, code, name)').order('created_at', { ascending: false }),
         supabase.from('student_course_units').select('id, user_id, course_unit_id, status, course_unit:course_units(code, name)').eq('status', 'active'),
       ])
@@ -115,6 +118,7 @@ export function CoordinatorReports() {
       })
 
       const courseUnitStudentMap = new Map<string, any[]>()
+      const courseUnitStudentIds = new Map<string, Set<string>>()
       allEnrollments.forEach((enrollment: any) => {
         const unit = allCourseUnits.find((item: any) => item.id === enrollment.course_unit_id)
         const student = allStudents.find((item: any) => item.id === enrollment.user_id)
@@ -123,7 +127,11 @@ export function CoordinatorReports() {
         const key = `${unit.code} - ${unit.name}`
         if (!courseUnitStudentMap.has(key)) {
           courseUnitStudentMap.set(key, [])
+          courseUnitStudentIds.set(key, new Set())
         }
+        const studentIds = courseUnitStudentIds.get(key)!
+        if (studentIds.has(student.id)) return
+        studentIds.add(student.id)
 
         courseUnitStudentMap.get(key)!.push({
           id: student.id,
@@ -157,7 +165,16 @@ export function CoordinatorReports() {
         groups: allGroups.map((group: any) => {
           const members = (allMembers || [])
             .filter((member: any) => member.group_id === group.id)
-            .map((member: any) => member.user?.full_name || 'Student')
+            .map((member: any) => ({
+              id: member.user_id,
+              student_name: member.user?.full_name || 'Student',
+              registration_number: member.user?.student_registration_number || '—',
+              email: member.user?.email || '—',
+              whatsapp_phone: member.user?.whatsapp_phone || '—',
+              course: member.user?.course || '—',
+              gender: member.user?.gender || '—',
+              role: member.role,
+            }))
 
           return {
             id: group.id,
@@ -247,10 +264,17 @@ export function CoordinatorReports() {
         return [
           { key: 'name', header: 'Group', value: (row) => row.name || '—' },
           { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
+          { key: 'course_unit_name', header: 'Course Unit Name', value: (row) => row.course_unit_name || '—' },
           { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || '—' },
           { key: 'leader', header: 'Leader', value: (row) => row.leader || '—' },
           { key: 'status', header: 'Status', value: (row) => row.status || '—' },
-          { key: 'members', header: 'Students in group', value: (row) => (row.members && row.members.length > 0 ? row.members.join(', ') : 'No members yet') },
+          { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || '—' },
+          { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
+          { key: 'email', header: 'Email', value: (row) => row.email || '—' },
+          { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
+          { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+          { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
+          { key: 'members', header: 'Students in group', value: (row) => (row.members && row.members.length > 0 ? row.members.map((member: any) => member.student_name || member).join(', ') : 'No members yet') },
           { key: 'max_members', header: 'Max', value: (row) => String(row.max_members || 0) },
           { key: 'created_at', header: 'Created', value: (row) => formatDate(row.created_at) },
         ]
@@ -307,7 +331,9 @@ export function CoordinatorReports() {
   const courseUnitOptions = overviewData.course_units || []
   const courseOptions = overviewData.courses || []
   const filteredGroupsForUnit = selectedCourseUnitId
-    ? (overviewData.groups || []).filter((group: any) => group.course_unit_id === selectedCourseUnitId)
+    ? (overviewData.groups || [])
+      .filter((group: any) => group.course_unit_id === selectedCourseUnitId)
+      .sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
     : []
   const selectedGroup = filteredGroupsForUnit.find((group: any) => group.id === selectedGroupId) || null
   const selectedUnitStudents = selectedCourseUnitId
@@ -332,26 +358,21 @@ export function CoordinatorReports() {
     if (selectedCategory === 'groups') {
       if (selectedGroup) {
         return (selectedGroup.members || []).map((m: any) => {
-          if (typeof m === 'string') {
-            return {
-              student_name: m,
-              full_name: m,
-              email: '—',
-              registration_number: '—',
-              name: selectedGroup.name,
-              course_unit: selectedGroup.course_unit || '—',
-              coursework: selectedGroup.coursework || '—',
-              leader: selectedGroup.leader || '—',
-              status: selectedGroup.status || '—',
-            }
+          return {
+            ...m,
+            name: selectedGroup.name,
+            course_unit: selectedGroup.course_unit || '—',
+            course_unit_name: selectedGroup.course_unit_name || '—',
+            coursework: selectedGroup.coursework || '—',
+            leader: selectedGroup.leader || '—',
+            status: selectedGroup.status || '—',
           }
-          return m
         })
       }
       if (selectedCourseUnitId) {
         return filteredGroupsForUnit
       }
-      return overviewData.groups || []
+      return [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
     }
     if (selectedCategory === 'course_unit_students') {
       if (selectedCourseUnitId) return selectedUnitStudents
@@ -369,7 +390,13 @@ export function CoordinatorReports() {
     let baseCols = getColumnsForCategory(selectedCategory)
     if (selectedCategory === 'groups' && selectedGroup) {
       baseCols = [
+        { key: 'student_number', header: 'No.', value: (row) => row.student_number || '—' },
         { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || row.full_name || '—' },
+        { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
+        { key: 'email', header: 'Email', value: (row) => row.email || '—' },
+        { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
+        { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+        { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
         { key: 'name', header: 'Group Name', value: (row) => row.name || selectedGroup.name || '—' },
         { key: 'leader', header: 'Leader', value: (row) => row.leader || selectedGroup.leader || '—' },
         { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || selectedGroup.coursework || '—' },
@@ -441,18 +468,103 @@ export function CoordinatorReports() {
     const printWindow = window.open('', '_blank', 'width=1200,height=800')
     if (!printWindow) return
 
+    const escapeHtml = (value: unknown) => String(value ?? '—')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+
+    if (selectedCategory === 'groups') {
+      const groupsToPrint = selectedGroup
+        ? [selectedGroup]
+        : selectedCourseUnitId
+          ? filteredGroupsForUnit
+          : [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
+      const studentColumnKeys = new Set(['student_name', 'registration_number', 'email', 'whatsapp_phone', 'course', 'gender'])
+      const studentColumns = columns.filter((column) => studentColumnKeys.has(column.key))
+      const columnsForMembers = studentColumns.length > 0
+        ? studentColumns
+        : getColumnsForCategory('groups').filter((column) => column.key === 'student_name')
+      const groupedUnits = groupsToPrint.reduce((units: Record<string, any[]>, group: any) => {
+        const unitKey = `${group.course_unit || '—'} - ${group.course_unit_name || '—'}`
+        if (!units[unitKey]) units[unitKey] = []
+        units[unitKey].push(group)
+        return units
+      }, {})
+
+      const groupedHtml = Object.entries(groupedUnits).map(([unitName, unitGroups], unitIndex) => `
+        <section class="course-unit ${unitIndex > 0 ? 'page-break' : ''}">
+          <h2>Course Unit: ${escapeHtml(unitName)}</h2>
+          ${unitGroups.map((group: any) => {
+            const members = group.members || []
+            const memberRows = members.length > 0
+              ? members.slice(0, 500).map((member: any, index: number) => `<tr><td>${index + 1}</td>${columnsForMembers.map((column) => `<td>${escapeHtml(column.value(member))}</td>`).join('')}</tr>`).join('')
+              : `<tr><td colspan="${columnsForMembers.length + 1}">No members assigned</td></tr>`
+            return `
+              <div class="group-section">
+                <h3>${escapeHtml(group.name || 'Unnamed Group')}</h3>
+                <div class="group-meta">
+                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework)}</span>
+                  <span><strong>Leader:</strong> ${escapeHtml(group.leader)}</span>
+                  <span><strong>Status:</strong> ${escapeHtml(group.status)}</span>
+                  <span><strong>Members:</strong> ${members.length} / ${escapeHtml(group.max_members)}</span>
+                </div>
+                <table>
+                  <thead><tr><th>No.</th>${columnsForMembers.map((column) => `<th>${escapeHtml(column.header)}</th>`).join('')}</tr></thead>
+                  <tbody>${memberRows}</tbody>
+                </table>
+              </div>
+            `
+          }).join('')}
+        </section>
+      `).join('')
+
+      printWindow.document.write(`
+        <!doctype html>
+        <html>
+          <head>
+            <title>Groups by Course Unit</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+              h1 { margin-bottom: 4px; }
+              h2 { border-bottom: 2px solid #111827; padding-bottom: 8px; }
+              h3 { margin: 18px 0 6px; }
+              .subtitle { color: #6b7280; font-size: 12px; }
+              .group-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #374151; }
+              table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+              th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 12px; }
+              th { background: #f3f4f6; font-weight: 600; }
+              .page-break { page-break-before: always; }
+              .group-section { page-break-inside: avoid; }
+              @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>
+            <h1>Groups by Course Unit</h1>
+            <p class="subtitle">${groupsToPrint.length} groups · Generated ${escapeHtml(formatDate(new Date().toISOString()))}</p>
+            ${groupedHtml || '<p>No groups found for the selected filters.</p>'}
+          </body>
+        </html>
+      `)
+      printWindow.document.close()
+      printWindow.focus()
+      printWindow.print()
+      return
+    }
+
     const rowsHtml = rows
       .slice(0, 500)
       .map((row: any) => {
         const cells = columns
-          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${column.value(row)}</td>`)
+          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${escapeHtml(column.value(row))}</td>`)
           .join('')
         return `<tr>${cells}</tr>`
       })
       .join('')
 
     const headerHtml = columns
-      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${column.header}</th>`)
+      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${escapeHtml(column.header)}</th>`)
       .join('')
 
     printWindow.document.write(`
@@ -508,7 +620,7 @@ export function CoordinatorReports() {
               <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-3 text-white shadow-sm`}>
                 <Icon className="h-5 w-5" />
               </div>
-              <Badge variant="secondary">{count}</Badge>
+              {tile.showCount !== false && <Badge variant="secondary">{count}</Badge>}
             </div>
 
             <div className="mt-5 space-y-2">
@@ -598,7 +710,7 @@ export function CoordinatorReports() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-medium uppercase tracking-wide text-text-muted">Open</span>
-                          <Badge variant="primary">{count}</Badge>
+                          {tile.showCount !== false && <Badge variant="primary">{count}</Badge>}
                         </div>
                       </button>
                     )
