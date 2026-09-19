@@ -16,6 +16,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { DataTable } from '../ui/DataTable'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
+const compareGroupNames = (firstName: string = '', secondName: string = '') =>
+  firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
+
 export function StudentGroups() {
   const { user } = useAuth()
   const supabase = createClient()
@@ -205,8 +208,8 @@ export function StudentGroups() {
       const aFullness = a.max_members ? aCount / a.max_members : 0
       const bFullness = b.max_members ? bCount / b.max_members : 0
 
-      if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '')
-      if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '')
+      if (sortBy === 'name-asc') return compareGroupNames(a.name || '', b.name || '')
+      if (sortBy === 'name-desc') return compareGroupNames(b.name || '', a.name || '')
       if (sortBy === 'members-desc') return bFullness - aFullness || bCount - aCount
       if (sortBy === 'members-asc') return aFullness - bFullness || aCount - bCount
       if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '')

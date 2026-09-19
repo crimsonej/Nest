@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { User, Save, RefreshCw } from 'lucide-react'
+import { User, Save, RefreshCw, Upload, Camera } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 
@@ -15,16 +15,21 @@ const avatarIndexes = {
   other: [2, 7, 10, 13, 16, 23, 26, 29, 32, 35, 38, 41],
 } as const
 
-const avatarStyles = ['bottts', 'anime', 'adventurer', 'miniavs', 'notionists', 'personas'] as const
+const avatarStyles = ['avataaars', 'bottts', 'lorelei', 'micah', 'pixel-art', 'adventurer', 'big-smile', 'personas', 'open-peeps'] as const
 
-function getAvatarOptions(gender: 'male' | 'female' | 'other', excluded: string[] = []) {
+function getAvatarOptions(gender: 'male' | 'female' | 'other', name?: string, excluded: string[] = []) {
   const source = gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'neutral'
   const excludedSet = new Set(excluded)
   const basePool = [...avatarIndexes[gender]]
   const generated: string[] = []
   const seen = new Set<string>()
 
-  for (let i = 0; generated.length < 6 && i < 24; i += 1) {
+  const initialsSeed = encodeURIComponent((name || 'Student').trim())
+  const initialsUrl = `https://api.dicebear.com/9.x/initials/svg?seed=${initialsSeed}&radius=50`
+  generated.push(initialsUrl)
+  seen.add(initialsUrl)
+
+  for (let i = 0; generated.length < 7 && i < 30; i += 1) {
     const style = avatarStyles[(i + Math.floor(Math.random() * avatarStyles.length)) % avatarStyles.length]
     const index = basePool[(i + Math.floor(Math.random() * basePool.length)) % basePool.length]
     const url = `https://api.dicebear.com/9.x/${style}/svg?seed=nest-${source}-${index}`
@@ -35,10 +40,7 @@ function getAvatarOptions(gender: 'male' | 'female' | 'other', excluded: string[
     generated.push(url)
   }
 
-  return generated.length > 0 ? generated : basePool
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 6)
-    .map((index) => `https://api.dicebear.com/9.x/bottts/svg?seed=nest-${source}-${index}`)
+  return generated
 }
 
 export default function StudentSettingsPage() {
@@ -59,6 +61,7 @@ export default function StudentSettingsPage() {
   const [updatingCourseUnits, setUpdatingCourseUnits] = useState(false)
   const [avatarOptions, setAvatarOptions] = useState<string[]>([])
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState('')
+  const [failedAvatarUrls, setFailedAvatarUrls] = useState<string[]>([])
   const [unitActionError, setUnitActionError] = useState('')
   const [formData, setFormData] = useState({
     fullName: user?.full_name || '',
@@ -144,34 +147,74 @@ export default function StudentSettingsPage() {
 
   useEffect(() => {
     const gender = user?.gender || 'other'
-    const options = getAvatarOptions(gender)
+    const options = getAvatarOptions(gender, user?.full_name)
     setAvatarOptions(options)
     setSelectedAvatarUrl(user?.avatar_url || options[0] || '')
   }, [user])
 
   const [saveError, setSaveError] = useState('')
 
+  const handleCustomPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError('Image file size must be less than 2MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        const photoUrl = reader.result
+        setSelectedAvatarUrl(photoUrl)
+        setAvatarOptions((prev) => Array.from(new Set([photoUrl, ...prev])))
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   async function handleSave() {
-    if (!userId) return
+    if (!userId && !user?.email) return
 
     setSaving(true)
     setSaveError('')
     try {
-      const { error } = await supabase
+      await supabase.auth.updateUser({
+        data: {
+          full_name: draftData.fullName.trim(),
+          avatar_url: selectedAvatarUrl,
+          whatsapp_phone: draftData.whatsappPhone,
+        },
+      })
+
+      let query = supabase
         .from('users')
         .update({
-          full_name: draftData.fullName,
+          full_name: draftData.fullName.trim(),
           whatsapp_phone: draftData.whatsappPhone,
           avatar_url: selectedAvatarUrl,
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', userId)
 
-      if (error) throw error
+      if (userId && user?.email) {
+        query = query.or(`id.eq.${userId},email.eq.${user.email}`)
+      } else if (userId) {
+        query = query.eq('id', userId)
+      } else if (user?.email) {
+        query = query.eq('email', user.email)
+      }
+
+      const { data: updatedData, error: dbError } = await query.select('*')
+
+      if (dbError) throw dbError
+
+      const updatedProfile = Array.isArray(updatedData) && updatedData.length > 0 ? updatedData[0] : updatedData
 
       setFormData((current) => ({
         ...current,
-        fullName: draftData.fullName,
-        whatsappPhone: draftData.whatsappPhone,
+        fullName: updatedProfile?.full_name || draftData.fullName.trim(),
+        whatsappPhone: updatedProfile?.whatsapp_phone || draftData.whatsappPhone,
       }))
 
       setIsEditOpen(false)
@@ -229,8 +272,9 @@ export default function StudentSettingsPage() {
       whatsappPhone: formData.whatsappPhone,
     })
     const gender = user?.gender || 'other'
-    const options = getAvatarOptions(gender)
-    setAvatarOptions(options)
+    const options = getAvatarOptions(gender, formData.fullName)
+    const allOpts = user?.avatar_url && !options.includes(user.avatar_url) ? [user.avatar_url, ...options] : options
+    setAvatarOptions(allOpts)
     setSelectedAvatarUrl(user?.avatar_url || options[0] || '')
     setIsEditOpen(true)
   }
@@ -242,7 +286,14 @@ export default function StudentSettingsPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary ring-4 ring-primary/5">
-              {user?.avatar_url ? <img src={user.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="h-8 w-8" />}
+              {user?.avatar_url && !failedAvatarUrls.includes(user.avatar_url) ? (
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={() => setFailedAvatarUrls((current) => current.includes(user.avatar_url!) ? current : [...current, user.avatar_url!])}
+                />
+              ) : <User className="h-8 w-8" />}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Student profile</p>
@@ -418,36 +469,55 @@ export default function StudentSettingsPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <label className="label mb-0">Profile picture</label>
-                <p className="text-[11px] text-text-muted">Choose a new avatar for your profile.</p>
+                <p className="text-[11px] text-text-muted">Choose an avatar or upload a custom photo.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const options = getAvatarOptions(user?.gender || 'other', avatarOptions)
-                  setAvatarOptions(options)
-                  setSelectedAvatarUrl(options[0] || '')
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-primary/40 hover:text-primary"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Refresh
-              </button>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20">
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload Photo
+                  <input type="file" accept="image/*" onChange={handleCustomPhotoUpload} className="hidden" />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const options = getAvatarOptions(user?.gender || 'other', draftData.fullName)
+                    setAvatarOptions(options)
+                    setSelectedAvatarUrl(options[0] || '')
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary hover:border-primary/40 hover:text-primary"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
+
+            <div className="flex flex-wrap gap-3 pt-1">
               {avatarOptions.map((avatarUrl) => (
                 <button
                   key={avatarUrl}
                   type="button"
                   onClick={() => setSelectedAvatarUrl(avatarUrl)}
-                  className={`rounded-full p-0.5 ${selectedAvatarUrl === avatarUrl ? 'bg-primary ring-2 ring-primary/25' : 'bg-border hover:bg-primary/40'}`}
+                  className={`relative rounded-full p-0.5 transition-all ${selectedAvatarUrl === avatarUrl ? 'bg-primary ring-2 ring-primary/40 scale-105' : 'bg-border hover:bg-primary/40'}`}
                   aria-label="Choose profile picture"
                   aria-pressed={selectedAvatarUrl === avatarUrl}
                 >
-                  <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+                  {failedAvatarUrls.includes(avatarUrl) ? (
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-hover text-text-muted">
+                      <User className="h-5 w-5" />
+                    </span>
+                  ) : (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="h-12 w-12 rounded-full object-cover"
+                      onError={() => setFailedAvatarUrls((current) => current.includes(avatarUrl) ? current : [...current, avatarUrl])}
+                    />
+                  )}
                 </button>
               ))}
             </div>
