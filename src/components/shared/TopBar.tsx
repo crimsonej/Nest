@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { User, LogOut, ChevronDown, MapPin, Sparkles, ArrowLeftRight } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from './ThemeToggle'
@@ -10,11 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator' | 'admin'; onSwitchWorkspace?: () => void }) {
   const { user, signOut } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [avatarFailed, setAvatarFailed] = useState(false)
-
-  useEffect(() => {
-    setAvatarFailed(false)
-  }, [user?.avatar_url])
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-surface/70 backdrop-blur-2xl transition-colors duration-300 shadow-xs">
@@ -54,14 +49,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
             >
               <div className="h-7 w-7 overflow-hidden rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 p-[1.5px] shadow-sm">
                 <div className="h-full w-full rounded-[10px] bg-surface flex items-center justify-center text-primary font-black text-xs">
-                  {user?.avatar_url && !avatarFailed ? (
-                    <img
-                      src={user.avatar_url}
-                      alt=""
-                      className="h-full w-full object-cover rounded-[10px]"
-                      onError={() => setAvatarFailed(true)}
-                    />
-                  ) : user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
                 </div>
               </div>
               <span className="hidden sm:block text-xs font-bold text-text-primary truncate max-w-[120px]">
