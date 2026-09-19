@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Download,
   FileText,
@@ -27,6 +27,8 @@ import {
   Layers,
   Sparkles,
   UserCheck,
+  ShieldCheck,
+  Building,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -58,6 +60,7 @@ type ReportColumn = {
 }
 
 type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
+type GroupReportFormat = 'student_roster' | 'group_summary' | 'department_matrix'
 
 const reportTiles = [
   { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-blue-500 to-cyan-500', showCount: true },
@@ -84,6 +87,7 @@ export function CoordinatorReports() {
 
   // Modal Layout & Controls State
   const [modalLayoutMode, setModalLayoutMode] = useState<ModalLayoutMode>('table')
+  const [groupReportFormat, setGroupReportFormat] = useState<GroupReportFormat>('student_roster')
   const [inModalSearch, setInModalSearch] = useState('')
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -220,6 +224,7 @@ export function CoordinatorReports() {
             description: group.description || '—',
             status: group.status,
             max_members: group.max_members,
+            leader_id: group.leader_id,
             leader: group.leader?.full_name || 'Unassigned',
             coursework: group.coursework?.title || '—',
             course_unit_id: unitId,
@@ -301,22 +306,42 @@ export function CoordinatorReports() {
           { key: 'created_at', header: 'Registered', value: (row) => formatDate(row.created_at) },
         ]
       case 'groups':
+        if (groupReportFormat === 'group_summary') {
+          return [
+            { key: 'name', header: 'Group Name', value: (row) => row.name || '—' },
+            { key: 'course_unit', header: 'Course Unit Code', value: (row) => row.course_unit || '—' },
+            { key: 'course_unit_name', header: 'Course Unit Name', value: (row) => row.course_unit_name || '—' },
+            { key: 'coursework', header: 'Coursework Title', value: (row) => row.coursework || '—' },
+            { key: 'leader', header: 'Group Leader', value: (row) => row.leader || '—' },
+            { key: 'status', header: 'Status', value: (row) => row.status || '—' },
+            { key: 'member_capacity', header: 'Capacity', value: (row) => row.member_capacity || '—' },
+            { key: 'members_roster', header: 'Members List', value: (row) => row.members_roster || 'No members yet' },
+            { key: 'created_at', header: 'Date Created', value: (row) => formatDate(row.created_at) },
+          ]
+        }
+        if (groupReportFormat === 'department_matrix') {
+          return [
+            { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
+            { key: 'name', header: 'Group Name', value: (row) => row.name || '—' },
+            { key: 'leader', header: 'Group Leader', value: (row) => row.leader || '—' },
+            { key: 'coursework', header: 'Coursework Assignment', value: (row) => row.coursework || '—' },
+            { key: 'member_capacity', header: 'Members', value: (row) => row.member_capacity || '—' },
+            { key: 'status', header: 'Status', value: (row) => row.status || '—' },
+            { key: 'members_roster', header: 'Roster Breakdown', value: (row) => row.members_roster || '—' },
+          ]
+        }
+        // Format 1: student_roster (Detailed Student-Level Roster)
         return [
-          { key: 'name', header: 'Group', value: (row) => row.name || '—' },
-          { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
-          { key: 'course_unit_name', header: 'Course Unit Name', value: (row) => row.course_unit_name || '—' },
-          { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || '—' },
-          { key: 'leader', header: 'Leader', value: (row) => row.leader || '—' },
-          { key: 'status', header: 'Status', value: (row) => row.status || '—' },
+          { key: 'student_number', header: 'No.', value: (row) => String(row.student_number || '—') },
           { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || '—' },
           { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
+          { key: 'role', header: 'Role', value: (row) => row.role || 'Member' },
+          { key: 'name', header: 'Group Name', value: (row) => row.name || '—' },
+          { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
+          { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || '—' },
+          { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
           { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
-          { key: 'course', header: 'Course', value: (row) => row.course || '—' },
-          { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
-          { key: 'members', header: 'Students in group', value: (row) => (row.members && row.members.length > 0 ? row.members.map((member: any) => member.student_name || member).join(', ') : 'No members yet') },
-          { key: 'max_members', header: 'Max', value: (row) => String(row.max_members || 0) },
-          { key: 'created_at', header: 'Created', value: (row) => formatDate(row.created_at) },
         ]
       case 'course_units':
         return [
@@ -371,7 +396,7 @@ export function CoordinatorReports() {
       setSortColumn(null)
       setSortOrder('asc')
     }
-  }, [selectedCategory])
+  }, [selectedCategory, groupReportFormat])
 
   const courseUnitOptions = overviewData.course_units || []
   const courseOptions = overviewData.courses || []
@@ -405,23 +430,65 @@ export function CoordinatorReports() {
   const getBaseRows = () => {
     if (!selectedCategory) return []
     if (selectedCategory === 'groups') {
-      if (selectedGroup) {
-        return (selectedGroup.members || []).map((m: any, idx: number) => ({
-          ...m,
-          student_number: idx + 1,
-          name: selectedGroup.name,
-          course_unit: selectedGroup.course_unit || '—',
-          course_unit_name: selectedGroup.course_unit_name || '—',
-          coursework: selectedGroup.coursework || '—',
-          leader: selectedGroup.leader || '—',
-          status: selectedGroup.status || '—',
+      const targetGroups = selectedGroup
+        ? [selectedGroup]
+        : selectedCourseUnitId
+          ? filteredGroupsForUnit
+          : [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
+
+      if (groupReportFormat === 'group_summary' || groupReportFormat === 'department_matrix') {
+        return targetGroups.map((g: any) => ({
+          ...g,
+          member_capacity: `${g.member_count || (g.members || []).length} / ${g.max_members || 0}`,
+          members_roster: (g.members || []).length > 0
+            ? g.members.map((m: any) => `${m.student_name || m.full_name || 'Student'} (${m.registration_number || 'No Reg'})`).join(', ')
+            : 'No members assigned',
         }))
       }
-      if (selectedCourseUnitId) {
-        return filteredGroupsForUnit
-      }
-      return [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
+
+      // Format 1: student_roster (Detailed Student-Level Roster)
+      const studentRows: any[] = []
+      let counter = 1
+      targetGroups.forEach((g: any) => {
+        const members = g.members || []
+        if (members.length === 0) {
+          studentRows.push({
+            id: `empty-${g.id}`,
+            student_number: counter++,
+            student_name: '— No Members Assigned —',
+            registration_number: '—',
+            role: '—',
+            name: g.name,
+            course_unit: g.course_unit || '—',
+            course_unit_name: g.course_unit_name || '—',
+            coursework: g.coursework || '—',
+            gender: '—',
+            email: '—',
+            whatsapp_phone: '—',
+          })
+        } else {
+          members.forEach((m: any) => {
+            const isLeader = g.leader_id === m.id || m.role === 'leader' || (g.leader && g.leader.toLowerCase().includes((m.student_name || '').toLowerCase()))
+            studentRows.push({
+              id: `${g.id}-${m.id || Math.random()}`,
+              student_number: counter++,
+              student_name: m.student_name || m.full_name || 'Student',
+              registration_number: m.registration_number || '—',
+              role: isLeader ? 'Group Leader' : 'Member',
+              name: g.name,
+              course_unit: g.course_unit || '—',
+              course_unit_name: g.course_unit_name || '—',
+              coursework: g.coursework || '—',
+              gender: m.gender || '—',
+              email: m.email || '—',
+              whatsapp_phone: m.whatsapp_phone || '—',
+            })
+          })
+        }
+      })
+      return studentRows
     }
+
     if (selectedCategory === 'course_unit_students') {
       if (selectedCourseUnitId) return selectedUnitStudents
       return overviewData.course_unit_students || []
@@ -465,22 +532,7 @@ export function CoordinatorReports() {
 
   const getActiveColumns = () => {
     if (!selectedCategory) return []
-    let baseCols = getColumnsForCategory(selectedCategory)
-    if (selectedCategory === 'groups' && selectedGroup) {
-      baseCols = [
-        { key: 'student_number', header: 'No.', value: (row) => String(row.student_number || '—') },
-        { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || row.full_name || '—' },
-        { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
-        { key: 'email', header: 'Email', value: (row) => row.email || '—' },
-        { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
-        { key: 'course', header: 'Course', value: (row) => row.course || '—' },
-        { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
-        { key: 'name', header: 'Group Name', value: (row) => row.name || selectedGroup.name || '—' },
-        { key: 'leader', header: 'Leader', value: (row) => row.leader || selectedGroup.leader || '—' },
-        { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || selectedGroup.coursework || '—' },
-        { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || selectedGroup.course_unit || '—' },
-      ]
-    }
+    const baseCols = getColumnsForCategory(selectedCategory)
     return baseCols.filter((col) => selectedColumnKeys[col.key] !== false)
   }
 
@@ -521,7 +573,7 @@ export function CoordinatorReports() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${selectedCategory}_filtered_report_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -543,7 +595,7 @@ export function CoordinatorReports() {
     )
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Report')
-    XLSX.writeFile(workbook, `${selectedCategory}_filtered_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.writeFile(workbook, `${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
   const handleExportPdf = () => {
@@ -566,19 +618,15 @@ export function CoordinatorReports() {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;')
 
-    if (selectedCategory === 'groups') {
+    if (selectedCategory === 'groups' && (groupReportFormat === 'department_matrix' || groupReportFormat === 'group_summary')) {
       const groupsToPrint = selectedGroup
         ? [selectedGroup]
         : selectedCourseUnitId
           ? filteredGroupsForUnit
           : [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
-      const studentColumnKeys = new Set(['student_name', 'registration_number', 'email', 'whatsapp_phone', 'course', 'gender'])
-      const studentColumns = columns.filter((column) => studentColumnKeys.has(column.key))
-      const columnsForMembers = studentColumns.length > 0
-        ? studentColumns
-        : getColumnsForCategory('groups').filter((column) => column.key === 'student_name')
+      
       const groupedUnits = groupsToPrint.reduce((units: Record<string, any[]>, group: any) => {
-        const unitKey = `${group.course_unit || '—'} - ${group.course_unit_name || '—'}`
+        const unitKey = `${group.course_unit || '—'} - ${group.course_unit_name || 'Course Unit'}`
         if (!units[unitKey]) units[unitKey] = []
         units[unitKey].push(group)
         return units
@@ -586,23 +634,50 @@ export function CoordinatorReports() {
 
       const groupedHtml = Object.entries(groupedUnits).map(([unitName, unitGroups], unitIndex) => `
         <section class="course-unit ${unitIndex > 0 ? 'page-break' : ''}">
-          <h2>Course Unit: ${escapeHtml(unitName)}</h2>
+          <h2 style="background:#1e293b; color:#fff; padding:10px 14px; border-radius:6px; font-size:15px; margin-top:20px;">
+            Course Unit: ${escapeHtml(unitName)}
+          </h2>
           ${unitGroups.map((group: any) => {
             const members = group.members || []
             const memberRows = members.length > 0
-              ? members.slice(0, 500).map((member: any, index: number) => `<tr><td>${index + 1}</td>${columnsForMembers.map((column) => `<td>${escapeHtml(column.value(member))}</td>`).join('')}</tr>`).join('')
-              : `<tr><td colspan="${columnsForMembers.length + 1}">No members assigned</td></tr>`
+              ? members.map((member: any, index: number) => `
+                  <tr>
+                    <td style="width:40px; text-align:center;">${index + 1}</td>
+                    <td><strong>${escapeHtml(member.student_name || member.full_name)}</strong></td>
+                    <td><code>${escapeHtml(member.registration_number)}</code></td>
+                    <td>${member.user_id === group.leader_id || member.role === 'leader' ? '<span style="color:#0284c7; font-weight:bold;">Leader</span>' : 'Member'}</td>
+                    <td>${escapeHtml(member.gender)}</td>
+                    <td>${escapeHtml(member.email)}</td>
+                    <td>${escapeHtml(member.whatsapp_phone)}</td>
+                  </tr>
+                `).join('')
+              : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:12px;">No members assigned yet</td></tr>`
+
             return `
-              <div class="group-section">
-                <h3>${escapeHtml(group.name || 'Unnamed Group')}</h3>
-                <div class="group-meta">
-                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework)}</span>
-                  <span><strong>Leader:</strong> ${escapeHtml(group.leader)}</span>
-                  <span><strong>Status:</strong> ${escapeHtml(group.status)}</span>
-                  <span><strong>Members:</strong> ${members.length} / ${escapeHtml(group.max_members)}</span>
+              <div style="border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:14px; page-break-inside:avoid; background:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
+                  <h3 style="margin:0; font-size:16px; color:#0f172a;">Group Name: ${escapeHtml(group.name || 'Unnamed Group')}</h3>
+                  <span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">
+                    Capacity: ${members.length} / ${escapeHtml(group.max_members)} Members
+                  </span>
                 </div>
-                <table>
-                  <thead><tr><th>No.</th>${columnsForMembers.map((column) => `<th>${escapeHtml(column.header)}</th>`).join('')}</tr></thead>
+                <div style="display:flex; gap:20px; font-size:12px; color:#475569; margin-bottom:10px;">
+                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework)}</span>
+                  <span><strong>Group Leader:</strong> ${escapeHtml(group.leader)}</span>
+                  <span><strong>Status:</strong> ${escapeHtml(group.status)}</span>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                  <thead>
+                    <tr style="background:#f1f5f9; color:#334155; font-weight:bold;">
+                      <th style="border:1px solid #cbd5e1; padding:6px;">No.</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Student Name</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Registration No.</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Role</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Gender</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Email</th>
+                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">WhatsApp</th>
+                    </tr>
+                  </thead>
                   <tbody>${memberRows}</tbody>
                 </table>
               </div>
@@ -615,26 +690,36 @@ export function CoordinatorReports() {
         <!doctype html>
         <html>
           <head>
-            <title>Groups by Course Unit</title>
+            <title>Ndejje University - Official Group Roster Report</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-              h1 { margin-bottom: 4px; }
-              h2 { border-bottom: 2px solid #111827; padding-bottom: 8px; }
-              h3 { margin: 18px 0 6px; }
-              .subtitle { color: #6b7280; font-size: 12px; }
-              .group-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #374151; }
-              table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-              th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 12px; }
-              th { background: #f3f4f6; font-weight: 600; }
+              body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #0f172a; line-height:1.4; }
+              .header { text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
+              .header h1 { margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color:#1e293b; }
+              .header h2 { margin: 4px 0 0; font-size: 14px; font-weight: 500; color: #475569; }
+              .header p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
+              .footer-signature { margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; font-size: 12px; }
+              .signature-box { border-top: 1px solid #0f172a; width: 220px; text-align: center; padding-top: 6px; }
               .page-break { page-break-before: always; }
-              .group-section { page-break-inside: avoid; }
               @media print { body { padding: 0; } }
             </style>
           </head>
           <body>
-            <h1>Groups by Course Unit</h1>
-            <p class="subtitle">${groupsToPrint.length} groups · Generated ${escapeHtml(formatDate(new Date().toISOString()))}</p>
+            <div class="header">
+              <h1>NDEJJE UNIVERSITY</h1>
+              <h2>Faculty of Science and Computing · Academic Department</h2>
+              <p>Official Group Roster Report · Generated ${escapeHtml(formatDate(new Date().toISOString()))}</p>
+            </div>
             ${groupedHtml || '<p>No groups found for the selected filters.</p>'}
+            <div class="footer-signature">
+              <div class="signature-box">
+                <strong>Course Coordinator</strong><br/>
+                <span>Signature & Date</span>
+              </div>
+              <div class="signature-box">
+                <strong>Head of Department</strong><br/>
+                <span>Signature & Date</span>
+              </div>
+            </div>
           </body>
         </html>
       `)
@@ -740,7 +825,7 @@ export function CoordinatorReports() {
         {rows.map((row: any, index: number) => {
           const titleVal = row.full_name || row.student_name || row.name || row.title || row.code || `Record #${index + 1}`
           const subVal = row.student_registration_number || row.email || row.course_unit || row.faculty || row.course || '—'
-          const badgeVal = row.status || row.gender || row.is_active || row.type || null
+          const badgeVal = row.status || row.role || row.gender || row.is_active || row.type || null
 
           return (
             <div
@@ -780,7 +865,7 @@ export function CoordinatorReports() {
               {row.members && row.members.length > 0 && (
                 <div className="pt-2 border-t border-border/60 text-xs text-text-muted">
                   <span className="font-semibold text-text-primary">{row.members.length} Members:</span>{' '}
-                  {row.members.map((m: any) => m.student_name || m).slice(0, 3).join(', ')}
+                  {row.members.map((m: any) => m.student_name || m.full_name || m).slice(0, 3).join(', ')}
                   {row.members.length > 3 && ` +${row.members.length - 3} more`}
                 </div>
               )}
@@ -829,7 +914,6 @@ export function CoordinatorReports() {
 
   // 3. Grouped Accordion View
   const renderGroupedAccordionView = (rows: any[], columns: ReportColumn[]) => {
-    // Group rows by first secondary field (e.g. course_unit or course or status)
     const groupingKey = selectedCategory === 'groups' ? 'course_unit' : selectedCategory === 'course_unit_students' ? 'course_unit' : 'course'
     const grouped = rows.reduce((acc: Record<string, any[]>, row: any) => {
       const groupName = row[groupingKey] || row.course_unit || row.course || row.status || 'General Roster'
@@ -841,7 +925,7 @@ export function CoordinatorReports() {
     return (
       <div className="space-y-3.5">
         {Object.entries(grouped).map(([groupTitle, groupRows]) => {
-          const isOpen = expandedAccordions[groupTitle] !== false // open by default
+          const isOpen = expandedAccordions[groupTitle] !== false
 
           return (
             <div key={groupTitle} className="rounded-2xl border border-border bg-surface overflow-hidden shadow-sm">
@@ -914,7 +998,7 @@ export function CoordinatorReports() {
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 text-xs text-text-secondary flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <span>Select any list tile below to open interactive controls, live search, 4 layout modes, and custom CSV/PDF exports.</span>
+            <span>Select any list tile below to open interactive controls, live search, 4 layout modes, 3 Group Report formats, and custom CSV/PDF exports.</span>
           </div>
         </div>
       )}
@@ -980,10 +1064,65 @@ export function CoordinatorReports() {
           setIsFullScreen(false)
         }}
         title={selectedCategory ? reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report Roster' : 'Report Roster'}
-        description={selectedCategory ? 'Filter records, switch layout views, customize columns, and preview live exports' : 'Report Details'}
+        description={selectedCategory ? 'Filter records, switch layout views, choose report format, and preview live exports' : 'Report Details'}
         size={isFullScreen ? 'full' : 'xl'}
       >
         <div className="space-y-5">
+          {/* Group Report Format Selector (Only visible for Groups category) */}
+          {selectedCategory === 'groups' && (
+            <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-primary" /> Select Group List Report Format
+                </span>
+                <span className="text-[11px] text-text-muted">Choose 1 of 3 standardized formats</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGroupReportFormat('student_roster')}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all',
+                    groupReportFormat === 'student_roster'
+                      ? 'border-primary bg-primary text-white shadow-sm font-semibold'
+                      : 'border-border bg-surface text-text-secondary hover:border-primary/40'
+                  )}
+                >
+                  <div className="font-bold text-xs">Format 1: Student Roster</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">Flat student-by-student group list with roles</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGroupReportFormat('group_summary')}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all',
+                    groupReportFormat === 'group_summary'
+                      ? 'border-primary bg-primary text-white shadow-sm font-semibold'
+                      : 'border-border bg-surface text-text-secondary hover:border-primary/40'
+                  )}
+                >
+                  <div className="font-bold text-xs">Format 2: Group Summary</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">Group-centric overview, capacity & member rosters</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGroupReportFormat('department_matrix')}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all',
+                    groupReportFormat === 'department_matrix'
+                      ? 'border-primary bg-primary text-white shadow-sm font-semibold'
+                      : 'border-border bg-surface text-text-secondary hover:border-primary/40'
+                  )}
+                >
+                  <div className="font-bold text-xs">Format 3: Department Matrix</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">Official Ndejje University print layout</div>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Top Control Bar: Category Filters, Search & Layout Switcher */}
           <div className="space-y-3 bg-surface-hover/30 p-4 rounded-2xl border border-border/80">
             {/* Category Specific Dropdowns */}
@@ -1209,8 +1348,13 @@ export function CoordinatorReports() {
               <Badge variant="primary" className="font-mono text-xs">
                 {getActiveRows().length} {getActiveRows().length === 1 ? 'Record' : 'Records'}
               </Badge>
+              {selectedCategory === 'groups' && (
+                <Badge variant="secondary" className="text-[11px] capitalize font-medium">
+                  {groupReportFormat.replace('_', ' ')}
+                </Badge>
+              )}
               {inModalSearch && (
-                <span className="text-xs text-text-muted">matching search "{inModalSearch}"</span>
+                <span className="text-xs text-text-muted">matching "{inModalSearch}"</span>
               )}
             </div>
 
@@ -1240,7 +1384,7 @@ export function CoordinatorReports() {
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
                 <FileText className="h-3.5 w-3.5 mr-1.5 text-rose-600" />
-                PDF
+                Export PDF
               </Button>
             </div>
           </div>
