@@ -227,8 +227,11 @@ export function CoordinatorGroups() {
     )
   }, [selectedCourseUnitId, user, selectedCoordinators])
 
+  const [createModalError, setCreateModalError] = useState('')
+
   const onSubmit = async (values: any) => {
     setCreating(true)
+    setCreateModalError('')
     try {
       if (!user?.id) {
         throw new Error('You need to be signed in before creating a group.')
@@ -258,7 +261,8 @@ export function CoordinatorGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error creating group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to create the group.')
+      const msg = error instanceof Error ? error.message : 'Unable to create the group.'
+      setCreateModalError(msg)
     } finally {
       setCreating(false)
     }
@@ -1170,8 +1174,14 @@ export function CoordinatorGroups() {
           </div>
         </Modal>
 
-        <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Create New Group" size="lg">
+        <Modal isOpen={createModalOpen} onClose={() => { setCreateModalOpen(false); setCreateModalError(''); }} title="Create New Group" size="lg">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {createModalError && (
+              <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger font-medium flex items-center justify-between">
+                <span>{createModalError}</span>
+                <button type="button" onClick={() => setCreateModalError('')} className="text-xs hover:underline ml-2">Dismiss</button>
+              </div>
+            )}
             <Controller
               name="courseworkId"
               control={form.control}

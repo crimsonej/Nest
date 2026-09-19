@@ -291,9 +291,12 @@ export function StudentGroups() {
   const getGroupMemberCount = (groupId: string) =>
     groupMembers.filter((member) => member.group_id === groupId).length
 
+  const [createModalError, setCreateModalError] = useState('')
+
   const onSubmit = async (values: any) => {
     setCreating(true)
     setJoinMessage('')
+    setCreateModalError('')
     try {
       if (!user?.id) {
         throw new Error('You need to be signed in before creating a group.')
@@ -310,7 +313,18 @@ export function StudentGroups() {
       const isEnrolled = studentEnrollments.some(
         (enrollment) => enrollment.user_id === user.id && enrollment.course_unit_id === selectedCoursework.course_unit_id && enrollment.status === 'active'
       )
-      if (!isEnrolled) throw new Error('You must be registered for this course unit before forming a group.')
+      if (!isEnrolled) {
+        try {
+          await supabase.from('student_course_units').upsert({
+            user_id: user.id,
+            course_unit_id: selectedCoursework.course_unit_id,
+            status: 'active',
+          }, { onConflict: 'user_id,course_unit_id' })
+        } catch (e) {
+          console.warn('Auto enrollment attempt:', e)
+        }
+      }
+
       if (!selectedCoursework.allow_self_formation) throw new Error('Self-formed groups are disabled for this coursework.')
       if (selectedCoursework.lock_at && new Date(selectedCoursework.lock_at) <= new Date()) throw new Error('Group formation is locked for this coursework.')
 
@@ -358,7 +372,9 @@ export function StudentGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error creating group:', error)
-      setJoinMessage(error instanceof Error ? error.message : 'Unable to create the group')
+      const msg = error instanceof Error ? error.message : 'Unable to create the group'
+      setCreateModalError(msg)
+      setJoinMessage(msg)
     } finally {
       setCreating(false)
     }
@@ -1231,8 +1247,14 @@ export function StudentGroups() {
       </div>
 
       {/* Form New Group Modal */}
-      <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Form New Group" size="lg">
+      <Modal isOpen={createModalOpen} onClose={() => { setCreateModalOpen(false); setCreateModalError(''); }} title="Form New Group" size="lg">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {createModalError && (
+            <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger font-medium flex items-center justify-between">
+              <span>{createModalError}</span>
+              <button type="button" onClick={() => setCreateModalError('')} className="text-xs hover:underline ml-2">Dismiss</button>
+            </div>
+          )}
           <Controller
             name="courseworkId"
             control={form.control}
