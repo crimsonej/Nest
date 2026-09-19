@@ -692,7 +692,11 @@ export function StudentGroups() {
             <Button variant="outline" size="sm" onClick={fetchData} loading={loading}>
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+            <Button size="sm" onClick={() => {
+              const defaultCw = selectedCourseworks.length > 0 ? selectedCourseworks[0].id : ''
+              form.setValue('courseworkId', defaultCw)
+              setCreateModalOpen(true)
+            }}>
               <Plus className="h-4 w-4 mr-1.5" />
               Create Group
             </Button>
