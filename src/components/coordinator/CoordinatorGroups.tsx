@@ -246,7 +246,7 @@ export function CoordinatorGroups() {
           coursework_id: values.courseworkId,
           name: values.name,
           description: values.description,
-          leader_id: null,
+          leader_id: user.id,
           is_private: values.isPrivate,
           max_members: selectedCoursework.max_group_size,
           status: 'forming',
@@ -255,6 +255,12 @@ export function CoordinatorGroups() {
         .single()
 
       if (error) throw error
+
+      await supabase.from('group_members').insert({
+        group_id: group.id,
+        user_id: user.id,
+        role: 'leader',
+      })
 
       setCreateModalOpen(false)
       form.reset()
