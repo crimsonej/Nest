@@ -518,11 +518,12 @@ export function CoordinatorReports() {
     }
 
     // Column Sorting
-    if (sortColumn) {
+    if (sortColumn && selectedCategory) {
+      const colDef = getColumnsForCategory(selectedCategory).find((c) => c.key === sortColumn)
       rows = [...rows].sort((a: any, b: any) => {
-        const valA = String(a[sortColumn] ?? '').toLowerCase()
-        const valB = String(b[sortColumn] ?? '').toLowerCase()
-        const comp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+        const valA = colDef ? colDef.value(a) : String(a[sortColumn] ?? '')
+        const valB = colDef ? colDef.value(b) : String(b[sortColumn] ?? '')
+        const comp = String(valA ?? '').toLowerCase().localeCompare(String(valB ?? '').toLowerCase(), undefined, { numeric: true, sensitivity: 'base' })
         return sortOrder === 'asc' ? comp : -comp
       })
     }
@@ -1215,6 +1216,34 @@ export function CoordinatorReports() {
                   </button>
                 )}
               </div>
+
+              {/* Sort By Dropdown & Order Toggle */}
+              {selectedCategory && (
+                <div className="flex items-center gap-1.5 border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-text-secondary uppercase tracking-wider shrink-0">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                    <span className="hidden sm:inline">Sort:</span>
+                  </div>
+                  <select
+                    value={sortColumn || ''}
+                    onChange={(e) => setSortColumn(e.target.value || null)}
+                    className="rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs text-text-primary focus:border-primary focus:outline-none max-w-[140px] sm:max-w-[160px]"
+                  >
+                    <option value="">Default Order</option>
+                    {getColumnsForCategory(selectedCategory).map((col) => (
+                      <option key={col.key} value={col.key}>{col.header}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                    className="inline-flex items-center justify-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs font-bold text-text-primary hover:bg-surface-hover transition-colors shrink-0"
+                    title={`Current order: ${sortOrder === 'asc' ? 'Ascending (A to Z)' : 'Descending (Z to A)'}`}
+                  >
+                    <span>{sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</span>
+                  </button>
+                </div>
+              )}
 
               {/* Layout Switcher Buttons */}
               <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
