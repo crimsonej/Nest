@@ -512,7 +512,16 @@ function RegisterFormSection({
   const [pendingRegistration, setPendingRegistration] = useState<any>(null)
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [savingCourseUnits, setSavingCourseUnits] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const universityOptions = getUniversityOptions()
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   async function fetchAcademicOptions() {
     try {
@@ -658,6 +667,8 @@ function RegisterFormSection({
         course_id: courseId || null,
         role: 'student',
         status: 'normal',
+        flagged_for_review: values.flaggedForReview || false,
+        flag_reason: values.flagReason || null,
       },
       { onConflict: 'id' }
     )
@@ -673,21 +684,54 @@ function RegisterFormSection({
     setLoading(true)
     setError('')
     try {
+      // 1. Perform server-side normalization & duplicate check
+      const checkRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...values,
+          facultyId: selectedFacultyId,
+          courseId: selectedCourseId,
+        }),
+      })
+
+      const checkData = await checkRes.json()
+
+      if (!checkRes.ok || checkData.error || checkData.duplicate) {
+        throw new Error(
+          checkData.error ||
+            'An account may already exist for these details. Try signing in or resetting your password.'
+        )
+      }
+
+      const normalized = checkData.normalized || values
+      const flaggedForReview = checkData.flaggedForReview || false
+      const flagReason = checkData.flagReason || null
+
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/callback`
+          : 'https://nest-df6.pages.dev/api/auth/callback'
+
+      // 2. Trigger Supabase Email Auth SignUp
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: values.email?.toLowerCase().trim(),
+        email: normalized.email,
         password: values.password,
         options: {
+          emailRedirectTo,
           data: {
-            full_name: values.fullName?.trim(),
+            full_name: normalized.fullName,
             role: 'student',
-            gender: (values.gender || 'other').toLowerCase(),
-            university: values.university?.trim(),
-            student_registration_number: values.studentRegistrationNumber?.trim(),
-            whatsapp_phone: values.whatsappPhone?.trim(),
-            faculty: values.faculty?.trim(),
-            course: values.course?.trim(),
+            gender: normalized.gender,
+            university: normalized.university,
+            student_registration_number: normalized.studentRegistrationNumber,
+            whatsapp_phone: normalized.whatsappPhone,
+            faculty: normalized.faculty,
+            course: normalized.course,
             faculty_id: selectedFacultyId || null,
             course_id: selectedCourseId || null,
+            flagged_for_review: flaggedForReview,
+            flag_reason: flagReason,
           },
         },
       })
@@ -697,18 +741,27 @@ function RegisterFormSection({
       if (!authUser)
         throw new Error('Account registration did not return a valid user.')
 
+      const regPayload = {
+        ...normalized,
+        facultyId: selectedFacultyId,
+        courseId: selectedCourseId,
+        flaggedForReview,
+        flagReason,
+      }
+
       if (data.session) {
-        await finishProfileRegistration(authUser, { ...values, facultyId: selectedFacultyId, courseId: selectedCourseId }, selectedCourseId)
+        await finishProfileRegistration(authUser, regPayload, selectedCourseId)
       } else {
         setPendingAuthUserId(authUser.id)
-        setPendingRegistration({ ...values, facultyId: selectedFacultyId, courseId: selectedCourseId })
-        setVerificationEmail(values.email)
+        setPendingRegistration(regPayload)
+        setVerificationEmail(normalized.email)
         setVerificationCode('')
       }
     } catch (err) {
-      const message = err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: unknown }).message)
-        : 'Registration failed'
+      const message =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Registration failed'
       setError(message)
     } finally {
       setLoading(false)
@@ -720,13 +773,24 @@ function RegisterFormSection({
     setVerificationLoading(true)
     setError('')
     try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      // Primary: verify with type 'email'
+      let verifyResult = await supabase.auth.verifyOtp({
         email: verificationEmail,
         token: verificationCode.trim(),
-        type: 'signup',
+        type: 'email',
       })
-      if (verifyError) throw verifyError
-      const authUser = data.user
+
+      // Fallback: verify with type 'signup' if type 'email' fails
+      if (verifyResult.error) {
+        verifyResult = await supabase.auth.verifyOtp({
+          email: verificationEmail,
+          token: verificationCode.trim(),
+          type: 'signup',
+        })
+      }
+
+      if (verifyResult.error) throw verifyResult.error
+      const authUser = verifyResult.data.user
       if (!authUser || !pendingRegistration) {
         throw new Error('Verification succeeded but the account profile is unavailable.')
       }
@@ -736,27 +800,51 @@ function RegisterFormSection({
       setPendingRegistration(null)
       await finishProfileRegistration(authUser, pendingRegistration, pendingRegistration.courseId)
     } catch (err) {
-      setError(err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: unknown }).message)
-        : 'Unable to verify the code.')
+      setError(
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Invalid verification code. Please check your email and try again.'
+      )
     } finally {
       setVerificationLoading(false)
     }
   }
 
   async function resendRegistrationCode() {
+    if (resendCooldown > 0) return
+
     setVerificationLoading(true)
     setError('')
     try {
-      const { error: resendError } = await supabase.auth.resend({
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/api/auth/callback`
+          : 'https://nest-df6.pages.dev/api/auth/callback'
+
+      let resendResult = await supabase.auth.resend({
         type: 'signup',
         email: verificationEmail,
+        options: {
+          emailRedirectTo,
+        },
       })
-      if (resendError) throw resendError
+      if (resendResult.error) {
+        resendResult = await supabase.auth.resend({
+          type: 'email_change',
+          email: verificationEmail,
+          options: {
+            emailRedirectTo,
+          },
+        })
+      }
+      if (resendResult.error) throw resendResult.error
+      setResendCooldown(60)
     } catch (err) {
-      setError(err && typeof err === 'object' && 'message' in err
-        ? String((err as { message: unknown }).message)
-        : 'Unable to resend the verification code.')
+      setError(
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Unable to resend the verification code.'
+      )
     } finally {
       setVerificationLoading(false)
     }
@@ -832,28 +920,69 @@ function RegisterFormSection({
 
   if (verificationEmail) {
     return (
-      <form onSubmit={verifyRegistrationCode} className="space-y-5">
-        <h1 className="text-2xl font-extrabold text-text-primary">Check your email</h1>
-        <p className="text-sm text-text-secondary">
-          Enter the verification code sent to {verificationEmail}.
-        </p>
-        {error && <p className="text-sm font-semibold text-danger" role="alert">{error}</p>}
+      <form onSubmit={verifyRegistrationCode} className="space-y-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary-light/50 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md">
+            <Mail className="h-3.5 w-3.5 text-primary" />
+            <span>Email Security Confirmation</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary">Check your email</h1>
+          <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+            We sent a confirmation email to <strong className="text-text-primary">{verificationEmail}</strong>. You can either click the confirmation link or enter the six-digit code.
+          </p>
+        </div>
+
+        {error && (
+          <div className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger-light p-3.5 text-xs font-semibold text-danger" role="alert">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <Input
-          label="Verification code"
+          label="6-Digit Email Verification Code *"
           placeholder="123456"
           value={verificationCode}
           onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
+          icon={<Lock className="h-4 w-4" />}
           required
         />
-        <Button type="submit" size="lg" className="w-full" disabled={verificationLoading || verificationCode.length < 6}>
-          {verificationLoading ? 'Verifying...' : 'Verify email'}
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full font-bold shadow-lg"
+          loading={verificationLoading}
+          disabled={verificationLoading || verificationCode.length < 6}
+        >
+          Verify Email & Continue
         </Button>
-        <button type="button" onClick={resendRegistrationCode} disabled={verificationLoading} className="w-full text-sm font-semibold text-primary">
-          Resend code
-        </button>
+
+        <div className="flex items-center justify-between border-t border-border/60 pt-4 text-xs">
+          <button
+            type="button"
+            onClick={resendRegistrationCode}
+            disabled={verificationLoading || resendCooldown > 0}
+            className="font-bold text-primary hover:underline disabled:opacity-50"
+          >
+            {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend confirmation email'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setVerificationEmail('')
+              setPendingRegistration(null)
+              setError('')
+            }}
+            className="text-text-muted hover:text-text-primary transition-colors font-medium"
+          >
+            Change email
+          </button>
+        </div>
       </form>
     )
   }

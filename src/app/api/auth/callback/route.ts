@@ -6,7 +6,7 @@ export const runtime = 'edge'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next')
 
   if (code) {
     const supabase = createServerClient(
@@ -27,9 +27,24 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data?.session) {
+      if (next) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+
+      // Check user role for proper dashboard redirection
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.session.user.id)
+        .single()
+
+      const redirectPath = profile?.role === 'coordinator'
+        ? '/coordinator/dashboard'
+        : '/student/dashboard'
+
+      return NextResponse.redirect(`${origin}${redirectPath}`)
     }
   }
 
