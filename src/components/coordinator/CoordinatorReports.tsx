@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Download,
   FileText,
@@ -15,6 +15,18 @@ import {
   GraduationCap,
   Layers3,
   SlidersHorizontal,
+  Search,
+  Maximize2,
+  Minimize2,
+  Table,
+  LayoutGrid,
+  ListFilter,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Sparkles,
+  UserCheck,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -45,6 +57,8 @@ type ReportColumn = {
   value: (row: any) => string
 }
 
+type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
+
 const reportTiles = [
   { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-blue-500 to-cyan-500', showCount: true },
   { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-amber-500 to-orange-500', showCount: true },
@@ -68,6 +82,14 @@ export function CoordinatorReports() {
   const [loading, setLoading] = useState(true)
   const [selectedColumnKeys, setSelectedColumnKeys] = useState<Record<string, boolean>>({})
 
+  // Modal Layout & Controls State
+  const [modalLayoutMode, setModalLayoutMode] = useState<ModalLayoutMode>('table')
+  const [inModalSearch, setInModalSearch] = useState('')
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [isFullScreen, setIsFullScreen] = useState(false)
+  const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({})
+
   useEffect(() => {
     fetchOverviewData()
   }, [user])
@@ -79,15 +101,20 @@ export function CoordinatorReports() {
         supabase.from('users').select('*').order('full_name', { ascending: true }),
         supabase.from('course_units').select('*, course:courses(code, name)').eq('is_active', true).order('name'),
         supabase.from('courses').select('*, faculty:faculties(code, name)').order('name'),
-        supabase.from('groups').select('id, name, description, status, max_members, leader_id, created_at, leader:users!groups_leader_id_fkey(full_name, email), coursework:courseworks(id, title, course_unit:course_units(id, code, name))').order('created_at', { ascending: false }),
+        supabase.from('groups').select('id, name, description, status, max_members, leader_id, created_at, leader:users!groups_leader_id_fkey(full_name, email), coursework:courseworks(id, title, course_unit_id, course_unit:course_units(id, code, name))').order('created_at', { ascending: false }),
         supabase.from('group_members').select('id, group_id, user_id, role, joined_at, user:users(full_name, email, student_registration_number, whatsapp_phone, course, gender)').order('joined_at', { ascending: false }),
-        supabase.from('courseworks').select('id, title, description, type, min_group_size, max_group_size, allow_self_formation, is_published, lock_at, created_at, course_unit:course_units(id, code, name)').order('created_at', { ascending: false }),
+        supabase.from('courseworks').select('id, title, description, type, min_group_size, max_group_size, allow_self_formation, is_published, lock_at, created_at, course_unit_id, course_unit:course_units(id, code, name)').order('created_at', { ascending: false }),
         supabase.from('student_course_units').select('id, user_id, course_unit_id, status, course_unit:course_units(code, name)').eq('status', 'active'),
       ])
 
-      const allStudents = (studentsRes.data || []).filter(
-        (student: any) => student.role === 'student' || student.status === 'normal' || student.status === 'selected_coordinator'
-      )
+      const rawUsers = studentsRes.data || []
+      const allStudents = rawUsers.filter((student: any) => {
+        if (student.role === 'admin' || student.role === 'coordinator') {
+          return student.status === 'selected_coordinator' || Boolean(student.student_registration_number)
+        }
+        return true
+      })
+
       const allGroups = groupsRes.data || []
       const allMembers = groupMembersRes.data || []
       const allCourseUnits = courseUnitsRes.data || []
@@ -102,7 +129,9 @@ export function CoordinatorReports() {
       allStudents.forEach((student: any) => {
         const rawCourse = (student.course || '').trim()
         const matchedCourse = allCourses.find((c: any) =>
-          c.code?.toLowerCase() === rawCourse.toLowerCase() || c.name?.toLowerCase() === rawCourse.toLowerCase()
+          c.code?.toLowerCase() === rawCourse.toLowerCase() ||
+          c.name?.toLowerCase() === rawCourse.toLowerCase() ||
+          rawCourse.toLowerCase().includes((c.code || '').toLowerCase())
         )
         const key = matchedCourse ? `${matchedCourse.code} - ${matchedCourse.name}` : (rawCourse || 'Unassigned')
         if (!courseStudentMap.has(key)) {
@@ -110,10 +139,13 @@ export function CoordinatorReports() {
         }
         courseStudentMap.get(key)!.push({
           id: student.id,
+          course_id: matchedCourse?.id || null,
           student_name: student.full_name,
           email: student.email,
           registration_number: student.student_registration_number,
           course: key,
+          gender: student.gender || '—',
+          whatsapp_phone: student.whatsapp_phone || '—',
         })
       })
 
@@ -121,7 +153,7 @@ export function CoordinatorReports() {
       const courseUnitStudentIds = new Map<string, Set<string>>()
       allEnrollments.forEach((enrollment: any) => {
         const unit = allCourseUnits.find((item: any) => item.id === enrollment.course_unit_id)
-        const student = allStudents.find((item: any) => item.id === enrollment.user_id)
+        const student = rawUsers.find((item: any) => item.id === enrollment.user_id)
         if (!unit || !student) return
 
         const key = `${unit.code} - ${unit.name}`
@@ -135,11 +167,14 @@ export function CoordinatorReports() {
 
         courseUnitStudentMap.get(key)!.push({
           id: student.id,
+          course_unit_id: unit.id,
           student_name: student.full_name,
           email: student.email,
           registration_number: student.student_registration_number,
           course_unit: key,
           course: student.course || 'Unassigned',
+          gender: student.gender || '—',
+          whatsapp_phone: student.whatsapp_phone || '—',
         })
       })
 
@@ -151,6 +186,7 @@ export function CoordinatorReports() {
           student_registration_number: student.student_registration_number,
           course: student.course || 'Unassigned',
           whatsapp_phone: student.whatsapp_phone || '—',
+          gender: student.gender || '—',
           created_at: student.created_at,
         })),
         orphan_students: orphanStudents.map((student: any) => ({
@@ -160,9 +196,11 @@ export function CoordinatorReports() {
           student_registration_number: student.student_registration_number,
           course: student.course || 'Unassigned',
           whatsapp_phone: student.whatsapp_phone || '—',
+          gender: student.gender || '—',
           created_at: student.created_at,
         })),
         groups: allGroups.map((group: any) => {
+          const unitId = group.coursework?.course_unit_id || group.coursework?.course_unit?.id || null
           const members = (allMembers || [])
             .filter((member: any) => member.group_id === group.id)
             .map((member: any) => ({
@@ -184,7 +222,7 @@ export function CoordinatorReports() {
             max_members: group.max_members,
             leader: group.leader?.full_name || 'Unassigned',
             coursework: group.coursework?.title || '—',
-            course_unit_id: group.coursework?.course_unit_id || group.coursework?.course_unit?.id || null,
+            course_unit_id: unitId,
             course_unit: group.coursework?.course_unit?.code || '—',
             course_unit_name: group.coursework?.course_unit?.name || '—',
             members,
@@ -217,6 +255,7 @@ export function CoordinatorReports() {
           title: item.title,
           description: item.description || '—',
           type: item.type,
+          course_unit_id: item.course_unit_id || item.course_unit?.id || null,
           course_unit: item.course_unit?.code || '—',
           course_unit_name: item.course_unit?.name || '—',
           min_group_size: item.min_group_size,
@@ -258,6 +297,7 @@ export function CoordinatorReports() {
           { key: 'student_registration_number', header: 'Reg No.', value: (row) => row.student_registration_number || '—' },
           { key: 'course', header: 'Course', value: (row) => row.course || '—' },
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
+          { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
           { key: 'created_at', header: 'Registered', value: (row) => formatDate(row.created_at) },
         ]
       case 'groups':
@@ -313,6 +353,8 @@ export function CoordinatorReports() {
           { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
           { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+          { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
+          { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
         ]
       default:
         return []
@@ -325,6 +367,9 @@ export function CoordinatorReports() {
       const map: Record<string, boolean> = {}
       cols.forEach((col) => (map[col.key] = true))
       setSelectedColumnKeys(map)
+      setInModalSearch('')
+      setSortColumn(null)
+      setSortOrder('asc')
     }
   }, [selectedCategory])
 
@@ -332,42 +377,45 @@ export function CoordinatorReports() {
   const courseOptions = overviewData.courses || []
   const filteredGroupsForUnit = selectedCourseUnitId
     ? (overviewData.groups || [])
-      .filter((group: any) => group.course_unit_id === selectedCourseUnitId)
+      .filter((group: any) => group.course_unit_id === selectedCourseUnitId || !selectedCourseUnitId)
       .sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
-    : []
+    : (overviewData.groups || []).sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
   const selectedGroup = filteredGroupsForUnit.find((group: any) => group.id === selectedGroupId) || null
+  
   const selectedUnitStudents = selectedCourseUnitId
     ? (overviewData.course_unit_students || []).filter((student: any) => {
+        if (student.course_unit_id && student.course_unit_id === selectedCourseUnitId) return true
         const unitName = student.course_unit || ''
         const selectedUnit = courseUnitOptions.find((unit: any) => unit.id === selectedCourseUnitId)
         return selectedUnit ? unitName.includes(selectedUnit.code || '') || unitName === `${selectedUnit.code} - ${selectedUnit.name}` : true
       })
-    : []
+    : (overviewData.course_unit_students || [])
+
   const selectedCourse = courseOptions.find((course: any) => course.id === selectedCourseId) || null
   const filteredStudentsForCourse = selectedCourse
     ? (overviewData.course_students || []).filter((student: any) => {
+        if (student.course_id && student.course_id === selectedCourse.id) return true
         const courseName = (student.course || '').toLowerCase()
         const code = (selectedCourse.code || '').toLowerCase()
         const name = (selectedCourse.name || '').toLowerCase()
-        return courseName.includes(code) || courseName.includes(name) || courseName === `${code} - ${name}`
+        return courseName.includes(code) || courseName.includes(name) || code.includes(courseName)
       })
-    : []
+    : (overviewData.course_students || [])
 
-  const getActiveRows = () => {
+  const getBaseRows = () => {
     if (!selectedCategory) return []
     if (selectedCategory === 'groups') {
       if (selectedGroup) {
-        return (selectedGroup.members || []).map((m: any) => {
-          return {
-            ...m,
-            name: selectedGroup.name,
-            course_unit: selectedGroup.course_unit || '—',
-            course_unit_name: selectedGroup.course_unit_name || '—',
-            coursework: selectedGroup.coursework || '—',
-            leader: selectedGroup.leader || '—',
-            status: selectedGroup.status || '—',
-          }
-        })
+        return (selectedGroup.members || []).map((m: any, idx: number) => ({
+          ...m,
+          student_number: idx + 1,
+          name: selectedGroup.name,
+          course_unit: selectedGroup.course_unit || '—',
+          course_unit_name: selectedGroup.course_unit_name || '—',
+          coursework: selectedGroup.coursework || '—',
+          leader: selectedGroup.leader || '—',
+          status: selectedGroup.status || '—',
+        }))
       }
       if (selectedCourseUnitId) {
         return filteredGroupsForUnit
@@ -385,12 +433,42 @@ export function CoordinatorReports() {
     return overviewData[selectedCategory] || []
   }
 
+  const getActiveRows = () => {
+    let rows = getBaseRows()
+
+    // In-modal live search filter
+    if (inModalSearch.trim()) {
+      const q = inModalSearch.toLowerCase().trim()
+      rows = rows.filter((row: any) => {
+        return Object.values(row).some((val) => {
+          if (val === null || val === undefined) return false
+          if (typeof val === 'object') {
+            return JSON.stringify(val).toLowerCase().includes(q)
+          }
+          return String(val).toLowerCase().includes(q)
+        })
+      })
+    }
+
+    // Column Sorting
+    if (sortColumn) {
+      rows = [...rows].sort((a: any, b: any) => {
+        const valA = String(a[sortColumn] ?? '').toLowerCase()
+        const valB = String(b[sortColumn] ?? '').toLowerCase()
+        const comp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+        return sortOrder === 'asc' ? comp : -comp
+      })
+    }
+
+    return rows
+  }
+
   const getActiveColumns = () => {
     if (!selectedCategory) return []
     let baseCols = getColumnsForCategory(selectedCategory)
     if (selectedCategory === 'groups' && selectedGroup) {
       baseCols = [
-        { key: 'student_number', header: 'No.', value: (row) => row.student_number || '—' },
+        { key: 'student_number', header: 'No.', value: (row) => String(row.student_number || '—') },
         { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || row.full_name || '—' },
         { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
         { key: 'email', header: 'Email', value: (row) => row.email || '—' },
@@ -404,6 +482,19 @@ export function CoordinatorReports() {
       ]
     }
     return baseCols.filter((col) => selectedColumnKeys[col.key] !== false)
+  }
+
+  const handleSortToggle = (colKey: string) => {
+    if (sortColumn === colKey) {
+      if (sortOrder === 'asc') setSortOrder('desc')
+      else {
+        setSortColumn(null)
+        setSortOrder('asc')
+      }
+    } else {
+      setSortColumn(colKey)
+      setSortOrder('asc')
+    }
   }
 
   const handleExportCsv = () => {
@@ -613,23 +704,25 @@ export function CoordinatorReports() {
       >
         <Card
           hover
-          className={`h-full overflow-hidden border border-border bg-gradient-to-br ${tile.color} p-[1px]`}
+          className={`h-full overflow-hidden border border-border bg-gradient-to-br ${tile.color} p-[1px] transition-transform hover:-translate-y-0.5`}
         >
-          <div className="h-full rounded-xl bg-surface p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-3 text-white shadow-sm`}>
-                <Icon className="h-5 w-5" />
+          <div className="h-full rounded-xl bg-surface p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-3 text-white shadow-sm`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                {tile.showCount !== false && <Badge variant="secondary" className="font-mono font-bold">{count}</Badge>}
               </div>
-              {tile.showCount !== false && <Badge variant="secondary">{count}</Badge>}
+
+              <div className="mt-4 space-y-1">
+                <h3 className="text-base font-semibold text-text-primary">{tile.label}</h3>
+                <p className="text-xs text-text-secondary">{tile.description}</p>
+              </div>
             </div>
 
-            <div className="mt-5 space-y-2">
-              <h3 className="text-base font-semibold text-text-primary">{tile.label}</h3>
-              <p className="text-sm text-text-secondary">{tile.description}</p>
-            </div>
-
-            <div className="mt-5 flex items-center justify-between text-sm text-primary font-medium">
-              <span>Open list</span>
+            <div className="mt-5 flex items-center justify-between text-xs text-primary font-semibold">
+              <span>View & Custom Export</span>
               <span>→</span>
             </div>
           </div>
@@ -638,19 +731,170 @@ export function CoordinatorReports() {
     )
   }
 
+  // --- LAYOUT VIEWER RENDERERS ---
+
+  // 1. Card Grid View
+  const renderCardGridView = (rows: any[], columns: ReportColumn[]) => {
+    return (
+      <div className="grid gap-4.5 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map((row: any, index: number) => {
+          const titleVal = row.full_name || row.student_name || row.name || row.title || row.code || `Record #${index + 1}`
+          const subVal = row.student_registration_number || row.email || row.course_unit || row.faculty || row.course || '—'
+          const badgeVal = row.status || row.gender || row.is_active || row.type || null
+
+          return (
+            <div
+              key={row.id || index}
+              className="rounded-2xl border border-border bg-surface p-4.5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
+                      {String(titleVal).slice(0, 2)}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-text-primary line-clamp-1">{titleVal}</h4>
+                      <p className="text-xs text-text-muted font-mono">{subVal}</p>
+                    </div>
+                  </div>
+                  {badgeVal && (
+                    <Badge variant="secondary" className="text-[10px] capitalize">
+                      {badgeVal}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs">
+                  {columns.map((col) => (
+                    <div key={col.key} className="flex justify-between items-center text-text-secondary">
+                      <span className="text-text-muted text-[11px] font-medium">{col.header}:</span>
+                      <span className="font-medium text-text-primary text-right max-w-[60%] truncate">
+                        {col.value(row)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {row.members && row.members.length > 0 && (
+                <div className="pt-2 border-t border-border/60 text-xs text-text-muted">
+                  <span className="font-semibold text-text-primary">{row.members.length} Members:</span>{' '}
+                  {row.members.map((m: any) => m.student_name || m).slice(0, 3).join(', ')}
+                  {row.members.length > 3 && ` +${row.members.length - 3} more`}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // 2. Compact Roster View
+  const renderCompactRosterView = (rows: any[], columns: ReportColumn[]) => {
+    return (
+      <div className="rounded-2xl border border-border bg-surface overflow-hidden divide-y divide-border/60">
+        {rows.map((row: any, index: number) => {
+          const mainName = row.full_name || row.student_name || row.name || row.title || row.code || `Item #${index + 1}`
+          const mainDetail = row.student_registration_number || row.email || row.course_unit || row.leader || '—'
+
+          return (
+            <div
+              key={row.id || index}
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-surface-hover/60 transition-colors gap-2 text-xs"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-text-muted w-6 text-center">{index + 1}.</span>
+                <div>
+                  <div className="font-bold text-text-primary text-sm">{mainName}</div>
+                  <div className="text-text-muted font-mono text-[11px]">{mainDetail}</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-text-secondary sm:ml-auto">
+                {columns.slice(0, 4).map((col) => (
+                  <span key={col.key} className="bg-surface-hover px-2 py-1 rounded-md text-[11px]">
+                    <strong className="text-text-muted mr-1">{col.header}:</strong>
+                    {col.value(row)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // 3. Grouped Accordion View
+  const renderGroupedAccordionView = (rows: any[], columns: ReportColumn[]) => {
+    // Group rows by first secondary field (e.g. course_unit or course or status)
+    const groupingKey = selectedCategory === 'groups' ? 'course_unit' : selectedCategory === 'course_unit_students' ? 'course_unit' : 'course'
+    const grouped = rows.reduce((acc: Record<string, any[]>, row: any) => {
+      const groupName = row[groupingKey] || row.course_unit || row.course || row.status || 'General Roster'
+      if (!acc[groupName]) acc[groupName] = []
+      acc[groupName].push(row)
+      return acc
+    }, {})
+
+    return (
+      <div className="space-y-3.5">
+        {Object.entries(grouped).map(([groupTitle, groupRows]) => {
+          const isOpen = expandedAccordions[groupTitle] !== false // open by default
+
+          return (
+            <div key={groupTitle} className="rounded-2xl border border-border bg-surface overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={() => setExpandedAccordions((prev) => ({ ...prev, [groupTitle]: !isOpen }))}
+                className="w-full flex items-center justify-between p-4 bg-surface-hover/40 text-left font-bold text-sm text-text-primary hover:bg-surface-hover transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  {isOpen ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                  <span>{groupTitle}</span>
+                  <Badge variant="primary" className="ml-2 font-mono text-xs">
+                    {groupRows.length} {groupRows.length === 1 ? 'Record' : 'Records'}
+                  </Badge>
+                </div>
+                <span className="text-xs text-text-muted uppercase tracking-wider">{isOpen ? 'Collapse' : 'Expand'}</span>
+              </button>
+
+              {isOpen && (
+                <div className="p-4 border-t border-border">
+                  <DataTable
+                    columns={columns.map((col) => ({
+                      key: col.key,
+                      header: col.header,
+                      render: (row: any) => <span className="whitespace-nowrap">{col.value(row)}</span>,
+                    }))}
+                    data={groupRows}
+                    keyExtractor={(row: any) => row.id || row.student_name || row.full_name || row.name || String(Math.random())}
+                    emptyMessage="No records in this group"
+                  />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {/* Top Banner */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Reports overview</h1>
-          <p className="text-text-secondary">Browse every database list from students and groups to course rosters and orphan records.</p>
+          <h1 className="text-2xl font-bold text-text-primary">Reports & Analytics Overview</h1>
+          <p className="text-text-secondary text-sm">Browse, search, dynamically filter, and customize exports across all system rosters.</p>
         </div>
 
-        <div className="inline-flex rounded-lg border border-border bg-surface p-1 shadow-sm">
+        <div className="inline-flex rounded-xl border border-border bg-surface p-1 shadow-sm">
           <button
             type="button"
             onClick={() => setViewMode('tiles')}
-            className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm ${viewMode === 'tiles' ? 'bg-primary text-white' : 'text-text-secondary'}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${viewMode === 'tiles' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <Grid3X3 className="h-4 w-4" />
             Tiles
@@ -658,7 +902,7 @@ export function CoordinatorReports() {
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary'}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${viewMode === 'list' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <List className="h-4 w-4" />
             List
@@ -667,23 +911,26 @@ export function CoordinatorReports() {
       </div>
 
       {!loading && (
-        <div className="rounded-xl border border-dashed border-border bg-surface-hover/40 px-4 py-3 text-sm text-text-secondary">
-          Select a list to open the records and export them as CSV or PDF.
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 text-xs text-text-secondary flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <span>Select any list tile below to open interactive controls, live search, 4 layout modes, and custom CSV/PDF exports.</span>
+          </div>
         </div>
       )}
 
       {loading ? (
         <Card>
-          <CardContent className="space-y-3 py-6">
+          <CardContent className="space-y-3 py-8">
             {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="h-12 animate-pulse rounded-lg bg-secondary/10" />
+              <div key={item} className="h-14 animate-pulse rounded-xl bg-secondary/10" />
             ))}
           </CardContent>
         </Card>
       ) : (
         <>
           {viewMode === 'tiles' ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {reportTiles.map(renderTile)}
             </div>
           ) : (
@@ -699,18 +946,18 @@ export function CoordinatorReports() {
                         onClick={() => setSelectedCategory(tile.id as ReportCategory)}
                         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-hover"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-2 text-white`}>
+                        <div className="flex items-center gap-3.5">
+                          <div className={`rounded-xl bg-gradient-to-br ${tile.color} p-2.5 text-white shadow-sm`}>
                             <tile.icon className="h-4 w-4" />
                           </div>
                           <div>
-                            <div className="font-medium text-text-primary">{tile.label}</div>
-                            <div className="text-sm text-text-secondary">{tile.description}</div>
+                            <div className="font-semibold text-text-primary text-sm">{tile.label}</div>
+                            <div className="text-xs text-text-secondary">{tile.description}</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium uppercase tracking-wide text-text-muted">Open</span>
-                          {tile.showCount !== false && <Badge variant="primary">{count}</Badge>}
+                          <span className="text-xs font-semibold text-primary">Open Roster →</span>
+                          {tile.showCount !== false && <Badge variant="primary" className="font-mono">{count}</Badge>}
                         </div>
                       </button>
                     )
@@ -722,6 +969,7 @@ export function CoordinatorReports() {
         </>
       )}
 
+      {/* Interactive Report Detail Modal */}
       <Modal
         isOpen={Boolean(selectedCategory)}
         onClose={() => {
@@ -729,23 +977,58 @@ export function CoordinatorReports() {
           setSelectedCourseUnitId(null)
           setSelectedGroupId(null)
           setSelectedCourseId(null)
+          setIsFullScreen(false)
         }}
-        title={selectedCategory ? reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report Details' : 'Report Details'}
-        description={selectedCategory ? 'Filter records, select custom columns, and live preview before downloading' : 'Report Details'}
-        size="xl"
+        title={selectedCategory ? reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report Roster' : 'Report Roster'}
+        description={selectedCategory ? 'Filter records, switch layout views, customize columns, and preview live exports' : 'Report Details'}
+        size={isFullScreen ? 'full' : 'xl'}
       >
         <div className="space-y-5">
-          {/* Category Specific Filters */}
-          {selectedCategory === 'groups' && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course unit</label>
+          {/* Top Control Bar: Category Filters, Search & Layout Switcher */}
+          <div className="space-y-3 bg-surface-hover/30 p-4 rounded-2xl border border-border/80">
+            {/* Category Specific Dropdowns */}
+            {selectedCategory === 'groups' && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">Filter by Course Unit</label>
+                  <select
+                    value={selectedCourseUnitId || ''}
+                    onChange={(event) => {
+                      setSelectedCourseUnitId(event.target.value || null)
+                      setSelectedGroupId(null)
+                    }}
+                    className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
+                  >
+                    <option value="">All Course Units</option>
+                    {courseUnitOptions.map((unit: any) => (
+                      <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">Filter by Group</label>
+                  <select
+                    value={selectedGroupId || ''}
+                    onChange={(event) => setSelectedGroupId(event.target.value || null)}
+                    disabled={!selectedCourseUnitId || filteredGroupsForUnit.length === 0}
+                    className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none disabled:opacity-50"
+                  >
+                    <option value="">All Groups in Unit</option>
+                    {filteredGroupsForUnit.map((group: any) => (
+                      <option key={group.id} value={group.id}>{group.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {selectedCategory === 'course_unit_students' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">Filter by Course Unit Roster</label>
                 <select
                   value={selectedCourseUnitId || ''}
-                  onChange={(event) => {
-                    setSelectedCourseUnitId(event.target.value || null)
-                    setSelectedGroupId(null)
-                  }}
+                  onChange={(event) => setSelectedCourseUnitId(event.target.value || null)}
                   className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
                 >
                   <option value="">All Course Units</option>
@@ -754,63 +1037,122 @@ export function CoordinatorReports() {
                   ))}
                 </select>
               </div>
+            )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Group</label>
+            {selectedCategory === 'course_students' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">Filter by Programme / Course</label>
                 <select
-                  value={selectedGroupId || ''}
-                  onChange={(event) => setSelectedGroupId(event.target.value || null)}
-                  disabled={!selectedCourseUnitId || filteredGroupsForUnit.length === 0}
-                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none disabled:opacity-50"
+                  value={selectedCourseId || ''}
+                  onChange={(event) => setSelectedCourseId(event.target.value || null)}
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
                 >
-                  <option value="">All Groups in Unit</option>
-                  {filteredGroupsForUnit.map((group: any) => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
+                  <option value="">All Degree Programmes</option>
+                  {courseOptions.map((course: any) => (
+                    <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
                   ))}
                 </select>
               </div>
-            </div>
-          )}
+            )}
 
-          {selectedCategory === 'course_unit_students' && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course unit</label>
-              <select
-                value={selectedCourseUnitId || ''}
-                onChange={(event) => setSelectedCourseUnitId(event.target.value || null)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
+            {/* In-Modal Search Bar & Layout Controls Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-text-muted" />
+                <input
+                  type="text"
+                  placeholder="Filter by keyword (name, reg no, email, leader)..."
+                  value={inModalSearch}
+                  onChange={(e) => setInModalSearch(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-surface pl-9 pr-3 py-1.5 text-xs text-text-primary focus:border-primary focus:outline-none"
+                />
+                {inModalSearch && (
+                  <button
+                    onClick={() => setInModalSearch('')}
+                    className="absolute right-2.5 top-2 text-xs text-text-muted hover:text-text-primary"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Layout Switcher Buttons */}
+              <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setModalLayoutMode('table')}
+                  className={cn(
+                    'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                    modalLayoutMode === 'table' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  )}
+                  title="Table View"
+                >
+                  <Table className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline text-[11px]">Table</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalLayoutMode('cards')}
+                  className={cn(
+                    'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                    modalLayoutMode === 'cards' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  )}
+                  title="Card Grid View"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline text-[11px]">Cards</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalLayoutMode('roster')}
+                  className={cn(
+                    'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                    modalLayoutMode === 'roster' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  )}
+                  title="Compact Roster View"
+                >
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline text-[11px]">Compact</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalLayoutMode('accordion')}
+                  className={cn(
+                    'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                    modalLayoutMode === 'accordion' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  )}
+                  title="Grouped Accordion View"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline text-[11px]">Grouped</span>
+                </button>
+              </div>
+
+              {/* Full-Screen Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullScreen((prev) => !prev)}
+                className="shrink-0 text-xs py-1 px-2.5 h-8"
+                title="Toggle Fullscreen"
               >
-                <option value="">All Course Units</option>
-                {courseUnitOptions.map((unit: any) => (
-                  <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
-                ))}
-              </select>
+                {isFullScreen ? <Minimize2 className="h-3.5 w-3.5 mr-1" /> : <Maximize2 className="h-3.5 w-3.5 mr-1" />}
+                <span className="hidden sm:inline">{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+              </Button>
             </div>
-          )}
+          </div>
 
-          {selectedCategory === 'course_students' && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Filter by Course Programme</label>
-              <select
-                value={selectedCourseId || ''}
-                onChange={(event) => setSelectedCourseId(event.target.value || null)}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary focus:outline-none"
-              >
-                <option value="">All Course Programmes</option>
-                {courseOptions.map((course: any) => (
-                  <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Column Customizer Checklist Toolbar */}
+          {/* Column Customizer Toolbar */}
           {selectedCategory && (
-            <div className="rounded-xl border border-border bg-surface-hover/60 p-3.5 space-y-2.5">
+            <div className="rounded-xl border border-border bg-surface-hover/50 p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-muted">
-                  <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <span>Customize Export & Preview Columns ({getActiveColumns().length} / {getColumnsForCategory(selectedCategory).length} Included)</span>
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                  <span>Customize Included Columns ({getActiveColumns().length} / {getColumnsForCategory(selectedCategory).length})</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-medium">
                   <button
@@ -821,7 +1163,7 @@ export function CoordinatorReports() {
                       allCols.forEach((c) => (map[c.key] = true))
                       setSelectedColumnKeys(map)
                     }}
-                    className="text-primary hover:underline"
+                    className="text-primary hover:underline text-[11px]"
                   >
                     Select All
                   </button>
@@ -829,21 +1171,21 @@ export function CoordinatorReports() {
                   <button
                     type="button"
                     onClick={() => setSelectedColumnKeys({})}
-                    className="text-text-muted hover:underline"
+                    className="text-text-muted hover:underline text-[11px]"
                   >
                     Clear All
                   </button>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-1.5 text-xs">
                 {getColumnsForCategory(selectedCategory).map((col) => {
                   const isChecked = selectedColumnKeys[col.key] !== false
                   return (
                     <label
                       key={col.key}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-lg border px-2.5 py-1 cursor-pointer transition-colors select-none',
+                        'flex items-center gap-1.5 rounded-lg border px-2 py-0.5 cursor-pointer transition-colors select-none text-[11px]',
                         isChecked ? 'border-primary/40 bg-primary/10 text-primary font-semibold' : 'border-border bg-surface text-text-muted'
                       )}
                     >
@@ -851,7 +1193,7 @@ export function CoordinatorReports() {
                         type="checkbox"
                         checked={isChecked}
                         onChange={(e) => setSelectedColumnKeys((prev) => ({ ...prev, [col.key]: e.target.checked }))}
-                        className="h-3.5 w-3.5 rounded border-border text-primary"
+                        className="h-3 w-3 rounded border-border text-primary"
                       />
                       <span>{col.header}</span>
                     </label>
@@ -867,7 +1209,9 @@ export function CoordinatorReports() {
               <Badge variant="primary" className="font-mono text-xs">
                 {getActiveRows().length} {getActiveRows().length === 1 ? 'Record' : 'Records'}
               </Badge>
-              <span className="text-xs text-text-muted">matching active filter criteria</span>
+              {inModalSearch && (
+                <span className="text-xs text-text-muted">matching search "{inModalSearch}"</span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -877,8 +1221,8 @@ export function CoordinatorReports() {
                 onClick={handleExportCsv}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <Download className="h-4 w-4 mr-1.5 text-emerald-600" />
-                Download CSV
+                <Download className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                CSV
               </Button>
               <Button
                 variant="outline"
@@ -886,8 +1230,8 @@ export function CoordinatorReports() {
                 onClick={handleExportXlsx}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <Download className="h-4 w-4 mr-1.5 text-blue-600" />
-                Download Excel
+                <Download className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
+                Excel
               </Button>
               <Button
                 variant="outline"
@@ -895,34 +1239,58 @@ export function CoordinatorReports() {
                 onClick={handleExportPdf}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <FileText className="h-4 w-4 mr-1.5 text-rose-600" />
-                Export PDF
+                <FileText className="h-3.5 w-3.5 mr-1.5 text-rose-600" />
+                PDF
               </Button>
             </div>
           </div>
 
-          {/* Live Preview Table */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted">Live Export Preview</h4>
+          {/* Active Layout Display */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                Active Preview Layout ({modalLayoutMode.toUpperCase()} MODE)
+              </h4>
+              <span className="text-[11px] text-text-muted">
+                Click column headers in Table mode to sort A-Z / Z-A
+              </span>
+            </div>
+
             {getActiveRows().length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-surface-hover/30 p-8 text-center text-sm text-text-muted">
-                No matching records found for the selected filter criteria.
+              <div className="rounded-2xl border border-dashed border-border bg-surface-hover/30 p-10 text-center text-sm text-text-muted">
+                No matching records found for your current filter or search criteria.
               </div>
             ) : getActiveColumns().length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-surface-hover/30 p-8 text-center text-sm text-text-muted">
-                Please check at least one column above to display in the export preview.
+              <div className="rounded-2xl border border-dashed border-border bg-surface-hover/30 p-10 text-center text-sm text-text-muted">
+                Please check at least one column above to display records in the preview.
               </div>
             ) : (
-              <DataTable
-                columns={getActiveColumns().map((col) => ({
-                  key: col.key,
-                  header: col.header,
-                  render: (row: any) => <span className="whitespace-nowrap">{col.value(row)}</span>,
-                }))}
-                data={getActiveRows()}
-                keyExtractor={(row: any) => row.id || row.student_name || row.full_name || row.name || row.title || row.code || String(Math.random())}
-                emptyMessage="No records available"
-              />
+              <>
+                {modalLayoutMode === 'table' && (
+                  <DataTable
+                    columns={getActiveColumns().map((col) => ({
+                      key: col.key,
+                      header: col.header,
+                      sortable: true,
+                      render: (row: any) => <span className="whitespace-nowrap">{col.value(row)}</span>,
+                    }))}
+                    data={getActiveRows()}
+                    sorting={{
+                      column: sortColumn || '',
+                      direction: sortOrder,
+                      onSort: handleSortToggle,
+                    }}
+                    keyExtractor={(row: any) => row.id || row.student_name || row.full_name || row.name || row.title || row.code || String(Math.random())}
+                    emptyMessage="No records available"
+                  />
+                )}
+
+                {modalLayoutMode === 'cards' && renderCardGridView(getActiveRows(), getActiveColumns())}
+
+                {modalLayoutMode === 'roster' && renderCompactRosterView(getActiveRows(), getActiveColumns())}
+
+                {modalLayoutMode === 'accordion' && renderGroupedAccordionView(getActiveRows(), getActiveColumns())}
+              </>
             )}
           </div>
         </div>
