@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
