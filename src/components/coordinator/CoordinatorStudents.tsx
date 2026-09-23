@@ -31,6 +31,8 @@ import {
   Send,
   CheckCircle2,
   RefreshCw,
+  UserPlus,
+  UserX,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
@@ -94,6 +96,58 @@ export function CoordinatorStudents() {
 
   const [studentEnrollments, setStudentEnrollments] = useState<any[]>([])
   const [savingSc, setSavingSc] = useState(false)
+  const [selectedUnitToAdd, setSelectedUnitToAdd] = useState('')
+  const [enrollmentSubmitting, setEnrollmentSubmitting] = useState(false)
+
+  const handleAddCourseUnitToStudent = async (studentId: string, courseUnitId: string) => {
+    if (!courseUnitId) return
+    setEnrollmentSubmitting(true)
+    try {
+      const { error } = await supabase.from('student_course_units').upsert(
+        { user_id: studentId, course_unit_id: courseUnitId, status: 'active' },
+        { onConflict: 'user_id,course_unit_id' }
+      )
+      if (error) throw error
+      setSelectedUnitToAdd('')
+      await fetchData()
+    } catch (err: any) {
+      alert(err.message || 'Unable to add course unit.')
+    } finally {
+      setEnrollmentSubmitting(false)
+    }
+  }
+
+  const handleRemoveCourseUnitFromStudent = async (studentId: string, courseUnitId: string) => {
+    const courseUnit = courseUnits.find((c) => c.id === courseUnitId)
+    const unitName = courseUnit ? `${courseUnit.code} - ${courseUnit.name}` : 'this course unit'
+    if (!confirm(`Remove student from ${unitName}?`)) return
+
+    setEnrollmentSubmitting(true)
+    try {
+      const { error } = await supabase
+        .from('student_course_units')
+        .delete()
+        .eq('user_id', studentId)
+        .eq('course_unit_id', courseUnitId)
+
+      if (error) throw error
+
+      // Clean up group members in groups for this course unit
+      const unitGroups = groupMembers
+        .filter((gm) => gm.user_id === studentId && (gm.group?.coursework?.course_unit_id === courseUnitId || gm.course_unit_id === courseUnitId))
+        .map((gm) => gm.id)
+
+      if (unitGroups.length > 0) {
+        await supabase.from('group_members').delete().in('id', unitGroups)
+      }
+
+      await fetchData()
+    } catch (err: any) {
+      alert(err.message || 'Unable to remove course unit.')
+    } finally {
+      setEnrollmentSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     fetchData()
@@ -1232,13 +1286,45 @@ export function CoordinatorStudents() {
               </div>
             </div>
 
-            <section className="space-y-2">
+            <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-text-primary">Course units added</h4>
                 <Badge variant="secondary" className="text-[11px]">
                   {(studentEnrollments.filter((enrollment) => enrollment.user_id === detailStudent.id)).length}
                 </Badge>
               </div>
+
+              {/* Add Course Unit Controls */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedUnitToAdd}
+                  onChange={(e) => setSelectedUnitToAdd(e.target.value)}
+                  className="flex-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-primary"
+                >
+                  <option value="">Select course unit to add...</option>
+                  {courseUnits
+                    .filter(
+                      (cu) =>
+                        !studentEnrollments.some(
+                          (enrollment) => enrollment.user_id === detailStudent.id && enrollment.course_unit_id === cu.id
+                        )
+                    )
+                    .map((cu) => (
+                      <option key={cu.id} value={cu.id}>
+                        {cu.code} - {cu.name}
+                      </option>
+                    ))}
+                </select>
+                <Button
+                  size="sm"
+                  disabled={!selectedUnitToAdd}
+                  loading={enrollmentSubmitting}
+                  onClick={() => handleAddCourseUnitToStudent(detailStudent.id, selectedUnitToAdd)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Unit
+                </Button>
+              </div>
+
               <div className="rounded-xl border border-border divide-y divide-border">
                 {studentEnrollments.filter((enrollment) => enrollment.user_id === detailStudent.id).length > 0 ? (
                   studentEnrollments
@@ -1251,11 +1337,17 @@ export function CoordinatorStudents() {
                             <p className="font-semibold text-text-primary">{courseUnit?.code || 'Course unit'}</p>
                             <p className="text-text-muted">{courseUnit?.name || 'Course unit details unavailable'}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
                             <Badge variant={enrollment.status === 'active' ? 'success' : 'secondary'} className="text-[10px] capitalize">
                               {enrollment.status || 'active'}
                             </Badge>
-                            {enrollment.created_at && <p className="mt-1 text-[10px] text-text-muted">Added {formatDate(enrollment.created_at)}</p>}
+                            <button
+                              onClick={() => handleRemoveCourseUnitFromStudent(detailStudent.id, enrollment.course_unit_id)}
+                              className="p-1 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Remove student from this course unit"
+                            >
+                              <UserX className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       )

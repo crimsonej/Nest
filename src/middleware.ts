@@ -38,6 +38,7 @@ export async function middleware(request: NextRequest) {
   const isStudentPage = request.nextUrl.pathname.startsWith('/student')
   const isCoordinatorPage = request.nextUrl.pathname.startsWith('/coordinator')
   const isAdminPage = request.nextUrl.pathname.startsWith('/admin')
+  const isLecturerPage = request.nextUrl.pathname.startsWith('/lecturer')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
 
   // Allow API routes and auth pages always
@@ -49,7 +50,7 @@ export async function middleware(request: NextRequest) {
   const hasSession = !!user
 
   if (hasSession) {
-    let userRole = user.user_metadata?.role
+    let userRole = user.user_metadata?.role || user.app_metadata?.role
     let userStatus = user.user_metadata?.status
 
     try {
@@ -65,34 +66,90 @@ export async function middleware(request: NextRequest) {
       // Ignore DB read errors and rely on the authenticated session metadata.
     }
 
-    const isCoordinatorRole =
-      userRole === 'coordinator' ||
-      userRole === 'lecturer' ||
-      userRole === 'admin' ||
-      userStatus === 'coordinator' ||
-      userStatus === 'selected_coordinator' ||
-      userStatus === 'admin'
+    if (userRole !== 'lecturer') {
+      try {
+        const { data: lecturerProfile } = await supabase
+          .from('lecturers')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle()
 
-    const isStudentRole = (userRole === 'student' || !userRole) && !isCoordinatorRole
+        if (lecturerProfile) {
+          userRole = 'lecturer'
+        }
+      } catch (err) {
+        // Ignore DB read errors
+      }
+    }
+
     const isAdminRole = userRole === 'admin' || userStatus === 'admin'
+    const isLecturerRole = userRole === 'lecturer'
+    const isCoordinatorRole =
+      !isLecturerRole &&
+      (userRole === 'coordinator' ||
+        userRole === 'admin' ||
+        userStatus === 'coordinator' ||
+        userStatus === 'selected_coordinator' ||
+        userStatus === 'admin')
 
+    // Admin-only pages
     if (isAdminPage && !isAdminRole) {
       const url = request.nextUrl.clone()
-      url.pathname = isCoordinatorRole ? '/coordinator/dashboard' : '/student/dashboard'
+      url.pathname = isLecturerRole
+        ? '/lecturer/reports'
+        : isCoordinatorRole
+          ? '/coordinator/dashboard'
+          : '/student/dashboard'
       return NextResponse.redirect(url)
     }
 
-    if (isCoordinatorPage && !isCoordinatorRole && isStudentRole) {
+    // Coordinator-only pages
+    if (isCoordinatorPage && !isCoordinatorRole) {
       const url = request.nextUrl.clone()
-      url.pathname = '/student/dashboard'
+      url.pathname = isAdminRole
+        ? '/admin/dashboard'
+        : isLecturerRole
+          ? '/lecturer/reports'
+          : '/student/dashboard'
       return NextResponse.redirect(url)
+    }
+
+    // Lecturer-only pages
+    if (isLecturerPage && !isLecturerRole) {
+      const url = request.nextUrl.clone()
+      url.pathname = isAdminRole
+        ? '/admin/dashboard'
+        : isCoordinatorRole
+          ? '/coordinator/dashboard'
+          : '/student/dashboard'
+      return NextResponse.redirect(url)
+    }
+
+    // For lecturers: enforce password change before accessing the portal
+    const isChangePasswordPage = request.nextUrl.pathname === '/lecturer/change-password'
+    if (isLecturerRole && isLecturerPage && !isChangePasswordPage) {
+      try {
+        const { data: lecturerProfile } = await supabase
+          .from('lecturers')
+          .select('must_change_password')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (lecturerProfile?.must_change_password === true) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/lecturer/change-password'
+          return NextResponse.redirect(url)
+        }
+      } catch {
+        // If we can't check, allow through
+      }
     }
 
     return supabaseResponse
   }
 
   // No session at all — redirect to login
-  if (isStudentPage || isCoordinatorPage || isAdminPage) {
+  if (isStudentPage || isCoordinatorPage || isAdminPage || isLecturerPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)

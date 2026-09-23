@@ -330,12 +330,51 @@ function LoginFormSection({
         .from('users')
         .select('role, status')
         .eq('id', authUser.id)
-        .single()
+        .maybeSingle()
 
+      let userRole = profile?.role || authUser.app_metadata?.role
+      const userStatus = profile?.status
+
+      if (userRole !== 'lecturer') {
+        const { data: lecturerProfile } = await supabase
+          .from('lecturers')
+          .select('id')
+          .eq('id', authUser.id)
+          .maybeSingle()
+
+        if (lecturerProfile) {
+          userRole = 'lecturer'
+        }
+      }
+
+      const isLecturer = userRole === 'lecturer'
       const isCoord =
-        profile?.role === 'coordinator' ||
-        profile?.status === 'coordinator' ||
-        profile?.status === 'selected_coordinator'
+        !isLecturer &&
+        (userRole === 'coordinator' ||
+          userStatus === 'coordinator' ||
+          userStatus === 'selected_coordinator')
+
+      if (isLecturer) {
+        let needsPasswordChange = false
+        try {
+          const { data: lecturerProfile } = await supabase
+            .from('lecturers')
+            .select('must_change_password')
+            .eq('id', authUser.id)
+            .maybeSingle()
+
+          if (lecturerProfile) {
+            needsPasswordChange = lecturerProfile.must_change_password === true
+          }
+        } catch (err) {
+          console.warn('Error checking lecturer must_change_password:', err)
+        }
+
+        window.location.href = needsPasswordChange
+          ? '/lecturer/change-password'
+          : '/lecturer/reports'
+        return
+      }
 
       window.location.href = isCoord
         ? '/coordinator/dashboard'

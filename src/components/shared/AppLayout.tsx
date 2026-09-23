@@ -5,13 +5,14 @@ import { cn } from '@/lib/utils'
 import { StudentSidebar } from '../student/StudentSidebar'
 import { CoordinatorSidebar } from '../coordinator/CoordinatorSidebar'
 import { AdminSidebar } from '../admin/AdminSidebar'
+import { LecturerSidebar } from '../lecturer/LecturerSidebar'
 import { TopBar } from './TopBar'
 import { RoleSwitchModal } from './RoleSwitchModal'
 import { useAuth } from '@/hooks/useAuth'
 
 interface LayoutProps {
   children: ReactNode
-  role: 'student' | 'coordinator' | 'admin'
+  role: 'student' | 'coordinator' | 'admin' | 'lecturer'
 }
 
 export function AppLayout({ children, role }: LayoutProps) {
@@ -40,7 +41,15 @@ export function AppLayout({ children, role }: LayoutProps) {
     return null
   }
 
-  const Sidebar = role === 'student' ? StudentSidebar : role === 'admin' ? AdminSidebar : CoordinatorSidebar
+  const Sidebar =
+    role === 'student'
+      ? StudentSidebar
+      : role === 'admin'
+        ? AdminSidebar
+        : role === 'lecturer'
+          ? LecturerSidebar
+          : CoordinatorSidebar
+
   const canSwitchWorkspace = user.role === 'admin' || user.status === 'admin' || user.status === 'coordinator' || user.status === 'selected_coordinator'
 
   return (

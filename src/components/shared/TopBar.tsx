@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from './ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator' | 'admin'; onSwitchWorkspace?: () => void }) {
+export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordinator' | 'admin' | 'lecturer'; onSwitchWorkspace?: () => void }) {
   const { user, signOut } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -23,11 +23,11 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
               </span>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.16em] text-primary truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
-                {role === 'student' ? 'Student Workspace' : role === 'admin' ? 'Admin Workspace' : 'Coordinator Workspace'}
+                {role === 'student' ? 'Student Workspace' : role === 'admin' ? 'Admin Workspace' : role === 'lecturer' ? 'Lecturer Workspace' : 'Coordinator Workspace'}
               </p>
             </div>
             <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
-              {role === 'student' ? 'Stay on top of your coursework and group collaboration' : role === 'admin' ? 'University-wide overview across faculties and academic data' : 'Real-time overview of courses, groups, and assignments'}
+              {role === 'student' ? 'Stay on top of your coursework and group collaboration' : role === 'admin' ? 'University-wide overview across faculties and academic data' : role === 'lecturer' ? 'View your assigned course unit — groups, students, and reports' : 'Real-time overview of courses, groups, and assignments'}
             </p>
           </div>
           <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-primary-light/40 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md lg:flex shrink-0 shadow-xs">
