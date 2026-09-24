@@ -16,6 +16,7 @@ import {
   Lock,
   Unlock,
   UserPlus,
+  UserMinus,
   UserX,
   CheckCircle2,
   X,
@@ -68,8 +69,18 @@ export function LecturerGroups() {
     status: 'forming',
   })
 
-  // Assigning loading states
+  // Coordinator-style edit modal state
+  const [groupEditName, setGroupEditName] = useState('')
+  const [groupEditDescription, setGroupEditDescription] = useState('')
+  const [groupEditStatus, setGroupEditStatus] = useState('forming')
+  const [groupEditMaxMembers, setGroupEditMaxMembers] = useState('5')
+  const [groupEditLeaderId, setGroupEditLeaderId] = useState('')
+  const [groupEditMemberId, setGroupEditMemberId] = useState('')
+  const [savingGroup, setSavingGroup] = useState(false)
+
+  // Assigning/removing loading states
   const [assigningIds, setAssigningIds] = useState<Record<string, boolean>>({})
+  const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({})
 
   // Step 1: Fetch assigned course unit
   useEffect(() => {
@@ -202,13 +213,12 @@ export function LecturerGroups() {
 
   const handleOpenEditModal = (group: any) => {
     setEditingGroup(group)
-    setGroupFormData({
-      name: group.name,
-      description: group.description || '',
-      coursework_id: group.coursework_id,
-      max_members: group.max_members || 5,
-      status: group.status || 'forming',
-    })
+    setGroupEditName(group.name || '')
+    setGroupEditDescription(group.description || '')
+    setGroupEditStatus(group.status || 'forming')
+    setGroupEditMaxMembers(String(group.max_members || 5))
+    setGroupEditLeaderId(group.leader_id || '')
+    setGroupEditMemberId('')
     setEditModalOpen(true)
   }
 
@@ -221,38 +231,111 @@ export function LecturerGroups() {
 
     setSubmittingGroup(true)
     try {
-      if (editModalOpen && editingGroup) {
-        const { error } = await supabase
-          .from('groups')
-          .update({
-            name: groupFormData.name.trim(),
-            description: groupFormData.description.trim() || null,
-            coursework_id: groupFormData.coursework_id,
-            max_members: groupFormData.max_members,
-            status: groupFormData.status,
-          })
-          .eq('id', editingGroup.id)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('groups').insert({
-          name: groupFormData.name.trim(),
-          description: groupFormData.description.trim() || null,
-          coursework_id: groupFormData.coursework_id,
-          max_members: groupFormData.max_members,
-          status: groupFormData.status,
-        })
-
-        if (error) throw error
-      }
-
+      const { error } = await supabase.from('groups').insert({
+        name: groupFormData.name.trim(),
+        description: groupFormData.description.trim() || null,
+        coursework_id: groupFormData.coursework_id,
+        max_members: groupFormData.max_members,
+        status: groupFormData.status,
+      })
+      if (error) throw error
       setCreateModalOpen(false)
-      setEditModalOpen(false)
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save group.')
+      alert(err instanceof Error ? err.message : 'Failed to create group.')
     } finally {
       setSubmittingGroup(false)
+    }
+  }
+
+  // Coordinator-style save group edits (for the edit modal)
+  const saveGroupEdits = async () => {
+    if (!editingGroup || !groupEditName.trim()) return
+
+    const nextMaxMembers = Number(groupEditMaxMembers)
+    const currentMemberCount = groupMembers.filter((m) => m.group_id === editingGroup.id).length
+    const coursework = courseworks.find((cw) => cw.id === editingGroup.coursework_id)
+    const courseworkMax = Number(coursework?.max_group_size || 20)
+
+    if (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1) {
+      alert('Maximum members must be a whole number of at least 1.')
+      return
+    }
+    if (nextMaxMembers < currentMemberCount) {
+      alert(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
+      return
+    }
+    if (nextMaxMembers > courseworkMax) {
+      alert(`This coursework allows a maximum of ${courseworkMax} members per group.`)
+      return
+    }
+
+    let targetStatus = groupEditStatus
+    if (currentMemberCount >= nextMaxMembers && groupEditStatus === 'forming') targetStatus = 'active'
+    else if (currentMemberCount < nextMaxMembers && groupEditStatus === 'active') targetStatus = 'forming'
+
+    setSavingGroup(true)
+    try {
+      if (groupEditLeaderId && groupEditLeaderId !== editingGroup.leader_id) {
+        await handleChangeGroupLeader(editingGroup.id, groupEditLeaderId)
+      }
+
+      const { error } = await supabase
+        .from('groups')
+        .update({
+          name: groupEditName.trim(),
+          description: groupEditDescription.trim() || null,
+          status: targetStatus,
+          max_members: nextMaxMembers,
+          leader_id: groupEditLeaderId || editingGroup.leader_id,
+        })
+        .eq('id', editingGroup.id)
+
+      if (error) throw error
+      setEditModalOpen(false)
+      setEditingGroup(null)
+      if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Unable to update the group.')
+    } finally {
+      setSavingGroup(false)
+    }
+  }
+
+  const addMemberFromEditor = async () => {
+    if (!editingGroup || !groupEditMemberId) return
+    const currentMemberCount = groupMembers.filter((m) => m.group_id === editingGroup.id).length
+    const capacity = Number(groupEditMaxMembers)
+    if (currentMemberCount >= capacity) {
+      alert('The group is already at its maximum capacity.')
+      return
+    }
+    await handleAssignStudentToGroup(groupEditMemberId, editingGroup.id)
+    setGroupEditMemberId('')
+  }
+
+  const handleChangeGroupLeader = async (groupId: string, newLeaderId: string) => {
+    if (!groupId || !newLeaderId) return
+    const targetGroup = groups.find((g) => g.id === groupId)
+    if (!targetGroup) return
+    const oldLeaderId = targetGroup.leader_id
+    try {
+      const isMember = groupMembers.some((m) => m.group_id === groupId && m.user_id === newLeaderId)
+      if (!isMember) {
+        await supabase.from('group_members').upsert(
+          { group_id: groupId, user_id: newLeaderId, role: 'leader' },
+          { onConflict: 'group_id,user_id' }
+        )
+      } else {
+        await supabase.from('group_members').update({ role: 'leader' }).eq('group_id', groupId).eq('user_id', newLeaderId)
+      }
+      if (oldLeaderId && oldLeaderId !== newLeaderId) {
+        await supabase.from('group_members').update({ role: 'member' }).eq('group_id', groupId).eq('user_id', oldLeaderId)
+      }
+      await supabase.from('groups').update({ leader_id: newLeaderId }).eq('id', groupId)
+      if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Unable to change group leader.')
     }
   }
 
@@ -318,7 +401,7 @@ export function LecturerGroups() {
       return
     }
 
-    setAssigningIds((prev) => ({ ...prev, [studentId]: true }))
+    setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: true }))
     try {
       const { error } = await supabase
         .from('group_members')
@@ -327,11 +410,19 @@ export function LecturerGroups() {
         .eq('user_id', studentId)
 
       if (error) throw error
+
+      // Auto-update group status back to 'forming' if member count drops below max_members
+      const currentCount = groupMembers.filter((m) => m.group_id === groupId).length
+      const newCount = currentCount - 1
+      if (group && group.status === 'active' && group.max_members && newCount < group.max_members) {
+        await supabase.from('groups').update({ status: 'forming' }).eq('id', groupId)
+      }
+
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Unable to remove student from group.')
     } finally {
-      setAssigningIds((prev) => ({ ...prev, [studentId]: false }))
+      setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
   }
 
@@ -547,67 +638,121 @@ export function LecturerGroups() {
       ) : sortedGroups.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-text-muted">No groups created for this course unit yet.</CardContent></Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {sortedGroups.map((group) => {
             const members = groupMembers.filter((m) => m.group_id === group.id)
             const memberCount = members.length
             const capacity = group.max_members || 0
+            const isFull = memberCount >= capacity
             const fillPct = capacity > 0 ? Math.min(100, Math.round((memberCount / capacity) * 100)) : 0
             const statusVariant = group.status === 'active' ? 'success' : group.status === 'locked' ? 'warning' : 'secondary'
 
             return (
-              <Card key={group.id} hover className="h-full flex flex-col justify-between">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-text-primary text-base leading-snug">{group.name}</h3>
-                      <p className="text-xs text-text-muted truncate mt-0.5">{group.coursework?.title || '—'}</p>
+              <Card key={group.id} className="flex flex-col justify-between hover:border-primary/40 transition-all">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <CardTitle className="truncate text-lg font-bold">{group.name}</CardTitle>
                     </div>
-                    <Badge variant={statusVariant} className="shrink-0 text-[11px] capitalize">{group.status}</Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs text-text-muted">
-                      <span>{memberCount} / {capacity} members</span>
-                      <span>{fillPct}%</span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                      <div
-                        className={cn('h-full rounded-full transition-all', fillPct >= 100 ? 'bg-emerald-500' : fillPct >= 60 ? 'bg-primary' : 'bg-amber-500')}
-                        style={{ width: `${fillPct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-text-muted truncate">Leader: {group.leader?.full_name || 'Unassigned'}</p>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <Button variant="ghost" size="sm" className="text-xs text-violet-400" onClick={() => setSelectedGroupId(group.id)}>
-                      View Members ({memberCount})
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleToggleLockGroup(group)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
-                        title={group.status === 'locked' ? 'Unlock Group' : 'Lock Group'}
-                      >
-                        {group.status === 'locked' ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                      </button>
-                      <button
-                        onClick={() => handleOpenEditModal(group)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
-                        title="Edit Group"
-                      >
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenEditModal(group)} title="Edit group">
                         <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-danger hover:bg-danger/10"
                         onClick={() => handleDeleteGroup(group.id)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-red-500 hover:bg-surface-hover transition-colors"
-                        title="Delete Group"
+                        title="Delete group"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
+                      <Badge variant={statusVariant}>{group.status}</Badge>
                     </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-text-secondary line-clamp-2">
+                    {group.description || 'Collaborative group for course unit assignments.'}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-xl border border-border bg-surface-hover p-2.5">
+                      <p className="text-text-muted">Leader</p>
+                      <p className="font-semibold text-text-primary truncate">{group.leader?.full_name || 'Unassigned'}</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-surface-hover p-2.5">
+                      <p className="text-text-muted">Students</p>
+                      <p className={`font-semibold ${isFull ? 'text-danger' : 'text-text-primary'}`}>
+                        {memberCount} / {capacity}{isFull ? ' (Full)' : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Inline member roster — coordinator style */}
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Assigned Members</span>
+                      <span className="text-[11px] text-text-muted">{memberCount} students</span>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {memberCount === 0 ? (
+                        <p className="text-xs text-text-muted italic">No students assigned yet.</p>
+                      ) : (
+                        members.map((member) => {
+                          const isLeader = group.leader_id === member.user_id
+                          return (
+                            <div key={member.id} className="flex items-center justify-between rounded-xl border border-border bg-surface-hover px-3 py-2">
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
+                                  {isLeader && (
+                                    <Badge variant="primary" className="px-1.5 py-0 text-[9px] gap-0.5">
+                                      <Crown className="h-2.5 w-2.5" /> Leader
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-text-muted">{member.user?.student_registration_number || 'No Reg No'}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {!isLeader && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 text-amber-500 hover:bg-amber-500/10"
+                                    title="Make this student Group Leader"
+                                    onClick={() => handleChangeGroupLeader(group.id, member.user_id)}
+                                  >
+                                    <Crown className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 shrink-0 p-0 text-danger hover:bg-danger/10"
+                                  title={isLeader ? 'Assign another leader before removing this student' : 'Remove student from group'}
+                                  disabled={isLeader}
+                                  loading={!!removingIds[`${member.user_id}-${group.id}`]}
+                                  onClick={() => handleRemoveFromGroup(member.user_id, group.id)}
+                                >
+                                  <UserMinus className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => handleToggleLockGroup(group)}>
+                      {group.status === 'locked' ? <Unlock className="h-3.5 w-3.5 mr-1" /> : <Lock className="h-3.5 w-3.5 mr-1" />}
+                      {group.status === 'locked' ? 'Unlock' : 'Lock'}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-xs text-violet-400" onClick={() => setSelectedGroupId(group.id)}>
+                      View Detail
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -752,11 +897,11 @@ export function LecturerGroups() {
         </Card>
       </div>
 
-      {/* Modal for Group Creation & Editing */}
+      {/* Modal for Group Creation */}
       <Modal
-        isOpen={createModalOpen || editModalOpen}
-        onClose={() => { setCreateModalOpen(false); setEditModalOpen(false); }}
-        title={editModalOpen ? 'Edit Group' : 'Create New Group'}
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title="Create New Group"
         size="md"
       >
         <form onSubmit={handleSaveGroup} className="space-y-4">
@@ -797,7 +942,6 @@ export function LecturerGroups() {
               onChange={(e) => setGroupFormData({ ...groupFormData, max_members: Number(e.target.value) || 5 })}
               min={1}
             />
-
             <Select
               label="Group Status"
               value={groupFormData.status}
@@ -811,14 +955,129 @@ export function LecturerGroups() {
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); }}>
+            <Button type="button" variant="outline" onClick={() => setCreateModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={submittingGroup}>
-              {editModalOpen ? 'Save Changes' : 'Create Group'}
+              Create Group
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Coordinator-style Edit Group Modal */}
+      <Modal
+        isOpen={editModalOpen && editingGroup !== null}
+        onClose={() => { setEditModalOpen(false); setEditingGroup(null) }}
+        title="Edit Group"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input label="Group name" value={groupEditName} onChange={(e) => setGroupEditName(e.target.value)} />
+          <Textarea label="Group description" value={groupEditDescription} onChange={(e) => setGroupEditDescription(e.target.value)} />
+          <Input
+            label="Maximum members"
+            type="number"
+            min={1}
+            max={20}
+            value={groupEditMaxMembers}
+            onChange={(e) => setGroupEditMaxMembers(e.target.value)}
+            helperText="Cannot be lower than current member count or higher than the coursework limit."
+          />
+          <Select
+            label="Group status"
+            value={groupEditStatus}
+            onChange={setGroupEditStatus}
+            options={[
+              { value: 'forming', label: 'Forming - members can still be added' },
+              { value: 'active', label: 'Active - formation complete' },
+              { value: 'locked', label: 'Locked - no further changes' },
+            ]}
+          />
+
+          {/* Leader selector */}
+          {editingGroup && (
+            <Select
+              label="Group Leader"
+              value={groupEditLeaderId}
+              onChange={setGroupEditLeaderId}
+              options={groupMembers
+                .filter((m) => m.group_id === editingGroup.id)
+                .map((m) => ({
+                  value: m.user_id,
+                  label: m.user?.full_name ? `${m.user.full_name} (${m.user.email || 'No email'})` : 'Student',
+                }))}
+              placeholder="Select group leader..."
+            />
+          )}
+
+          {/* Coordinator-style member management */}
+          {editingGroup && (
+            <div className="space-y-3 rounded-xl border border-border bg-surface-hover/60 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Members</p>
+                  <p className="text-xs text-text-muted">
+                    {groupMembers.filter((m) => m.group_id === editingGroup.id).length} / {groupEditMaxMembers || '0'} assigned
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {groupMembers.filter((m) => m.group_id === editingGroup.id).map((member) => (
+                  <div key={member.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-text-primary">{member.user?.full_name || 'Student'}</p>
+                      {editingGroup.leader_id === member.user_id && (
+                        <p className="text-[10px] text-primary">Group leader</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 shrink-0 p-0 text-danger hover:bg-danger/10"
+                      title={editingGroup.leader_id === member.user_id ? 'Assign another leader before removing this student' : 'Remove student from group'}
+                      disabled={editingGroup.leader_id === member.user_id}
+                      loading={!!removingIds[`${member.user_id}-${editingGroup.id}`]}
+                      onClick={() => handleRemoveFromGroup(member.user_id, editingGroup.id)}
+                    >
+                      <UserMinus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {/* Add student searchable dropdown */}
+              <div className="flex gap-2">
+                <Select
+                  value={groupEditMemberId}
+                  onChange={setGroupEditMemberId}
+                  searchable
+                  options={enrolledStudents
+                    .filter((s) => !groupMembers.some((m) => m.group_id === editingGroup.id && m.user_id === s.id))
+                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+                    .map((s) => ({
+                      value: s.id,
+                      label: `${s.full_name}${s.student_registration_number ? ` (${s.student_registration_number})` : ''}`,
+                      searchText: `${s.full_name || ''} ${s.student_registration_number || ''} ${s.email || ''}`,
+                    }))}
+                  placeholder="Search and add a student..."
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  onClick={addMemberFromEditor}
+                  disabled={!groupEditMemberId || groupMembers.filter((m) => m.group_id === editingGroup.id).length >= Number(groupEditMaxMembers || 0)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => { setEditModalOpen(false); setEditingGroup(null) }}>Cancel</Button>
+            <Button onClick={saveGroupEdits} loading={savingGroup} disabled={!groupEditName.trim()}>Save changes</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
