@@ -335,34 +335,42 @@ export function CoordinatorCoursework() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Course Work</h1>
-          <p className="text-text-secondary">Create and manage course work, assignments, and submission requirements for each unit.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-border bg-surface p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('tile')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'tile' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Tiles
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <List className="h-4 w-4" />
-              List
-            </button>
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Coordinator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Course <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Work</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Create and manage course work, assignments, and submission requirements for each unit.</p>
           </div>
-          <Button onClick={openCreateModal}>
-            <Plus className="h-4 w-4" />
-            Add Course Work
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex rounded-xl border border-border/60 bg-surface/80 p-1 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setViewMode('tile')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Tiles
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <List className="h-3.5 w-3.5" />
+                List
+              </button>
+            </div>
+            <Button onClick={openCreateModal} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md">
+              <Plus className="h-4 w-4" />
+              Add Course Work
+            </Button>
+          </div>
         </div>
       </div>
 

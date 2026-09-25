@@ -669,23 +669,26 @@ export function StudentGroups() {
   if (selectedCourseUnitId && selectedCourseSummary) {
     return (
       <div className="space-y-6">
-        {/* Back + Header row */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)}>
-              <ArrowLeft className="h-4 w-4 mr-1.5" />
-              All Course Units
-            </Button>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Course Unit</p>
-              <h1 className="text-2xl font-bold text-text-primary">
-                {selectedCourseSummary.code} • {selectedCourseSummary.name}
-              </h1>
+        <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 via-violet-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)} className="shrink-0">
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                All Units
+              </Button>
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  Course Unit
+                </div>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+                  {selectedCourseSummary.code} <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">• {selectedCourseSummary.name}</span>
+                </h1>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary">{selectedCourseSummary.totalMembersAssigned} / {selectedCourseSummary.totalStudents} Grouped</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="primary">{selectedCourseSummary.totalMembersAssigned} / {selectedCourseSummary.totalStudents} Grouped</Badge>
             <Badge variant="secondary">{selectedCourseSummary.totalGroups} Groups</Badge>
             {/* Grid / List toggle */}
             <div className="flex items-center rounded-xl border border-border bg-surface p-1">
@@ -721,6 +724,7 @@ export function StudentGroups() {
             </Button>
           </div>
         </div>
+      </div>
 
         {joinMessage && (
           <div className="rounded-xl border border-warning/20 bg-warning-light px-4 py-3 text-sm text-warning flex items-center justify-between">
@@ -1117,14 +1121,19 @@ export function StudentGroups() {
   // DEFAULT VIEW: Course Unit tiles only
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Groups</h1>
-          <p className="text-text-secondary">Select a course unit to view the available groups and team setup for each assignment.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={fetchData} loading={loading}>
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 via-violet-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              Student Portal
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Student <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">Groups</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Select a course unit to view the available groups and team setup for each assignment.</p>
+          </div>
+          <Button variant="outline" onClick={fetchData} loading={loading} className="self-start sm:self-auto border-border/60 backdrop-blur-md">
             <RefreshCw className="h-4 w-4 mr-1.5" />
             Refresh
           </Button>

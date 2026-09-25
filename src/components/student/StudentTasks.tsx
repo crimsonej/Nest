@@ -147,26 +147,26 @@ export function StudentTasks() {
 
   return (
     <div className="space-y-7">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-5 border-b border-border pb-7 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-            Academic Rhythm & Milestones
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
-            Tasks & Deadlines
-          </h1>
-          <p className="mt-2 max-w-xl text-text-secondary">
-            Keep track of upcoming coursework deadlines, group commitments, and action items.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Link href="/student/coursework">
-            <Button variant="outline">
-              <ListChecks className="h-4 w-4" />
-              Browse Coursework
-            </Button>
-          </Link>
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 via-violet-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              <Clock3 className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
+              Student Portal
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Tasks <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">& Deadlines</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Keep track of upcoming coursework deadlines, group commitments, and action items.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href="/student/coursework">
+              <Button variant="outline" className="border-border/60 backdrop-blur-md">
+                <ListChecks className="h-4 w-4 mr-1.5" />
+                Browse Coursework
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

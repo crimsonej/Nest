@@ -116,9 +116,9 @@ export function Select({
           {isOpen ? <ChevronUp className="h-4 w-4 text-text-muted" /> : <ChevronDown className="h-4 w-4 text-text-muted" />}
         </button>
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-border bg-surface shadow-lg animate-fade-in">
+          <div className="absolute z-50 mt-1.5 w-full max-h-60 overflow-auto rounded-2xl border border-border/80 bg-surface/95 p-1 shadow-2xl backdrop-blur-2xl animate-fade-in scrollbar-thin">
             {searchable && (
-              <div className="p-2 border-b border-border sticky top-0 bg-surface">
+              <div className="p-2 border-b border-border/60 sticky top-0 bg-surface/90 backdrop-blur-md z-10">
                 <input
                   ref={inputRef}
                   type="text"
@@ -126,7 +126,7 @@ export function Select({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onClick={(e) => e.stopPropagation()}
-                  className="input py-1.5 text-sm"
+                  className="input py-1.5 px-3 text-sm rounded-xl"
                 />
               </div>
             )}

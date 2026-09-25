@@ -639,18 +639,20 @@ export function CoordinatorStudents() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
-            <p className="text-sm font-medium uppercase tracking-[0.14em] text-primary">Coordinator Portal</p>
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <GraduationCap className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+              Coordinator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Student Directory <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">& Management</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Manage student records, edit profiles, process AI/spreadsheet imports with live staging preview, and assign granular Selected Coordinator (SC) course unit powers.
+            </p>
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-text-primary sm:text-3xl">Student Directory & Management</h1>
-          <p className="mt-1 text-text-secondary">
-            Manage student records, edit profiles, process AI/spreadsheet imports with live staging preview, and assign granular Selected Coordinator (SC) course unit powers.
-          </p>
-        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)}>
             <Sparkles className="h-4 w-4 mr-1.5 text-amber-500" />
@@ -666,6 +668,7 @@ export function CoordinatorStudents() {
           </Button>
         </div>
       </div>
+    </div>
 
       {/* Analytics Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

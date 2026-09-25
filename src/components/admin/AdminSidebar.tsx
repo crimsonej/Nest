@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { BookOpen, Building2, FileText, GraduationCap, LayoutDashboard, Layers3, LogOut, Menu, Settings, Shield, UserCheck, Users, X } from 'lucide-react'
+import { BookOpen, Building2, FileText, GraduationCap, LayoutDashboard, Layers3, LogOut, Menu, Settings, Shield, UserCheck, Users, X, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -31,7 +31,7 @@ export function AdminSidebar() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed left-4 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-md lg:hidden"
+        className="fixed left-4 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-lg lg:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open administrator navigation"
       >
@@ -39,12 +39,7 @@ export function AdminSidebar() {
       </motion.button>
 
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-[#1e293b] bg-[#0f172a] text-slate-100 transition-colors duration-300 dark:bg-[#030712] dark:border-[#111827] lg:flex"
-        style={{
-          backgroundColor: 'var(--sidebar-bg)',
-          borderColor: 'var(--sidebar-border)',
-          color: 'var(--sidebar-text)',
-        }}
+        className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border bg-surface/95 text-text-primary backdrop-blur-2xl shadow-xl transition-colors duration-300 lg:flex"
         aria-label="Administrator navigation"
       >
         <SidebarContent pathname={pathname} user={user} signOut={signOut} />
@@ -57,7 +52,7 @@ export function AdminSidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
               aria-hidden="true"
             />
@@ -66,12 +61,7 @@ export function AdminSidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-white/10 bg-[#0f172a] text-white shadow-2xl lg:hidden"
-              style={{
-                backgroundColor: 'var(--sidebar-bg)',
-                borderColor: 'var(--sidebar-border)',
-                color: 'var(--sidebar-text)',
-              }}
+              className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-border bg-surface text-text-primary shadow-2xl lg:hidden"
               aria-label="Administrator mobile navigation"
             >
               <SidebarContent pathname={pathname} user={user} signOut={signOut} onClose={() => setMobileMenuOpen(false)} isMobile />
@@ -85,23 +75,36 @@ export function AdminSidebar() {
 
 function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: { pathname: string; user: any; signOut: () => void; onClose?: () => void; isMobile?: boolean }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
-        <Link href="/admin/dashboard" onClick={onClose} className="flex items-center gap-3 text-white">
-          <Image src="/logo.png" alt="NEST Logo" width={40} height={40} className="rounded-2xl shrink-0" />
+    <div className="relative flex h-full flex-col overflow-hidden bg-surface text-text-primary transition-colors duration-300">
+      {/* Decorative ambient glow Orbs inside sidebar */}
+      <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full bg-rose-500/15 blur-3xl dark:bg-rose-600/20 html.mid:bg-rose-500/25" />
+      <div className="pointer-events-none absolute top-1/2 -right-16 h-48 w-48 rounded-full bg-amber-500/15 blur-3xl dark:bg-amber-600/15 html.mid:bg-amber-500/20" />
+
+      {/* Sidebar Header / Logo */}
+      <div className="relative z-10 flex h-20 items-center justify-between border-b border-border px-5 backdrop-blur-md">
+        <Link href="/admin/dashboard" onClick={onClose} className="flex items-center gap-3 group">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 via-rose-600 to-amber-600 p-0.5 shadow-lg shadow-rose-500/25 group-hover:scale-105 transition-transform duration-200">
+            <Image src="/logo.png" alt="NEST Logo" width={36} height={36} className="rounded-[14px] shrink-0" />
+          </div>
           <div>
-            <strong className="block text-base tracking-[0.18em] font-extrabold">NEST</strong>
-            <small className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-75">Admin Portal</small>
+            <strong className="block text-base tracking-[0.2em] font-extrabold text-text-primary">NEST</strong>
+            <small className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-rose-600 dark:text-rose-400 html.mid:text-rose-300">Admin Portal</small>
           </div>
         </Link>
         {isMobile && (
-          <button className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors" onClick={onClose} aria-label="Close menu">
+          <button className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors" onClick={onClose} aria-label="Close menu">
             <X className="h-5 w-5" />
           </button>
         )}
       </div>
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6 scrollbar-thin" role="navigation" aria-label="Administrator workspace">
-        <p className="px-3 pb-3 text-[11px] font-bold uppercase tracking-[0.16em] opacity-60">University Control</p>
+
+      {/* Navigation Links */}
+      <nav className="relative z-10 flex-1 space-y-1.5 overflow-y-auto px-3.5 py-5 scrollbar-thin" role="navigation" aria-label="Administrator workspace">
+        <div className="px-3 pb-2 flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-text-muted">University Control</p>
+          <span className="flex h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+        </div>
+
         {navigation.map((item) => {
           const Icon = item.icon
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -111,36 +114,54 @@ function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: 
               href={item.href}
               onClick={onClose}
               className={cn(
-                'relative flex items-center gap-3.5 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 select-none',
-                active ? 'text-white font-bold shadow-sm' : 'opacity-75 hover:bg-white/10 hover:opacity-100'
+                'group relative flex items-center gap-3.5 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 select-none',
+                active ? 'text-white font-bold' : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:translate-x-0.5'
               )}
             >
               {active && (
                 <motion.div
                   layoutId="activeAdminNavPill"
-                  className="absolute inset-0 rounded-2xl bg-primary shadow-md shadow-primary/30"
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-500 to-amber-600 shadow-lg shadow-rose-500/30"
                   transition={{ type: 'spring', stiffness: 450, damping: 35 }}
                 />
               )}
-              <Icon className="relative z-10 h-5 w-5 flex-shrink-0" aria-hidden="true" />
+              <div className={cn(
+                'relative z-10 flex h-7 w-7 items-center justify-center rounded-xl transition-all duration-200',
+                active ? 'bg-white/20 text-white shadow-sm' : 'text-text-muted group-hover:text-text-primary group-hover:scale-110'
+              )}>
+                <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+              </div>
               <span className="relative z-10">{item.name}</span>
             </Link>
           )
         })}
       </nav>
-      <div className="border-t border-white/10 bg-black/10 p-4">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-emerald-300 font-bold shrink-0">
-            <Shield className="h-5 w-5" />
+
+      {/* Floating User Glass Profile Box */}
+      <div className="relative z-10 border-t border-border p-3.5 backdrop-blur-md">
+        <div className="rounded-2xl border border-border bg-surface-hover/60 p-3 shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-rose-500/40">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 p-0.5 font-bold text-white shadow-md">
+              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-rose-950/80 font-black text-xs text-rose-300">
+                <Shield className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-text-primary truncate">{user?.full_name || 'Administrator'}</p>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400 html.mid:text-rose-300 truncate">
+                <Sparkles className="h-3 w-3 text-amber-500" /> Super Admin
+              </span>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-white">{user?.full_name}</p>
-            <p className="truncate text-[11px] opacity-70">Administrator</p>
-          </div>
+
+          <button
+            onClick={signOut}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-bold text-text-secondary hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-600 dark:hover:text-rose-300 transition-all duration-200 active:scale-[0.98]"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
-        <button onClick={signOut} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors">
-          <LogOut className="h-4 w-4" />Sign Out
-        </button>
       </div>
     </div>
   )

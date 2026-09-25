@@ -170,34 +170,42 @@ export function CoordinatorCourseUnits() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Course Units</h1>
-          <p className="text-text-secondary">Create and manage the academic units that feed coursework, registrations, and group formation.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-border bg-surface p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('tile')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'tile' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Tiles
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <List className="h-4 w-4" />
-              List
-            </button>
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Coordinator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Course <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Units</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Create and manage the academic units that feed coursework, registrations, and group formation.</p>
           </div>
-          <Button onClick={openCreateModal}>
-            <Plus className="h-4 w-4" />
-            Add Course Unit
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex rounded-xl border border-border/60 bg-surface/80 p-1 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setViewMode('tile')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Tiles
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <List className="h-3.5 w-3.5" />
+                List
+              </button>
+            </div>
+            <Button onClick={openCreateModal} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md">
+              <Plus className="h-4 w-4" />
+              Add Course Unit
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -228,7 +236,7 @@ export function CoordinatorCourseUnits() {
       </Card>
 
       {viewMode === 'tile' ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="h-52 rounded-2xl border border-border bg-surface animate-pulse" />
@@ -281,35 +289,35 @@ export function CoordinatorCourseUnits() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          <div className="overflow-x-auto">
-            <table className="table">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full min-w-[550px] text-sm text-left border-collapse">
               <thead>
-                <tr>
-                  <th>Course Unit</th>
-                  <th>Course</th>
-                  <th>Coordinator</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
+                <tr className="border-b border-border/70 bg-surface-hover/60 text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  <th className="px-4 py-3.5">Course Unit</th>
+                  <th className="px-4 py-3.5">Course</th>
+                  <th className="px-4 py-3.5">Coordinator</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/50">
                 {filteredCourseUnits.map((courseUnit) => (
-                  <tr key={courseUnit.id}>
-                    <td>
+                  <tr key={courseUnit.id} className="hover:bg-surface-hover/50">
+                    <td className="px-4 py-3.5">
                       <div>
                         <p className="font-medium text-text-primary">{courseUnit.code}</p>
-                        <p className="text-sm text-text-muted">{courseUnit.name}</p>
+                        <p className="text-xs text-text-muted">{courseUnit.name}</p>
                       </div>
                     </td>
-                    <td>{courseUnit.course?.name || 'Unassigned course'}</td>
-                    <td>{courseUnit.coordinator?.full_name || 'Unassigned'}</td>
-                    <td>
+                    <td className="px-4 py-3.5 text-text-secondary">{courseUnit.course?.name || 'Unassigned course'}</td>
+                    <td className="px-4 py-3.5 text-text-secondary">{courseUnit.coordinator?.full_name || 'Unassigned'}</td>
+                    <td className="px-4 py-3.5">
                       <Badge variant={courseUnit.is_active ? 'success' : 'secondary'}>
                         {courseUnit.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
-                    <td className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="flex justify-end gap-1.5">
                         <Button variant="ghost" size="sm" onClick={() => openEditModal(courseUnit)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -344,7 +352,7 @@ export function CoordinatorCourseUnits() {
             value={formValues.courseId}
             onChange={(value) => setFormValues((prev) => ({ ...prev, courseId: value }))}
           />
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Course Unit Code"
               placeholder="e.g. CS101"
@@ -370,15 +378,15 @@ export function CoordinatorCourseUnits() {
             checked={formValues.isActive}
             onCheckedChange={(checked) => setFormValues((prev) => ({ ...prev, isActive: checked }))}
           />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => {
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-2">
+            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => {
               setCreateModalOpen(false)
               setEditModalOpen(false)
               resetForm()
             }}>
               Cancel
             </Button>
-            <Button type="button" onClick={handleSubmit} loading={submitting}>
+            <Button type="button" className="w-full sm:w-auto" onClick={handleSubmit} loading={submitting}>
               {editModalOpen ? 'Update Course Unit' : 'Save Course Unit'}
             </Button>
           </div>

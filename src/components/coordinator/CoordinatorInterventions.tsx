@@ -156,20 +156,28 @@ export function CoordinatorInterventions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Interventions & Automation</h1>
-          <p className="text-text-secondary">Manage unassigned students and group assignments</p>
-        </div>
-        <div className="flex flex-col min-[380px]:flex-row gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={fetchData} loading={loading} className="w-full min-[380px]:w-auto">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button onClick={handleAutoFill} loading={autoFillLoading} className="w-full min-[380px]:w-auto">
-            <Shuffle className="h-4 w-4" />
-            Auto-Assign All
-          </Button>
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Coordinator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Interventions <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">& Automation</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Manage unassigned students and automated group assignment algorithms.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={fetchData} loading={loading} className="border-border/60 backdrop-blur-md">
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Refresh
+            </Button>
+            <Button onClick={handleAutoFill} loading={autoFillLoading} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md">
+              <Shuffle className="h-4 w-4 mr-1.5" />
+              Auto-Assign All
+            </Button>
+          </div>
         </div>
       </div>
 

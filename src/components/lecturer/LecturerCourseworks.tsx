@@ -319,40 +319,44 @@ export function LecturerCourseworks() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="h-5 w-5 text-violet-500" />
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-violet-500">Lecturer Portal</p>
+      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+              <BookOpen className="h-3.5 w-3.5 text-violet-500 animate-pulse" />
+              Lecturer Portal
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Course <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Work</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Manage assignments for <span className="font-bold text-violet-500 dark:text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">Course Work</h1>
-          <p className="text-text-secondary text-sm">
-            Manage assignments for <span className="font-bold text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-xl border border-border bg-surface p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('tile')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${viewMode === 'tile' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Tiles
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${viewMode === 'list' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              <List className="h-4 w-4" />
-              List
-            </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex rounded-xl border border-border/60 bg-surface/80 p-1 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setViewMode('tile')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-violet-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Tiles
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-violet-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              >
+                <List className="h-3.5 w-3.5" />
+                List
+              </button>
+            </div>
+            <Button onClick={openCreateModal} className="bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-md">
+              <Plus className="h-4 w-4 mr-1" />
+              Create Course Work
+            </Button>
           </div>
-          <Button onClick={openCreateModal}>
-            <Plus className="h-4 w-4 mr-1" />
-            Create Course Work
-          </Button>
         </div>
       </div>
 

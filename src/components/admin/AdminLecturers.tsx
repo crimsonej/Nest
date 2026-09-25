@@ -261,28 +261,29 @@ export function AdminLecturers() {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
-            <Shield className="h-4 w-4" />
-            <span>Administrator Platform</span>
+      <div className="relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              <Shield className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+              Administrator Platform
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Lecturer <span className="bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">Management</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary max-w-2xl">
+              Create lecturer profiles in Supabase, assign faculties & course units, set initial login credentials, and perform default password resets.
+            </p>
           </div>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-text-primary">
-            Lecturer Management
-          </h1>
-          <p className="mt-1 text-sm text-text-secondary max-w-2xl">
-            Create lecturer profiles in Supabase, assign faculties & course units, set initial login credentials, and perform default password resets.
-          </p>
-        </div>
 
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center gap-2.5 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Add New Lecturer</span>
-        </button>
+          <button
+            onClick={openAddModal}
+            className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-rose-600/20 hover:from-rose-700 hover:to-amber-700 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Add New Lecturer</span>
+          </button>
+        </div>
       </div>
 
       {/* Global Alerts */}

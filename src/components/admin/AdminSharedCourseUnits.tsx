@@ -40,5 +40,61 @@ export function AdminSharedCourseUnits() {
     setMessage(error ? error.message : 'Shared faculty assignments saved.')
   }
 
-  return <div className="space-y-6"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Administrator workspace</p><h1 className="mt-2 text-3xl font-black text-text-primary">Shared course units</h1><p className="mt-2 text-sm text-text-secondary">Courses stay owned by one faculty. Select extra faculties only for course units that are genuinely shared.</p></div><div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]"><div className="space-y-2 rounded-2xl border border-border bg-surface p-3">{units.map((unit) => <button key={unit.id} onClick={() => setActiveUnit(unit.id)} className={`flex w-full items-start gap-3 rounded-xl p-3 text-left ${activeUnit === unit.id ? 'bg-emerald-500/10 ring-1 ring-emerald-500/40' : 'hover:bg-surface-hover'}`}><Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span><strong className="block text-sm text-text-primary">{unit.code} · {unit.name}</strong><small className="text-xs text-text-muted">Primary: {unit.course?.faculty?.name || 'Course faculty'}</small></span></button>)}</div><div className="rounded-2xl border border-border bg-surface p-5">{activeUnit ? <><div className="mb-4 flex items-center justify-between"><h2 className="font-bold text-text-primary">Available faculties</h2><button onClick={save} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white"><Save className="h-4 w-4" />Save</button></div><div className="space-y-2">{faculties.map((faculty) => <button key={faculty.id} onClick={() => toggle(faculty.id)} className="flex w-full items-center justify-between rounded-xl border border-border px-3 py-3 text-left text-sm"><span><strong className="text-text-primary">{faculty.name}</strong><small className="ml-2 text-xs text-text-muted">{faculty.code}</small></span>{(selected[activeUnit] || []).includes(faculty.id) && <Check className="h-4 w-4 text-emerald-600" />}</button>)}</div>{message && <p className="mt-4 text-sm text-emerald-700">{message}</p>}</> : <p className="text-sm text-text-secondary">Select a course unit to assign its shared faculties.</p>}</div></div></div>
+  return (
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              <Layers3 className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+              Administrator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Shared <span className="bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">Course Units</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Courses stay owned by one faculty. Select extra faculties only for course units that are genuinely shared.</p>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+        <div className="space-y-2 rounded-2xl border border-border bg-surface p-3">
+          {units.map((unit) => (
+            <button key={unit.id} onClick={() => setActiveUnit(unit.id)} className={`flex w-full items-start gap-3 rounded-xl p-3 text-left ${activeUnit === unit.id ? 'bg-emerald-500/10 ring-1 ring-emerald-500/40' : 'hover:bg-surface-hover'}`}>
+              <Layers3 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <span>
+                <strong className="block text-sm text-text-primary">{unit.code} · {unit.name}</strong>
+                <small className="text-xs text-text-muted">Primary: {unit.course?.faculty?.name || 'Course faculty'}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          {activeUnit ? (
+            <>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-bold text-text-primary">Available faculties</h2>
+                <button onClick={save} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white">
+                  <Save className="h-4 w-4" />Save
+                </button>
+              </div>
+              <div className="space-y-2">
+                {faculties.map((faculty) => (
+                  <button key={faculty.id} onClick={() => toggle(faculty.id)} className="flex w-full items-center justify-between rounded-xl border border-border px-3 py-3 text-left text-sm">
+                    <span>
+                      <strong className="text-text-primary">{faculty.name}</strong>
+                      <small className="ml-2 text-xs text-text-muted">{faculty.code}</small>
+                    </span>
+                    {(selected[activeUnit] || []).includes(faculty.id) && <Check className="h-4 w-4 text-emerald-600" />}
+                  </button>
+                ))}
+              </div>
+              {message && <p className="mt-4 text-sm text-emerald-700">{message}</p>}
+            </>
+          ) : (
+            <p className="text-sm text-text-secondary">Select a course unit to assign its shared faculties.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }

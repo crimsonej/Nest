@@ -217,26 +217,39 @@ export function CoordinatorDashboard() {
       {/* Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="flex flex-col gap-4 rounded-3xl border border-primary/20 bg-primary-light/30 p-6 sm:flex-row sm:items-center sm:justify-between shadow-xs backdrop-blur-md"
+        className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-r from-emerald-950/20 via-teal-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl"
       >
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Coordinator Overview</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-text-primary sm:text-3xl tracking-tight">Keep every group moving.</h1>
-          <p className="mt-1 text-xs text-text-secondary font-medium">Monitor course activity and resolve unassigned students from one place.</p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Link href="/coordinator/coursework">
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New Coursework
-            </Button>
-          </Link>
-          <Link href="/coordinator/groups">
-            <Button size="sm">
-              Review Groups
-              <ArrowRight className="h-4 w-4 ml-1.5" />
-            </Button>
-          </Link>
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400 backdrop-blur-md mb-2.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Coordinator Center · Real-Time Supervision</span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
+              Keep every group moving <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">forward</span>
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
+              Monitor course activity, auto-assign unassigned students, track lock dates, and supervise academic performance.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/coordinator/coursework">
+              <Button variant="outline" size="sm" className="border-emerald-500/30 hover:border-emerald-500/60 shadow-xs">
+                <Plus className="h-4 w-4 mr-1.5 text-emerald-500" />
+                New Coursework
+              </Button>
+            </Link>
+            <Link href="/coordinator/groups">
+              <Button size="sm" className="bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25 border-0">
+                Review Groups
+                <ArrowRight className="h-4 w-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </motion.div>
 

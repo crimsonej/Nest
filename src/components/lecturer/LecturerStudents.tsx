@@ -226,25 +226,28 @@ export function LecturerStudents() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <GraduationCap className="h-5 w-5 text-violet-500" />
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-violet-500">Lecturer Portal</p>
+      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+              <GraduationCap className="h-3.5 w-3.5 text-violet-500 animate-pulse" />
+              Lecturer Portal
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Course Unit <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Students</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Enrolled in: <span className="font-bold text-violet-500 dark:text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-text-primary sm:text-3xl">Course Unit Students</h1>
-          <p className="mt-1 text-text-secondary text-sm">
-            Enrolled in: <span className="font-bold text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchData(assignedCourseUnit.id)} loading={loading}>
-            <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-          </Button>
-          <Button size="sm" onClick={() => setIsEnrollModalOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-1" /> Enroll Student
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchData(assignedCourseUnit.id)} loading={loading} className="border-border/60 backdrop-blur-md">
+              <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+            </Button>
+            <Button size="sm" onClick={() => setIsEnrollModalOpen(true)} className="bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-md">
+              <UserPlus className="h-4 w-4 mr-1" /> Enroll Student
+            </Button>
+          </div>
         </div>
       </div>
 

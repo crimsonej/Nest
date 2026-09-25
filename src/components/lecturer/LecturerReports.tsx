@@ -752,32 +752,37 @@ export function LecturerReports() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="h-5 w-5 text-violet-500" />
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-violet-500">Lecturer Portal</p>
+      <div className="relative overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-r from-violet-950/20 via-purple-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-bold text-violet-400 backdrop-blur-md mb-2.5">
+              <FileText className="h-3.5 w-3.5 text-violet-400" />
+              <span>Lecturer Supervision Portal</span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
+              Reports & <span className="bg-gradient-to-r from-violet-500 via-purple-400 to-indigo-500 bg-clip-text text-transparent">Analytics</span>
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
+              Assigned Course Unit: <span className="font-bold text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-text-primary sm:text-3xl">Reports & Analytics</h1>
-          <p className="mt-1 text-text-secondary text-sm">
-            Scoped to: <span className="font-bold text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setViewMode('tiles')}
-            className={cn('p-2 rounded-xl border text-xs font-medium transition-colors', viewMode === 'tiles' ? 'bg-primary text-white border-primary' : 'border-border text-text-muted hover:text-text-primary')}
-            title="Tile View"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={cn('p-2 rounded-xl border text-xs font-medium transition-colors', viewMode === 'list' ? 'bg-primary text-white border-primary' : 'border-border text-text-muted hover:text-text-primary')}
-            title="List View"
-          >
-            <List className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setViewMode('tiles')}
+              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'tiles' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500/50 shadow-md shadow-violet-500/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
+              title="Tile View"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'list' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500/50 shadow-md shadow-violet-500/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
+              title="List View"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1012,57 +1017,57 @@ export function LecturerReports() {
                 )}
 
                 {/* Layout Switcher Buttons */}
-                <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
+                <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border overflow-x-auto shrink-0 scrollbar-none">
                   <button
                     type="button"
                     onClick={() => setModalLayoutMode('table')}
                     className={cn(
-                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors shrink-0',
                       modalLayoutMode === 'table' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Table View"
                   >
                     <Table className="h-3.5 w-3.5" />
-                    <span className="hidden md:inline text-[11px]">Table</span>
+                    <span className="hidden xs:inline text-[11px]">Table</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setModalLayoutMode('cards')}
                     className={cn(
-                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors shrink-0',
                       modalLayoutMode === 'cards' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Card Grid View"
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
-                    <span className="hidden md:inline text-[11px]">Cards</span>
+                    <span className="hidden xs:inline text-[11px]">Cards</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setModalLayoutMode('roster')}
                     className={cn(
-                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors shrink-0',
                       modalLayoutMode === 'roster' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Compact Roster View"
                   >
                     <ListFilter className="h-3.5 w-3.5" />
-                    <span className="hidden md:inline text-[11px]">Compact</span>
+                    <span className="hidden xs:inline text-[11px]">Compact</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setModalLayoutMode('accordion')}
                     className={cn(
-                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors',
+                      'p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors shrink-0',
                       modalLayoutMode === 'accordion' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Grouped Accordion View"
                   >
                     <Layers className="h-3.5 w-3.5" />
-                    <span className="hidden md:inline text-[11px]">Grouped</span>
+                    <span className="hidden xs:inline text-[11px]">Grouped</span>
                   </button>
                 </div>
 

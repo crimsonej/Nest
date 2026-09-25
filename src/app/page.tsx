@@ -89,29 +89,40 @@ export default function HomePage() {
             </motion.h1>
 
             <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl font-medium">
-              NEST brings students and coordinators into one calm, high-performance workspace for course units, group formation, assignments, and campus coordination without stale data.
+              NEST brings students, lecturers, and coordinators into one calm, high-performance workspace for course units, group formation, assignments, and campus coordination without stale data.
             </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row mb-12">
               <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl">
+                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl shadow-indigo-500/25">
                   Sign In to Workspace
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 border-primary/30 hover:border-primary/60 backdrop-blur-md">
                   Create Account
                 </Button>
               </Link>
             </motion.div>
 
-            <motion.p variants={itemVariants} className="mt-8 text-xs text-text-muted">
-              Created by Kibirige Joachim Elijah · GitHub:{' '}
-              <a href="https://github.com/crimsonej" target="_blank" rel="noreferrer" className="font-bold text-primary hover:underline">
-                crimsonej
-              </a>
-            </motion.p>
+            {/* Quick Stat Pill Highlights */}
+            <motion.div variants={itemVariants} className="inline-flex flex-wrap items-center justify-center gap-4 sm:gap-8 rounded-3xl border border-border/80 bg-surface/75 px-6 py-3.5 backdrop-blur-xl shadow-lg">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>100% Real-Time Group Roster</span>
+              </div>
+              <div className="hidden sm:block h-4 w-px bg-border/80" />
+              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
+                <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                <span>Lecturer & Coordinator Oversight</span>
+              </div>
+              <div className="hidden sm:block h-4 w-px bg-border/80" />
+              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Automatic Excel / PDF Exports</span>
+              </div>
+            </motion.div>
           </motion.div>
         </section>
 

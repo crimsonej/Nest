@@ -8,70 +8,95 @@
   --color-primary-light: #e0e7ff;
   --color-secondary: #7c3aed;
   --color-secondary-hover: #6d28d9;
-  --color-success: #10b981;
+  --color-success: #059669;
   --color-success-light: #d1fae5;
-  --color-warning: #f59e0b;
+  --color-warning: #d97706;
   --color-warning-light: #fef3c7;
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
-  --color-background: #faf9fe;
+  --color-danger: #e11d48;
+  --color-danger-light: #ffe4e6;
+  --color-background: #f8fafc;
   --color-surface: #ffffff;
-  --color-surface-hover: #f3f0ff;
-  --color-border: #e2e8f0;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #cbd5e1;
   --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
+  --color-text-secondary: #334155;
   --color-text-muted: #64748b;
-  --sidebar-bg: #0f172a;
-  --sidebar-text: #f8fafc;
-  --sidebar-border: #1e293b;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #0f172a;
+  --sidebar-border: #e2e8f0;
 }
 
 html.mid {
   --color-primary: #f43f5e;
   --color-primary-hover: #e11d48;
-  --color-primary-light: rgba(244, 63, 94, 0.2);
-  --color-secondary: #f97316;
-  --color-secondary-hover: #ea580c;
+  --color-primary-light: rgba(244, 63, 94, 0.25);
+  --color-secondary: #fb923c;
+  --color-secondary-hover: #f97316;
   --color-success: #10b981;
   --color-success-light: rgba(16, 185, 129, 0.2);
   --color-warning: #f59e0b;
   --color-warning-light: rgba(245, 158, 11, 0.2);
   --color-danger: #f43f5e;
-  --color-danger-light: rgba(244, 63, 94, 0.2);
-  --color-background: #18040c;
-  --color-surface: #240815;
-  --color-surface-hover: #330d1f;
-  --color-border: #4c0d29;
+  --color-danger-light: rgba(244, 63, 94, 0.25);
+  --color-background: #140209;
+  --color-surface: #220612;
+  --color-surface-hover: #320a1b;
+  --color-border: #520e2e;
   --color-text-primary: #fff1f2;
   --color-text-secondary: #fecdd3;
   --color-text-muted: #fb7185;
-  --sidebar-bg: #120208;
+  --sidebar-bg: #18040b;
   --sidebar-text: #fff1f2;
-  --sidebar-border: #330d1f;
+  --sidebar-border: rgba(244, 63, 94, 0.25);
 }
 
 html.dark {
   --color-primary: #06b6d4;
   --color-primary-hover: #22d3ee;
-  --color-primary-light: rgba(6, 182, 212, 0.16);
-  --color-secondary: #8b5cf6;
-  --color-secondary-hover: #a78bfa;
+  --color-primary-light: rgba(6, 182, 212, 0.18);
+  --color-secondary: #a855f7;
+  --color-secondary-hover: #c084fc;
   --color-success: #10b981;
-  --color-success-light: rgba(16, 185, 129, 0.18);
+  --color-success-light: rgba(16, 185, 129, 0.2);
   --color-warning: #fbbf24;
-  --color-warning-light: rgba(251, 191, 36, 0.18);
-  --color-danger: #f87171;
-  --color-danger-light: rgba(248, 113, 113, 0.18);
-  --color-background: #030712;
-  --color-surface: #0b1329;
-  --color-surface-hover: #131e3a;
+  --color-warning-light: rgba(251, 191, 36, 0.2);
+  --color-danger: #fb7185;
+  --color-danger-light: rgba(251, 113, 133, 0.2);
+  --color-background: #040711;
+  --color-surface: #0b132b;
+  --color-surface-hover: #121e42;
   --color-border: #1e293b;
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: #94a3b8;
-  --sidebar-bg: #020617;
+  --sidebar-bg: #070b16;
   --sidebar-text: #f8fafc;
-  --sidebar-border: #0f172a;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Circular Wave Reveal View Transition for Theme Switching */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: theme-ripple-reveal 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes theme-ripple-reveal {
+  from {
+    clip-path: circle(0% at var(--click-x, 50%) var(--click-y, 50%));
+  }
+  to {
+    clip-path: circle(160% at var(--click-x, 50%) var(--click-y, 50%));
+  }
 }
 
 @layer base {
@@ -99,15 +124,16 @@ html.dark {
     min-width: 320px;
     overflow-x: hidden;
     background-image:
-      radial-gradient(ellipse at 15% 10%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 45%),
-      radial-gradient(ellipse at 85% 20%, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 40%),
-      radial-gradient(ellipse at 50% 85%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 50%),
+      radial-gradient(ellipse at 12% 8%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 42%),
+      radial-gradient(ellipse at 88% 16%, color-mix(in srgb, var(--color-secondary) 20%, transparent), transparent 38%),
+      radial-gradient(ellipse at 35% 90%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 48%),
+      radial-gradient(ellipse at 70% 60%, color-mix(in srgb, var(--color-secondary) 10%, transparent), transparent 55%),
       linear-gradient(180deg, var(--color-background), var(--color-background));
-    background-size: 150% 150%, 140% 140%, 130% 130%, 100% 100%;
-    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 0%;
+    background-size: 150% 150%, 140% 140%, 130% 130%, 120% 120%, 100% 100%;
+    background-position: 0% 0%, 100% 0%, 50% 100%, 60% 50%, 0% 0%;
     background-attachment: fixed;
     animation: ambient-drift 26s ease-in-out infinite alternate;
-    transition: background-color 0.4s ease, color 0.4s ease;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
   }
 
   body::before {
@@ -122,8 +148,8 @@ html.dark {
 
   .workspace-surface {
     background-image:
-      radial-gradient(ellipse at 80% -10%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 30rem),
-      radial-gradient(ellipse at 10% 25%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 26rem);
+      radial-gradient(ellipse at 80% -10%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 32rem),
+      radial-gradient(ellipse at 10% 25%, color-mix(in srgb, var(--color-secondary) 14%, transparent), transparent 28rem);
   }
 
   :focus-visible {
@@ -201,29 +227,38 @@ html.dark {
 
 @layer components {
   .btn {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none touch-manipulation;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none touch-manipulation;
   }
 
   .btn-primary {
     @apply btn text-white shadow-md active:scale-[0.98];
-    background-color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary) 30%, transparent);
   }
 
   .btn-primary:hover {
-    background-color: var(--color-primary-hover);
+    filter: brightness(1.12);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
   }
 
   .btn-secondary {
     @apply btn text-white shadow-sm hover:shadow-md active:scale-[0.98];
-    background-color: var(--color-secondary);
+    background: linear-gradient(135deg, var(--color-secondary), color-mix(in srgb, var(--color-secondary) 70%, #ec4899));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-secondary) 30%, transparent);
   }
 
   .btn-secondary:hover {
-    background-color: var(--color-secondary-hover);
+    filter: brightness(1.12);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--color-secondary) 40%, transparent);
   }
 
   .btn-outline {
-    @apply btn border border-border bg-surface text-text-primary backdrop-blur-sm hover:bg-surface-hover active:scale-[0.98];
+    @apply btn border border-border text-text-primary backdrop-blur-md hover:bg-surface-hover active:scale-[0.98];
+    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  }
+
+  .btn-outline:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
   }
 
   .btn-ghost {
@@ -232,12 +267,14 @@ html.dark {
 
   .btn-danger {
     @apply btn text-white shadow-md active:scale-[0.98];
-    background-color: var(--color-danger);
+    background: linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 70%, #f97316));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-danger) 30%, transparent);
   }
 
   .btn-success {
     @apply btn text-white shadow-md active:scale-[0.98];
-    background-color: var(--color-success);
+    background: linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, #06b6d4));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-success) 30%, transparent);
   }
 
   .btn-sm {
@@ -249,56 +286,85 @@ html.dark {
   }
 
   .input {
-    @apply w-full min-h-11 rounded-xl border border-border bg-surface px-4 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply w-full min-h-11 rounded-2xl border border-border px-4 py-2.5 text-base text-text-primary placeholder:text-text-muted transition-all duration-200 focus:border-primary focus:outline-none hover:border-border disabled:opacity-50 disabled:cursor-not-allowed;
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-primary) 5%, transparent);
+  }
+
+  .input:focus {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent), 0 2px 8px color-mix(in srgb, var(--color-primary) 10%, transparent);
   }
 
   .card {
-    @apply rounded-2xl border border-border shadow-[0_8px_24px_rgba(16,42,67,0.06)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(16,42,67,0.1)];
-    background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    @apply rounded-3xl border border-border shadow-[0_8px_28px_rgba(16,42,67,0.07)] backdrop-blur-xl transition-all duration-300;
+    background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
   }
 
   .card:hover {
-    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--color-primary) 8%, transparent), 0 4px 12px rgba(0,0,0,0.04);
   }
 
   .card-header {
-    @apply border-b border-border px-6 py-4;
+    @apply border-b border-border px-4 py-3.5 sm:px-6 sm:py-4;
   }
 
   .card-content {
-    @apply px-6 py-4;
+    @apply px-4 py-3.5 sm:px-6 sm:py-4;
   }
 
   .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide transition-colors;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide transition-all duration-200;
+    backdrop-filter: blur(6px);
   }
 
   .badge-primary {
-    @apply badge bg-primary-light text-primary border;
+    @apply badge border;
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
   }
 
   .badge-success {
-    @apply badge bg-success-light text-success border;
+    @apply badge border;
+    background: color-mix(in srgb, var(--color-success) 14%, transparent);
+    color: var(--color-success);
+    border-color: color-mix(in srgb, var(--color-success) 25%, transparent);
   }
 
   .badge-warning {
-    @apply badge bg-warning-light text-warning border;
+    @apply badge border;
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    color: var(--color-warning);
+    border-color: color-mix(in srgb, var(--color-warning) 25%, transparent);
   }
 
   .badge-danger {
-    @apply badge bg-danger-light text-danger border;
+    @apply badge border;
+    background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 25%, transparent);
   }
 
   .badge-secondary {
-    @apply badge bg-surface-hover text-text-secondary border border-border;
+    @apply badge border;
+    background: color-mix(in srgb, var(--color-surface-hover) 80%, transparent);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
   }
 
   .glass-panel {
-    @apply rounded-3xl border border-white/20 bg-surface shadow-xl backdrop-blur-xl transition-all;
+    @apply rounded-3xl border border-white/15 shadow-2xl backdrop-blur-2xl transition-all;
+    background: color-mix(in srgb, var(--color-surface) 75%, transparent);
   }
 
   .content-wrap {
     @apply min-w-0 max-w-full;
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-text-primary tracking-wide mb-1.5;
   }
 
   .page-enter {

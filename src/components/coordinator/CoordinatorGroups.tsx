@@ -699,35 +699,38 @@ export function CoordinatorGroups() {
   if (selectedCourseUnitId && selectedCourseSummary) {
     return (
       <div className="space-y-6">
-        {/* Back + Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)}>
-              <ArrowLeft className="h-4 w-4 mr-1.5" />
-              All Course Units
-            </Button>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Course Unit</p>
-              <h1 className="text-2xl font-bold text-text-primary">
-                {selectedCourseSummary.code} • {selectedCourseSummary.name}
-              </h1>
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)} className="shrink-0">
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                All Units
+              </Button>
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Course Unit
+                </div>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+                  {selectedCourseSummary.code} <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">• {selectedCourseSummary.name}</span>
+                </h1>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="primary">{selectedCourseSummary.totalMembersAssigned} / {selectedCourseSummary.totalStudents} Grouped</Badge>
-            <Badge variant="secondary">{selectedCourseSummary.totalGroups} Groups</Badge>
-            <Badge variant="warning">{orphanStudents.length} Orphans</Badge>
-            <Button variant="outline" size="sm" onClick={fetchData} loading={loading}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button onClick={() => {
-              const defaultCw = selectedCourseworks.length > 0 ? selectedCourseworks[0].id : ''
-              form.setValue('courseworkId', defaultCw)
-              setCreateModalOpen(true)
-            }}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Group
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="primary" className="font-semibold">{selectedCourseSummary.totalMembersAssigned} / {selectedCourseSummary.totalStudents} Grouped</Badge>
+              <Badge variant="secondary" className="font-semibold">{selectedCourseSummary.totalGroups} Groups</Badge>
+              <Badge variant="warning" className="font-semibold">{orphanStudents.length} Orphans</Badge>
+              <Button variant="outline" size="sm" onClick={fetchData} loading={loading}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button onClick={() => {
+                const defaultCw = selectedCourseworks.length > 0 ? selectedCourseworks[0].id : ''
+                form.setValue('courseworkId', defaultCw)
+                setCreateModalOpen(true)
+              }}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                New Group
+              </Button>
             {currentUnitManagers && (
               <Button variant="outline" onClick={openRandomGroupModal} disabled={selectedCourseworks.length === 0}>
                 <Shuffle className="h-4 w-4 mr-1.5" />
@@ -736,6 +739,7 @@ export function CoordinatorGroups() {
             )}
           </div>
         </div>
+      </div>
 
         {/* Group Formation Tiles */}
         <div>
@@ -1246,16 +1250,23 @@ export function CoordinatorGroups() {
   // DEFAULT VIEW: Course Unit tiles only
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Groups</h1>
-          <p className="text-text-secondary">Select a course unit to view its groups, rosters, and manage orphan student assignments.</p>
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Coordinator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Student <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Groups</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Select a course unit to view its groups, rosters, and manage orphan student assignments.</p>
+          </div>
+          <Button variant="outline" onClick={fetchData} loading={loading} className="self-start sm:self-auto border-border/60 backdrop-blur-md">
+            <RefreshCw className="h-4 w-4 mr-1.5" />
+            Refresh
+          </Button>
         </div>
-        <Button variant="outline" onClick={fetchData} loading={loading}>
-          <RefreshCw className="h-4 w-4 mr-1.5" />
-          Refresh
-        </Button>
       </div>
 
       {/* Search */}

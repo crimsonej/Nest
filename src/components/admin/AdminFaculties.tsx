@@ -63,15 +63,22 @@ export function AdminFaculties() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Administrator workspace</p>
-          <h1 className="mt-2 text-3xl font-black text-text-primary">Faculties</h1>
-          <p className="mt-2 text-sm text-text-secondary">Create, manage, and remove faculties for your academic institution.</p>
+      <div className="relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              <Building2 className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+              Administrator Workspace
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Academic <span className="bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">Faculties</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Create, manage, and remove faculties for your academic institution.</p>
+          </div>
+          <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-rose-700 hover:to-amber-700 transition-all">
+            <Plus className="h-4 w-4" />Add faculty
+          </button>
         </div>
-        <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
-          <Plus className="h-4 w-4" />Add faculty
-        </button>
       </div>
 
       {error && <p className="rounded-xl border border-danger/30 bg-danger-light/40 p-3 text-sm text-danger">{error}</p>}

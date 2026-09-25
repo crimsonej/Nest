@@ -173,10 +173,18 @@ export function StudentCoursework() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Coursework & Assignments</h1>
-          <p className="text-text-secondary">View and manage your coursework tasks, instructions, and deadlines</p>
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 via-violet-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              <BookOpen className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
+              Student Portal
+            </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+              Coursework <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">& Assignments</span>
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">View and manage your coursework tasks, instructions, and deadlines.</p>
+          </div>
         </div>
       </div>
 

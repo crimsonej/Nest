@@ -285,26 +285,37 @@ export function StudentDashboard() {
       {/* Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="flex flex-col gap-4 rounded-3xl border border-primary/20 bg-primary-light/30 p-6 sm:flex-row sm:items-center sm:justify-between shadow-xs backdrop-blur-md"
+        className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-r from-indigo-950/20 via-violet-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl"
       >
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Student Workspace</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-text-primary sm:text-3xl tracking-tight">
-            Welcome back, {user?.full_name?.split(' ')[0]}.
-          </h1>
-          <p className="mt-1 text-xs text-text-secondary font-medium">Ndejje University · Kampala Campus</p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
-            <BookOpen className="h-4 w-4 mr-1.5" />
-            Course Units ({myCourseUnitIds.length})
-          </Button>
-          <Link href="/student/coursework">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1.5" />
-              Browse Coursework
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-bold text-indigo-400 backdrop-blur-md mb-2.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              <span>Student Workspace · Ndejje University</span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
+              Welcome back, <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">{user?.full_name?.split(' ')[0] || 'Student'}</span> 👋
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
+              Track active coursework deadlines, manage project group tasks, and monitor your academic progress.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)} className="border-indigo-500/30 hover:border-indigo-500/60 shadow-xs">
+              <BookOpen className="h-4 w-4 mr-2 text-indigo-500" />
+              Course Units ({myCourseUnitIds.length})
             </Button>
-          </Link>
+            <Link href="/student/coursework">
+              <Button size="sm" className="shadow-lg shadow-indigo-500/25">
+                <Plus className="h-4 w-4 mr-1.5" />
+                Browse Coursework
+              </Button>
+            </Link>
+          </div>
         </div>
       </motion.div>
 
@@ -315,9 +326,10 @@ export function StudentDashboard() {
       )}
 
       {/* Metric Cards Grid */}
-      <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="My Groups" value={metrics.myGroups} icon={<Users className="h-6 w-6" />} color="primary" />
-        <MetricCard title="Course Units" value={metrics.registeredCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" onClick={() => setIsModalOpen(true)} />
+      <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <MetricCard title="My Active Groups" value={metrics.myGroups} icon={<Users className="h-6 w-6" />} color="primary" />
+        <MetricCard title="Registered Course Units" value={metrics.registeredCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" onClick={() => setIsModalOpen(true)} />
+        <MetricCard title="In-Progress Tasks" value={metrics.activeTasks} icon={<Target className="h-6 w-6" />} color="warning" />
       </motion.div>
 
       {/* Lists Grid */}
