@@ -1,7 +1,9 @@
 'use client'
 
 import { ReactNode, useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { motion, useReducedMotion } from 'framer-motion'
 import { StudentSidebar } from '../student/StudentSidebar'
 import { CoordinatorSidebar } from '../coordinator/CoordinatorSidebar'
 import { AdminSidebar } from '../admin/AdminSidebar'
@@ -17,6 +19,8 @@ interface LayoutProps {
 
 export function AppLayout({ children, role }: LayoutProps) {
   const { user, loading } = useAuth()
+  const pathname = usePathname()
+  const shouldReduceMotion = useReducedMotion()
   const [roleModalOpen, setRoleModalOpen] = useState(false)
 
   useEffect(() => {
@@ -60,8 +64,15 @@ export function AppLayout({ children, role }: LayoutProps) {
           role={role}
           onSwitchWorkspace={canSwitchWorkspace ? () => setRoleModalOpen(true) : undefined}
         />
-        <main className="page-enter mx-auto w-full max-w-[1500px] min-w-0 px-3.5 pb-10 pt-4 sm:px-6 sm:py-8 lg:px-8 lg:py-8" role="main">
-          {children}
+        <main className="mx-auto w-full max-w-[1500px] min-w-0 px-3.5 pb-10 pt-4 sm:px-6 sm:py-8 lg:px-8 lg:py-8" role="main">
+          <motion.div
+            key={pathname}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: 'easeOut' }}
+          >
+            {children}
+          </motion.div>
         </main>
       </div>
 

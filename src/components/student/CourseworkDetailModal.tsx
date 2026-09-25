@@ -32,6 +32,7 @@ interface CourseworkDetailModalProps {
   onClose: () => void
   coursework: any
   onTasksUpdated?: () => void
+  showTasksTab?: boolean
 }
 
 export function CourseworkDetailModal({
@@ -39,6 +40,7 @@ export function CourseworkDetailModal({
   onClose,
   coursework,
   onTasksUpdated,
+  showTasksTab = true,
 }: CourseworkDetailModalProps) {
   const { user } = useAuth()
   const supabase = createClient()
@@ -236,19 +238,21 @@ export function CourseworkDetailModal({
             <FileText className="h-4 w-4" />
             Coursework Details & Prompt
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('tasks')}
-            className={cn(
-              'pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2',
-              activeTab === 'tasks'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-text-muted hover:text-text-primary'
-            )}
-          >
-            <CheckCircle className="h-4 w-4" />
-            My Action Items ({tasks.length})
-          </button>
+          {showTasksTab && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('tasks')}
+              className={cn(
+                'pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2',
+                activeTab === 'tasks'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              )}
+            >
+              <CheckCircle className="h-4 w-4" />
+              My Action Items ({tasks.length})
+            </button>
+          )}
         </div>
 
         {/* TAB 1: DETAILS & PROMPT */}
@@ -343,14 +347,16 @@ export function CourseworkDetailModal({
             </div>
 
             {/* Quick action to add a sub-task */}
-            <div className="pt-2 border-t border-border/60 flex items-center justify-between">
-              <p className="text-xs text-text-muted">
-                Need to break this coursework into sub-tasks?
-              </p>
-              <Button size="sm" variant="outline" onClick={() => setActiveTab('tasks')}>
-                Manage Sub-tasks ({tasks.length})
-              </Button>
-            </div>
+            {showTasksTab && (
+              <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                <p className="text-xs text-text-muted">
+                  Need to break this coursework into sub-tasks?
+                </p>
+                <Button size="sm" variant="outline" onClick={() => setActiveTab('tasks')}>
+                  Manage Sub-tasks ({tasks.length})
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

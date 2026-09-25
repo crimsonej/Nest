@@ -118,26 +118,34 @@ export default function HomePage() {
                 <span>Lecturer & Coordinator Oversight</span>
               </div>
               <div className="hidden sm:block h-4 w-px bg-border/80" />
-              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>Automatic Excel / PDF Exports</span>
-              </div>
             </motion.div>
           </motion.div>
         </section>
 
         {/* Features Section */}
         <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
-          <div className="mb-16 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="mb-16 text-center"
+          >
             <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-text-primary lg:text-5xl">
               Built for Modern University Workflows
             </h2>
             <p className="mx-auto max-w-2xl text-base text-text-secondary sm:text-lg">
               Purpose-built tools designed for seamless student collaboration and real-time coordinator oversight.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <motion.div
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.12 }}
+            className="grid gap-8 md:grid-cols-3"
+          >
             <FeatureCard
               icon={Users}
               title="Student Group Formation"
@@ -156,7 +164,7 @@ export default function HomePage() {
               description="Complete administrative control with live group monitoring, intervention tools, automated sync, and comprehensive reporting."
               features={['Real-time group monitor', 'Auto-assign unassigned students', 'Google Sheets sync', 'Audit logs']}
             />
-          </div>
+          </motion.div>
         </section>
       </main>
 
@@ -178,6 +186,7 @@ export default function HomePage() {
 function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; features: string[] }) {
   return (
     <motion.div
+      variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } }}
       whileHover={{ y: -6, scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 350, damping: 25 }}
       className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/85 p-6 shadow-lg backdrop-blur-xl transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 sm:p-8"

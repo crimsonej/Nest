@@ -105,9 +105,15 @@ export function AdminDashboard() {
       )}
 
       {/* Metric Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <motion.div
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         {cards.map(({ label, value, icon: Icon, color }) => (
-          <Card key={label} className="relative overflow-hidden group">
+          <motion.div key={label} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.25 } } }}>
+          <Card className="relative overflow-hidden group">
             <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${color}`} />
             <CardContent className="p-5 sm:p-6">
               <div className="flex items-start justify-between gap-3">
@@ -121,13 +127,20 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Quick Navigation Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      >
         {quickLinks.map(({ label, href, icon: Icon, highlight }) => (
-          <Link key={href} href={href}>
+          <motion.div key={href} variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.22 } } }}>
+          <Link href={href}>
             <motion.div
               whileHover={{ y: -3, scale: 1.01 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
@@ -144,8 +157,9 @@ export function AdminDashboard() {
               <ArrowRight className="h-4 w-4 opacity-60" />
             </motion.div>
           </Link>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Faculty Structure Table Card */}
       <Card>

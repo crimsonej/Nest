@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Download,
   FileText,
@@ -795,16 +796,28 @@ export function LecturerReports() {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center min-h-[20vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      )}
-
-      {/* Report Tiles */}
-      {!loading && viewMode === 'tiles' && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <AnimatePresence mode="wait" initial={false}>
+        {loading ? (
+          <motion.div
+            key="reports-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex min-h-[20vh] items-center justify-center"
+            role="status"
+            aria-label="Loading reports"
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+          </motion.div>
+        ) : viewMode === 'tiles' ? (
+        <motion.div
+          key="reports-tiles"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {reportTiles.map((tile) => {
             const Icon = tile.icon
             const count = overviewData[tile.id]?.length || 0
@@ -839,11 +852,15 @@ export function LecturerReports() {
               </button>
             )
           })}
-        </div>
-      )}
-
-      {/* List View */}
-      {!loading && viewMode === 'list' && (
+        </motion.div>
+        ) : (
+        <motion.div
+          key="reports-list"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+        >
         <Card>
           <CardContent className="divide-y divide-border p-0">
             {reportTiles.map((tile) => {
@@ -876,7 +893,9 @@ export function LecturerReports() {
             })}
           </CardContent>
         </Card>
-      )}
+        </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── Interactive Report Detail Modal ─────────────────────────────────── */}
       <Modal

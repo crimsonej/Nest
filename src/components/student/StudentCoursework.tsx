@@ -239,6 +239,7 @@ export function StudentCoursework() {
         onClose={() => setTaskModalOpen(false)}
         coursework={selectedCoursework}
         onTasksUpdated={fetchCourseworks}
+        showTasksTab={false}
       />
     </div>
   )
