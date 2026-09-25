@@ -39,6 +39,7 @@ export async function PATCH(request: Request) {
     const { error: authErr } = await adminSupabase.auth.admin.updateUserById(lecturer_id, {
       password: cleanPassword,
       app_metadata: { role: 'lecturer', provider: 'email', providers: ['email'], must_change_password: true },
+      user_metadata: { must_change_password: true },
     })
 
     if (authErr) {

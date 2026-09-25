@@ -355,16 +355,34 @@ function LoginFormSection({
           userStatus === 'selected_coordinator')
 
       if (isLecturer) {
-        let needsPasswordChange = false
+        let needsPasswordChange =
+          authUser.user_metadata?.must_change_password === true ||
+          authUser.app_metadata?.must_change_password === true
+
         try {
           const { data: lecturerProfile } = await supabase
             .from('lecturers')
-            .select('must_change_password')
+            .select('must_change_password, temp_password')
             .eq('id', authUser.id)
             .maybeSingle()
 
           if (lecturerProfile) {
-            needsPasswordChange = lecturerProfile.must_change_password === true
+            if (
+              lecturerProfile.must_change_password === true ||
+              (lecturerProfile.must_change_password !== false && !!lecturerProfile.temp_password)
+            ) {
+              needsPasswordChange = true
+            } else if (lecturerProfile.must_change_password === false && !lecturerProfile.temp_password) {
+              needsPasswordChange = false
+            }
+          } else {
+            // If DB query returned null (due to RLS or sync delay), assume true for initial logins if not explicitly false
+            if (
+              authUser.user_metadata?.must_change_password !== false &&
+              authUser.app_metadata?.must_change_password !== false
+            ) {
+              needsPasswordChange = true
+            }
           }
         } catch (err) {
           console.warn('Error checking lecturer must_change_password:', err)

@@ -128,20 +128,35 @@ export async function middleware(request: NextRequest) {
     // For lecturers: enforce password change before accessing the portal
     const isChangePasswordPage = request.nextUrl.pathname === '/lecturer/change-password'
     if (isLecturerRole && isLecturerPage && !isChangePasswordPage) {
-      try {
-        const { data: lecturerProfile } = await supabase
-          .from('lecturers')
-          .select('must_change_password')
-          .eq('id', user.id)
-          .maybeSingle()
+      let mustChange =
+        user.user_metadata?.must_change_password === true ||
+        user.app_metadata?.must_change_password === true
 
-        if (lecturerProfile?.must_change_password === true) {
-          const url = request.nextUrl.clone()
-          url.pathname = '/lecturer/change-password'
-          return NextResponse.redirect(url)
+      if (!mustChange) {
+        try {
+          const { data: lecturerProfile } = await supabase
+            .from('lecturers')
+            .select('must_change_password, temp_password')
+            .eq('id', user.id)
+            .maybeSingle()
+
+          if (lecturerProfile) {
+            if (
+              lecturerProfile.must_change_password === true ||
+              (lecturerProfile.must_change_password !== false && !!lecturerProfile.temp_password)
+            ) {
+              mustChange = true
+            }
+          }
+        } catch {
+          // If we can't check, fall back to metadata
         }
-      } catch {
-        // If we can't check, allow through
+      }
+
+      if (mustChange) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/lecturer/change-password'
+        return NextResponse.redirect(url)
       }
     }
 
