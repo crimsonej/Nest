@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge'
+
 // GET /api/admin/lecturers
 // Fetches all lecturers with linked faculties and course units,
 // as well as active faculties and course units for dropdown selectors.

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge'
+
 // PATCH /api/admin/lecturers/reset-password
 // Resets a lecturer's password in Supabase Auth to a default/chosen password.
 export async function PATCH(request: Request) {
