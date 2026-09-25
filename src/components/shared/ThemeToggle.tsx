@@ -13,14 +13,10 @@ export default function ThemeToggle() {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return <div className="h-9 w-32 rounded-full bg-surface-hover border border-border animate-pulse" />
-  }
-
-  const currentTheme = theme || 'light'
+  const currentTheme = mounted ? (theme || 'light') : 'light'
 
   const handleThemeChange = (newTheme: string, event: React.MouseEvent<HTMLButtonElement>) => {
-    if (newTheme === currentTheme) return
+    if (!mounted || newTheme === currentTheme) return
 
     const x = event.clientX
     const y = event.clientY
@@ -50,7 +46,7 @@ export default function ThemeToggle() {
   ]
 
   return (
-    <div className="relative inline-flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1 shadow-md backdrop-blur-xl transition-colors duration-300">
+    <div className="relative inline-flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1 shadow-md backdrop-blur-xl transition-colors duration-300" suppressHydrationWarning>
       {options.map((option) => {
         const Icon = option.icon
         const isActive = currentTheme === option.id
@@ -65,21 +61,17 @@ export default function ThemeToggle() {
               isActive ? 'text-white' : 'text-text-muted hover:text-text-primary'
             }`}
           >
-            {isActive && (
+            {mounted && isActive && (
               <motion.div
                 layoutId="activeThemeIndicator"
                 className={`absolute inset-0 rounded-full ${option.activeBg}`}
                 transition={{ type: 'spring', stiffness: 450, damping: 35 }}
               />
             )}
-            <motion.div
-              whileHover={{ rotate: option.id === 'light' ? 45 : option.id === 'dark' ? -15 : 0, scale: 1.15 }}
-              whileTap={{ scale: 0.9 }}
-              className="relative z-10 flex items-center gap-1.5"
-            >
+            <div className="relative z-10 flex items-center gap-1.5">
               <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-current' : option.color}`} />
               <span className="hidden sm:inline">{option.label}</span>
-            </motion.div>
+            </div>
           </button>
         )
       })}

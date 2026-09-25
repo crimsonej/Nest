@@ -64,7 +64,7 @@ export function Modal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 pointer-events-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? 'modal-title' : undefined}
@@ -88,7 +88,7 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
-              'relative z-10 w-full rounded-t-3xl rounded-b-none sm:rounded-3xl border-t sm:border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto max-h-[92dvh] sm:max-h-[85dvh] flex flex-col',
+              'relative z-10 w-full rounded-3xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto max-h-[calc(100dvh-2rem)] sm:max-h-[85dvh] flex flex-col',
               sizeClasses[size]
             )}
             onClick={(e) => e.stopPropagation()}

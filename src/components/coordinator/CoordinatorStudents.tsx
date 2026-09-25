@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import {
   Users,
@@ -1227,7 +1228,7 @@ export function CoordinatorStudents() {
       )}
 
       {/* DETAIL MODAL */}
-      {detailStudent && (
+      {detailStudent && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-border pb-4">
@@ -1407,11 +1408,12 @@ export function CoordinatorStudents() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ADD / EDIT STUDENT MODAL */}
-      {(isAddModalOpen || editingStudent) && (
+      {(isAddModalOpen || editingStudent) && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
@@ -1526,11 +1528,12 @@ export function CoordinatorStudents() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* DELETE CONFIRMATION MODAL */}
-      {deletingStudent && (
+      {deletingStudent && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-danger/30 bg-background p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-danger border-b border-border pb-3">
@@ -1554,11 +1557,12 @@ export function CoordinatorStudents() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* GRANULAR SC COURSE UNIT SELECTION MODAL */}
-      {scStudent && (
+      {scStudent && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
@@ -1630,11 +1634,12 @@ export function CoordinatorStudents() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* AI & SPREADSHEET IMPORT STAGING PREVIEW MODAL */}
-      {isImportModalOpen && (
+      {isImportModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-4 overflow-hidden">
             <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
@@ -1786,7 +1791,8 @@ export function CoordinatorStudents() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

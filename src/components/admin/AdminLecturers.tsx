@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   UserCheck,
@@ -537,7 +538,7 @@ export function AdminLecturers() {
 
       {/* --- ADD LECTURER MODAL --- */}
       <AnimatePresence>
-        {isAddModalOpen && (
+        {isAddModalOpen && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
@@ -708,13 +709,14 @@ export function AdminLecturers() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 
       {/* --- RESET PASSWORD MODAL --- */}
       <AnimatePresence>
-        {isResetModalOpen && targetLecturer && (
+        {isResetModalOpen && targetLecturer && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
@@ -837,13 +839,14 @@ export function AdminLecturers() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 
       {/* --- REMOVE LECTURER MODAL --- */}
       <AnimatePresence>
-        {isDeleteModalOpen && targetLecturer && (
+        {isDeleteModalOpen && targetLecturer && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
@@ -903,7 +906,8 @@ export function AdminLecturers() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </div>
