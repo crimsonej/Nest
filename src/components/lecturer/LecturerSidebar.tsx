@@ -28,7 +28,7 @@ export function LecturerSidebar() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed left-4 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-lg lg:hidden"
+        className="fixed left-4 top-16 z-50 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-lg lg:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open navigation menu"
       >

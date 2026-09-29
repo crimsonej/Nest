@@ -9,6 +9,7 @@ import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
 import { Textarea } from '../ui/Textarea'
+import { DataTable } from '../ui/DataTable'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { groupCreationSchema } from '@/lib/validators'
@@ -986,62 +987,78 @@ export function CoordinatorGroups() {
                   <p className="text-xs mt-1">No orphan students remain in {selectedCourseSummary.code}.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b border-border bg-surface-hover text-xs font-semibold uppercase tracking-wider text-text-muted">
-                        <th className="py-3 px-4">Student Name & Email</th>
-                        <th className="py-3 px-4">Reg Number</th>
-                        <th className="py-3 px-4">WhatsApp</th>
-                        <th className="py-3 px-4">Target Group</th>
-                        <th className="py-3 px-4 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {orphanStudents.map((student) => {
-                        const targetGroupId = assignmentTargets[student.id] || selectedGroups[0]?.id || ''
+                <DataTable
+                  columns={[
+                    {
+                      key: 'student',
+                      header: 'Student',
+                      render: (row: any) => (
+                        <div>
+                          <p className="font-semibold text-text-primary">{row.full_name}</p>
+                          <p className="text-xs text-text-muted">{row.email}</p>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'regNumber',
+                      header: 'Reg Number',
+                      render: (row: any) => (
+                        <span className="font-mono text-xs font-medium text-text-primary">{row.student_registration_number || '—'}</span>
+                      ),
+                    },
+                    {
+                      key: 'whatsapp',
+                      header: 'WhatsApp',
+                      render: (row: any) => (
+                        <span className="text-xs text-text-secondary">{row.whatsapp_phone || '—'}</span>
+                      ),
+                    },
+                    {
+                      key: 'targetGroup',
+                      header: 'Target Group',
+                      render: (row: any) => {
+                        const targetGroupId = assignmentTargets[row.id] || selectedGroups[0]?.id || ''
                         return (
-                          <tr key={student.id} className="hover:bg-surface-hover/50 transition-colors">
-                            <td className="py-3 px-4">
-                              <p className="font-semibold text-text-primary">{student.full_name}</p>
-                              <p className="text-xs text-text-muted">{student.email}</p>
-                            </td>
-                            <td className="py-3 px-4 font-mono text-xs font-medium text-text-primary">
-                              {student.student_registration_number || '—'}
-                            </td>
-                            <td className="py-3 px-4 text-xs text-text-secondary">
-                              {student.whatsapp_phone || '—'}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Select
-                                value={targetGroupId}
-                                onChange={(value) => setAssignmentTargets((prev) => ({ ...prev, [student.id]: value }))}
-                                options={selectedGroups.map((group) => {
-                                  const cnt = groupMembers.filter((m) => m.group_id === group.id).length
-                                  return { value: group.id, label: `${group.name} (${cnt}/${group.max_members})` }
-                                })}
-                                placeholder="Select group..."
-                                className="w-52 text-xs"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleAssignStudentToGroup(student.id, targetGroupId)}
-                                loading={!!assigningIds[`${student.id}-${targetGroupId}`]}
-                                disabled={!selectedGroups.length || !targetGroupId}
-                              >
-                                <UserPlus className="h-3.5 w-3.5 mr-1" />
-                                Assign / Override
-                              </Button>
-                            </td>
-                          </tr>
+                          <Select
+                            value={targetGroupId}
+                            onChange={(value) => setAssignmentTargets((prev) => ({ ...prev, [row.id]: value }))}
+                            options={selectedGroups.map((group: any) => {
+                              const cnt = groupMembers.filter((m: any) => m.group_id === group.id).length
+                              return { value: group.id, label: `${group.name} (${cnt}/${group.max_members})` }
+                            })}
+                            placeholder="Select group..."
+                            className="w-full sm:w-52 text-xs"
+                          />
                         )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                      },
+                    },
+                    {
+                      key: 'action',
+                      header: 'Action',
+                      className: 'text-right',
+                      render: (row: any) => {
+                        const targetGroupId = assignmentTargets[row.id] || selectedGroups[0]?.id || ''
+                        return (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleAssignStudentToGroup(row.id, targetGroupId)}
+                            loading={!!assigningIds[`${row.id}-${targetGroupId}`]}
+                            disabled={!selectedGroups.length || !targetGroupId}
+                            className="w-full sm:w-auto"
+                          >
+                            <UserPlus className="h-3.5 w-3.5 mr-1" />
+                            Assign / Override
+                          </Button>
+                        )
+                      },
+                    },
+                  ]}
+                  data={orphanStudents}
+                  keyExtractor={(row) => row.id}
+                  mobileView="cards"
+                  emptyMessage="No orphan students found"
+                />
               )}
             </CardContent>
           </Card>

@@ -29,6 +29,7 @@ import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
 import { Textarea } from '../ui/Textarea'
+import { DataTable } from '../ui/DataTable'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -512,48 +513,67 @@ export function LecturerGroups() {
             {selectedGroupMemberRows.length === 0 ? (
               <p className="p-6 text-center text-text-muted text-sm">No members in this group yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border bg-surface-hover/50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-text-muted uppercase tracking-wider">Student Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-text-muted uppercase tracking-wider">Reg No.</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-text-muted uppercase tracking-wider">Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-text-muted uppercase tracking-wider">Role</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-text-muted uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {selectedGroupMemberRows.map((m) => {
-                      const isLeader = selectedGroup.leader_id === m.user_id || m.role === 'leader'
-                      return (
-                        <tr key={m.id} className="hover:bg-surface-hover/40 transition-colors">
-                          <td className="px-4 py-3 font-medium text-text-primary">{m.user?.full_name || '—'}</td>
-                          <td className="px-4 py-3 text-text-secondary font-mono text-xs">{m.user?.student_registration_number || '—'}</td>
-                          <td className="px-4 py-3 text-text-secondary text-xs">{m.user?.email || '—'}</td>
-                          <td className="px-4 py-3">
-                            {isLeader
-                              ? <Badge variant="warning" className="text-[11px]"><Crown className="h-3 w-3 mr-1 inline" />Leader</Badge>
-                              : <Badge variant="secondary" className="text-[11px]">Member</Badge>}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {!isLeader && (
-                                <Button size="sm" variant="ghost" className="text-xs" onClick={() => handleSetLeader(selectedGroup.id, m.user_id)}>
-                                  <Crown className="h-3.5 w-3.5 mr-1" /> Make Leader
-                                </Button>
-                              )}
-                              <Button size="sm" variant="ghost" className="text-xs text-red-500 hover:text-red-600" onClick={() => handleRemoveFromGroup(m.user_id, selectedGroup.id)}>
-                                <UserX className="h-3.5 w-3.5 mr-1" /> Remove
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
+              <DataTable
+                columns={[
+                  {
+                    key: 'student',
+                    header: 'Student Name',
+                    render: (row: any) => (
+                      <span className="font-medium text-text-primary">{row.user?.full_name || '—'}</span>
+                    ),
+                  },
+                  {
+                    key: 'regNumber',
+                    header: 'Reg No.',
+                    render: (row: any) => (
+                      <span className="font-mono text-xs text-text-secondary">{row.user?.student_registration_number || '—'}</span>
+                    ),
+                  },
+                  {
+                    key: 'email',
+                    header: 'Email',
+                    render: (row: any) => (
+                      <span className="text-text-secondary text-xs">{row.user?.email || '—'}</span>
+                    ),
+                  },
+                  {
+                    key: 'role',
+                    header: 'Role',
+                    render: (row: any) => {
+                      const isLeader = selectedGroup.leader_id === row.user_id || row.role === 'leader'
+                      return isLeader ? (
+                        <Badge variant="warning" className="text-[11px]"><Crown className="h-3 w-3 mr-1 inline" />Leader</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[11px]">Member</Badge>
                       )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    },
+                  },
+                  {
+                    key: 'actions',
+                    header: 'Action',
+                    className: 'text-right',
+                    render: (row: any) => {
+                      const isLeader = selectedGroup.leader_id === row.user_id || row.role === 'leader'
+                      return (
+                        <div className="flex items-center justify-end gap-2">
+                          {!isLeader && (
+                            <Button size="sm" variant="ghost" className="text-xs" onClick={() => handleSetLeader(selectedGroup.id, row.user_id)}>
+                              <Crown className="h-3.5 w-3.5 mr-1" /> Make Leader
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-xs text-red-500 hover:text-red-600" onClick={() => handleRemoveFromGroup(row.user_id, selectedGroup.id)}>
+                            <UserX className="h-3.5 w-3.5 mr-1" /> Remove
+                          </Button>
+                        </div>
+                      )
+                    },
+                  },
+                ]}
+                data={selectedGroupMemberRows}
+                keyExtractor={(row) => row.id}
+                mobileView="cards"
+                emptyMessage="No members in this group"
+              />
             )}
           </CardContent>
         </Card>
@@ -810,91 +830,104 @@ export function LecturerGroups() {
             {filteredEnrolledStudents.length === 0 ? (
               <p className="p-8 text-center text-text-muted text-xs">No students found matching current search and filter criteria.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="border-b border-border bg-surface-hover/50">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-bold text-text-muted uppercase tracking-wider">Student</th>
-                      <th className="px-4 py-3 text-left font-bold text-text-muted uppercase tracking-wider">Reg No.</th>
-                      <th className="px-4 py-3 text-left font-bold text-text-muted uppercase tracking-wider">Email / WhatsApp</th>
-                      <th className="px-4 py-3 text-left font-bold text-text-muted uppercase tracking-wider">Assigned Group</th>
-                      <th className="px-4 py-3 text-right font-bold text-text-muted uppercase tracking-wider">Group Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredEnrolledStudents.map((student) => {
-                      const groupInfo = studentGroupMap[student.id]
+              <DataTable
+                columns={[
+                  {
+                    key: 'student',
+                    header: 'Student',
+                    render: (row: any) => (
+                      <div>
+                        <p className="font-semibold text-text-primary">{row.full_name}</p>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'regNumber',
+                    header: 'Reg No.',
+                    render: (row: any) => (
+                      <span className="font-mono text-xs text-text-secondary">{row.student_registration_number || '—'}</span>
+                    ),
+                  },
+                  {
+                    key: 'contact',
+                    header: 'Email / WhatsApp',
+                    render: (row: any) => (
+                      <div className="text-text-muted">
+                        <p className="text-xs">{row.email}</p>
+                        {row.whatsapp_phone && <p className="text-[10px] text-emerald-400">WA: {row.whatsapp_phone}</p>}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'assignedGroup',
+                    header: 'Assigned Group',
+                    render: (row: any) => {
+                      const groupInfo = studentGroupMap[row.id]
                       const assignedGroup = groupInfo?.group
                       const isLeader = groupInfo?.role === 'leader'
-
-                      return (
-                        <tr key={student.id} className="hover:bg-surface-hover/40 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-text-primary">
-                            {student.full_name}
-                          </td>
-                          <td className="px-4 py-3 text-text-secondary font-mono">
-                            {student.student_registration_number || '—'}
-                          </td>
-                          <td className="px-4 py-3 text-text-muted">
-                            {student.email}
-                            {student.whatsapp_phone && <span className="block text-[10px] text-emerald-400">WA: {student.whatsapp_phone}</span>}
-                          </td>
-                          <td className="px-4 py-3">
-                            {assignedGroup ? (
-                              <div className="flex items-center gap-1.5">
-                                <Badge variant={isLeader ? 'warning' : 'primary'} className="text-[11px]">
-                                  {isLeader && <Crown className="h-3 w-3 mr-1 inline" />}
-                                  {assignedGroup.name}
-                                </Badge>
-                              </div>
-                            ) : (
-                              <Badge variant="secondary" className="text-[11px] text-amber-500 border-amber-500/30">
-                                Unassigned (Orphan)
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {assignedGroup ? (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-xs text-red-500 hover:text-red-600"
-                                  onClick={() => handleRemoveFromGroup(student.id, assignedGroup.id)}
-                                  loading={assigningIds[student.id]}
-                                >
-                                  <UserX className="h-3.5 w-3.5 mr-1" /> Remove from Group
-                                </Button>
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <select
-                                    className="rounded-lg border border-border bg-surface px-2 py-1 text-xs text-text-primary focus:outline-none"
-                                    onChange={(e) => {
-                                      if (e.target.value) {
-                                        handleAssignStudentToGroup(student.id, e.target.value)
-                                        e.target.value = ''
-                                      }
-                                    }}
-                                    defaultValue=""
-                                    disabled={groups.length === 0}
-                                  >
-                                    <option value="" disabled>Assign to Group...</option>
-                                    {groups.map((g) => (
-                                      <option key={g.id} value={g.id}>
-                                        {g.name} ({groupMembers.filter((m) => m.group_id === g.id).length}/{g.max_members || '∞'})
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                      return assignedGroup ? (
+                        <Badge variant={isLeader ? 'warning' : 'primary'} className="text-[11px]">
+                          {isLeader && <Crown className="h-3 w-3 mr-1 inline" />}
+                          {assignedGroup.name}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[11px] text-amber-500 border-amber-500/30">
+                          Unassigned (Orphan)
+                        </Badge>
                       )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    },
+                  },
+                  {
+                    key: 'action',
+                    header: 'Group Action',
+                    className: 'text-right',
+                    render: (row: any) => {
+                      const groupInfo = studentGroupMap[row.id]
+                      const assignedGroup = groupInfo?.group
+                      const isLeader = groupInfo?.role === 'leader'
+                      
+                      if (assignedGroup) {
+                        return (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-red-500 hover:text-red-600"
+                            onClick={() => handleRemoveFromGroup(row.id, assignedGroup.id)}
+                            loading={!!assigningIds[row.id]}
+                          >
+                            <UserX className="h-3.5 w-3.5 mr-1" /> Remove from Group
+                          </Button>
+                        )
+                      }
+                      
+                      // For unassigned students, we need a select dropdown
+                      // Since DataTable render can't easily handle controlled select with onChange,
+                      // we'll use a simpler approach with a button that opens a modal or use the select
+                      return (
+                        <Select
+                          value=""
+                          onChange={(value) => {
+                            if (value) {
+                              handleAssignStudentToGroup(row.id, value)
+                            }
+                          }}
+                          options={groups.map((g: any) => ({
+                            value: g.id,
+                            label: `${g.name} (${groupMembers.filter((m: any) => m.group_id === g.id).length}/{g.max_members || '∞'})`,
+                          }))}
+                          placeholder="Assign to Group..."
+                          className="w-full sm:w-48 text-xs"
+                          disabled={groups.length === 0}
+                        />
+                      )
+                    },
+                  },
+                ]}
+                data={filteredEnrolledStudents}
+                keyExtractor={(row) => row.id}
+                mobileView="cards"
+                emptyMessage="No students found"
+              />
             )}
           </CardContent>
         </Card>
