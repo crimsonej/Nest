@@ -70,7 +70,7 @@ export function DevProfileSwitcher() {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen && (
-        <div className="mb-3 w-80 sm:w-96 rounded-2xl border border-border bg-surface/95 backdrop-blur-lg p-4 shadow-2xl animate-in slide-in-from-bottom-5">
+        <div className="mb-3 w-[calc(100vw-2rem)] max-w-sm sm:w-96 rounded-2xl border border-border bg-surface/95 backdrop-blur-lg p-4 shadow-2xl animate-in slide-in-from-bottom-5">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">

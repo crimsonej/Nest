@@ -286,7 +286,7 @@ html.dark {
   }
 
   .btn-sm {
-    @apply px-3 py-1.5 text-xs rounded-lg;
+    @apply px-3 py-1.5 min-h-8 text-xs rounded-lg;
   }
 
   .btn-lg {

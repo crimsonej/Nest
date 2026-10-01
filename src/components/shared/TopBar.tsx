@@ -13,7 +13,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-surface/70 backdrop-blur-2xl transition-colors duration-300 shadow-xs">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-1.5 pl-4 sm:pl-14 pr-2.5 py-2 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-1.5 pl-14 pr-2.5 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="hidden h-6 w-px bg-border/80 sm:block" />
           <div className="min-w-0 truncate">
@@ -64,6 +64,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                   <div
                     className="fixed inset-0 z-10"
                     onClick={() => setUserMenuOpen(false)}
+                    onTouchStart={() => setUserMenuOpen(false)}
                     aria-hidden="true"
                   />
                   <motion.div

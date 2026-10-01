@@ -80,24 +80,28 @@ export function Select({
     if (rect.width === 0 || rect.height === 0) return null
 
     const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
     const spaceBelow = viewportHeight - rect.bottom
     const spaceAbove = rect.top
     const estimatedHeight = 240
+
+    const width = Math.min(rect.width, viewportWidth - 16)
+    const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8))
 
     if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow) {
       const availableMax = Math.min(spaceAbove - 16, 320)
       return {
         bottom: viewportHeight - rect.top + 6,
-        left: rect.left,
-        width: rect.width,
+        left,
+        width,
         maxHeight: Math.max(availableMax, 120),
       }
     } else {
       const availableMax = Math.min(spaceBelow - 16, 320)
       return {
         top: rect.bottom + 6,
-        left: rect.left,
-        width: rect.width,
+        left,
+        width,
         maxHeight: Math.max(availableMax, 120),
       }
     }
@@ -130,8 +134,9 @@ export function Select({
       if (pos) setMenuStyle(pos)
     }
 
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      const target = event.target as Node | null
+      if (!target) return
       if (
         buttonRef.current &&
         !buttonRef.current.contains(target) &&
@@ -146,11 +151,13 @@ export function Select({
     window.addEventListener('resize', handleScrollOrResize)
     window.addEventListener('scroll', handleScrollOrResize, true)
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
 
     return () => {
       window.removeEventListener('resize', handleScrollOrResize)
       window.removeEventListener('scroll', handleScrollOrResize, true)
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
     }
   }, [isOpen, calcPosition])
 

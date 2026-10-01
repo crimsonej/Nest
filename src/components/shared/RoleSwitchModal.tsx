@@ -53,7 +53,7 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
           How would you like to view NEST for this session? You can switch between roles at any time.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className={`grid gap-4 grid-cols-1 ${user.role === 'admin' || user.status === 'admin' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <motion.button
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

@@ -40,8 +40,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
         disabled={isDisabled}
-        onClick={onClick}
+        type={(props.type as 'button' | 'submit' | 'reset') || 'button'}
         {...(props as HTMLMotionProps<'button'>)}
+        onClick={onClick}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {children}
