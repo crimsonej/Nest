@@ -57,14 +57,14 @@ export function Modal({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-[90vw]',
+    full: 'max-w-[96vw] sm:max-w-[90vw]',
   }
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-2.5 sm:p-4 md:p-6 pointer-events-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? 'modal-title' : undefined}
@@ -88,13 +88,13 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
-              'relative z-10 w-full rounded-3xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto max-h-[calc(100dvh-2rem)] sm:max-h-[85dvh] flex flex-col',
+              'relative z-10 w-full rounded-2xl sm:rounded-3xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto max-h-[calc(100dvh-1.25rem)] sm:max-h-[88dvh] flex flex-col',
               sizeClasses[size]
             )}
             onClick={(e) => e.stopPropagation()}
           >
             {(title || showCloseButton) && (
-              <div className="flex items-start justify-between p-4 sm:p-6 border-b border-border/70 bg-surface-hover/30 shrink-0">
+              <div className="flex items-start justify-between p-3.5 sm:p-6 border-b border-border/70 bg-surface-hover/30 shrink-0">
                 <div className="min-w-0 pr-2">
                   {title && (
                     <h2 id="modal-title" className="text-base sm:text-xl font-bold tracking-tight text-text-primary truncate">
@@ -120,7 +120,7 @@ export function Modal({
                 )}
               </div>
             )}
-            <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0">{children}</div>
+            <div className="p-3.5 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0">{children}</div>
           </motion.div>
         </div>
       )}
@@ -156,8 +156,8 @@ export function ConfirmDialog({
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="space-y-4">
         <p className="text-text-secondary text-sm leading-relaxed">{message}</p>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-2">
+          <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             {cancelText}
           </Button>
           <Button
@@ -165,6 +165,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={loading}
             loading={loading}
+            className="w-full sm:w-auto"
           >
             {confirmText}
           </Button>

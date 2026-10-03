@@ -72,7 +72,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-                    className="absolute right-0 mt-2 w-56 rounded-2xl border border-border/80 bg-surface shadow-xl py-2 z-20 backdrop-blur-xl overflow-hidden"
+                    className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border/80 bg-surface shadow-xl py-2 z-20 backdrop-blur-xl overflow-hidden"
                   >
                     <div className="px-4 py-2.5 border-b border-border/60 bg-surface-hover/30">
                       <p className="text-xs font-bold text-text-primary truncate">{user?.full_name}</p>

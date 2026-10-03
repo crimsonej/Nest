@@ -135,10 +135,10 @@ export function AuthStage({ initialMode }: AuthStageProps) {
   return (
     <div className="w-full">
       {/* Tab Row */}
-      <div className="flex items-center justify-between gap-4 border-b border-border/60 pb-6 mb-8">
+      <div className="flex items-center justify-between gap-2.5 border-b border-border/60 pb-4 sm:pb-6 mb-6 sm:mb-8">
         {/* Segmented Pill Tabs */}
         <div
-          className="relative inline-flex items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner"
+          className="relative inline-flex items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner max-w-full"
           style={{ backdropFilter: 'blur(12px)' }}
         >
           {/* Shared sliding pill — always rendered, moves between tabs */}
@@ -162,7 +162,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               key={tab}
               type="button"
               onClick={() => handleModeChange(tab)}
-              className={`relative z-10 flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-colors duration-250 select-none min-w-[110px] justify-center ${
+              className={`relative z-10 flex items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-bold transition-colors duration-250 select-none min-w-[90px] sm:min-w-[110px] justify-center ${
                 mode === tab
                   ? 'text-white'
                   : 'text-text-muted hover:text-text-primary'
@@ -173,7 +173,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               ) : (
                 <UserPlus className="h-3.5 w-3.5 shrink-0" />
               )}
-              {tab === 'login' ? 'Sign In' : 'Create Account'}
+              <span>{tab === 'login' ? 'Sign In' : 'Create Account'}</span>
             </button>
           ))}
         </div>

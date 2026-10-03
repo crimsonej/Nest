@@ -224,18 +224,18 @@ export function CourseworkDetailModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border/80 gap-6">
+        <div className="flex border-b border-border/80 gap-4 sm:gap-6 overflow-x-auto scrollbar-thin flex-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab('info')}
             className={cn(
-              'pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2',
+              'pb-3 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap',
               activeTab === 'info'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-text-muted hover:text-text-primary'
             )}
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4 w-4 shrink-0" />
             Coursework Details & Prompt
           </button>
           {showTasksTab && (
@@ -243,13 +243,13 @@ export function CourseworkDetailModal({
               type="button"
               onClick={() => setActiveTab('tasks')}
               className={cn(
-                'pb-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2',
+                'pb-3 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 whitespace-nowrap',
                 activeTab === 'tasks'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-muted hover:text-text-primary'
               )}
             >
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 shrink-0" />
               My Action Items ({tasks.length})
             </button>
           )}

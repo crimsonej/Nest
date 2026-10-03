@@ -85,7 +85,9 @@ export function Select({
     const spaceAbove = rect.top
     const estimatedHeight = 240
 
-    const width = Math.min(rect.width, viewportWidth - 16)
+    const minWidth = Math.min(220, viewportWidth - 16)
+    const rawWidth = Math.max(rect.width, minWidth)
+    const width = Math.min(rawWidth, viewportWidth - 16)
     const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8))
 
     if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow) {

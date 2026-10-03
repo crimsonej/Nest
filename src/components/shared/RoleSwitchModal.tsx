@@ -53,18 +53,18 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
           How would you like to view NEST for this session? You can switch between roles at any time.
         </p>
 
-        <div className={`grid gap-4 grid-cols-1 ${user.role === 'admin' || user.status === 'admin' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        <div className={`grid gap-3 sm:gap-4 grid-cols-1 ${user.role === 'admin' || user.status === 'admin' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <motion.button
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleSelectRole('student')}
-            className="flex flex-col items-center rounded-2xl border border-border/80 bg-surface p-6 text-center shadow-xs transition-all hover:border-primary/40 hover:shadow-lg"
+            className="flex flex-col items-center rounded-2xl border border-border/80 bg-surface p-4 sm:p-6 text-center shadow-xs transition-all hover:border-primary/40 hover:shadow-lg"
           >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm">
-              <User className="h-7 w-7" />
+            <div className="mb-2.5 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm">
+              <User className="h-5 w-5 sm:h-7 sm:w-7" />
             </div>
-            <h4 className="font-bold text-text-primary text-base">Student Portal</h4>
-            <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">Access your group work, assignment tasks, and submission deadlines.</p>
+            <h4 className="font-bold text-text-primary text-sm sm:text-base">Student Portal</h4>
+            <p className="mt-1 text-xs text-text-secondary leading-relaxed">Access your group work, assignment tasks, and submission deadlines.</p>
           </motion.button>
 
           {(user.role === 'admin' || user.status === 'admin') && (
@@ -72,11 +72,13 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
               whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleSelectRole('admin')}
-              className="flex flex-col items-center rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-6 text-center shadow-xs transition-all hover:border-emerald-500 hover:shadow-lg"
+              className="flex flex-col items-center rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 sm:p-6 text-center shadow-xs transition-all hover:border-emerald-500 hover:shadow-lg"
             >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"><Building2 className="h-7 w-7" /></div>
-              <h4 className="font-bold text-text-primary text-base">Administrator</h4>
-              <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">View and manage all faculties, courses, course units, and students.</p>
+              <div className="mb-2.5 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm">
+                <Building2 className="h-5 w-5 sm:h-7 sm:w-7" />
+              </div>
+              <h4 className="font-bold text-text-primary text-sm sm:text-base">Administrator</h4>
+              <p className="mt-1 text-xs text-text-secondary leading-relaxed">View and manage all faculties, courses, course units, and students.</p>
             </motion.button>
           )}
 
@@ -84,18 +86,18 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleSelectRole('coordinator')}
-            className="flex flex-col items-center rounded-2xl border border-primary/40 bg-primary-light/30 p-6 text-center shadow-xs transition-all hover:border-primary hover:shadow-lg"
+            className="flex flex-col items-center rounded-2xl border border-primary/40 bg-primary-light/30 p-4 sm:p-6 text-center shadow-xs transition-all hover:border-primary hover:shadow-lg"
           >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm">
-              <Shield className="h-7 w-7" />
+            <div className="mb-2.5 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm">
+              <Shield className="h-5 w-5 sm:h-7 sm:w-7" />
             </div>
-            <h4 className="font-bold text-text-primary text-base">{roleTitle}</h4>
-            <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">Manage group allocations, course units, student rosters, and AI Entry.</p>
+            <h4 className="font-bold text-text-primary text-sm sm:text-base">{roleTitle}</h4>
+            <p className="mt-1 text-xs text-text-secondary leading-relaxed">Manage group allocations, course units, student rosters, and AI Entry.</p>
           </motion.button>
         </div>
 
         <div className="flex justify-end pt-2 border-t border-border/60">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
         </div>

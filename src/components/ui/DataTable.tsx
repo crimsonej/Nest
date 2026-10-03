@@ -185,11 +185,11 @@ export function DataTable<T extends { id: string }>({
                     </div>
                   </div>
 
-                  <div className="grid gap-1.5 text-xs pt-1 border-t border-border/40">
+                  <div className="grid gap-2 text-xs pt-2 border-t border-border/40">
                     {otherCols.map((col) => (
-                      <div key={col.key} className="flex justify-between items-center gap-2">
-                        <span className="text-text-muted text-[11px] font-semibold shrink-0">{col.header}:</span>
-                        <div className="text-text-primary font-medium text-right truncate max-w-[65%]">
+                      <div key={col.key} className="flex justify-between items-start gap-2">
+                        <span className="text-text-muted text-[11px] font-semibold shrink-0 max-w-[40%] pt-0.5">{col.header}:</span>
+                        <div className="text-text-primary font-medium text-right min-w-0 flex-1 break-words">
                           {col.render ? col.render(row) : (row as Record<string, unknown>)[col.key] as React.ReactNode}
                         </div>
                       </div>

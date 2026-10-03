@@ -539,8 +539,8 @@ html.dark {
 @media (max-width: 640px) {
   .card-header,
   .card-content {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
   }
 
   .auth-form-pane {
@@ -560,6 +560,34 @@ html.dark {
 
   .workspace-surface main {
     overflow-wrap: anywhere;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Ensure tables scroll smoothly on small mobile screens */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  table thead th,
+  table tbody td {
+    padding-left: 0.625rem !important;
+    padding-right: 0.625rem !important;
+  }
+
+  /* Ensure dialogs and modals use maximum screen width safely */
+  [role="dialog"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Select and Input mobile safety */
+  .input, select {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS safari */
   }
 }
 

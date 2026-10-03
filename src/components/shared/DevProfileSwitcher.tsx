@@ -68,9 +68,9 @@ export function DevProfileSwitcher() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-50">
       {isOpen && (
-        <div className="mb-3 w-[calc(100vw-2rem)] max-w-sm sm:w-96 rounded-2xl border border-border bg-surface/95 backdrop-blur-lg p-4 shadow-2xl animate-in slide-in-from-bottom-5">
+        <div className="mb-3 w-[calc(100vw-1.5rem)] max-w-xs sm:max-w-sm rounded-2xl border border-border bg-surface/95 backdrop-blur-lg p-3.5 sm:p-4 shadow-2xl animate-in slide-in-from-bottom-5">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
@@ -89,7 +89,7 @@ export function DevProfileSwitcher() {
             </button>
           </div>
 
-          <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+          <div className="mt-3 max-h-60 sm:max-h-72 space-y-2 overflow-y-auto pr-1">
             {accounts.map((acc) => {
               const isActive = user?.id === acc.id || user?.email === acc.email
               const isCoordinator = acc.role === 'coordinator' || acc.status === 'coordinator' || acc.status === 'selected_coordinator'
@@ -144,9 +144,9 @@ export function DevProfileSwitcher() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary text-white px-4 py-2.5 shadow-lg hover:bg-primary-hover hover:shadow-xl transition-all"
+        className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-primary/30 bg-primary text-white px-3.5 py-2 sm:px-4 sm:py-2.5 shadow-lg hover:bg-primary-hover hover:shadow-xl transition-all"
       >
-        <Users className="h-4 w-4" />
+        <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         <span className="text-xs font-semibold">Switch Account</span>
         {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
       </button>
