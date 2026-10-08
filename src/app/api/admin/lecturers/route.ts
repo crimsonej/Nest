@@ -2,28 +2,46 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-export const runtime = 'edge'
+async function checkAdmin(request: Request) {
+  const adminSupabase = createAdminClient()
+  const authClient = await createClient()
+
+  let { data: { user } } = await authClient.auth.getUser()
+
+  if (!user) {
+    const authHeader = request.headers.get('Authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      const { data } = await adminSupabase.auth.getUser(token)
+      user = data.user
+    }
+  }
+
+  if (!user) return { user: null, isAdmin: false }
+
+  const { data: profile } = await adminSupabase
+    .from('users')
+    .select('role, status')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const isAdmin =
+    profile?.role === 'admin' ||
+    (profile as any)?.status === 'admin' ||
+    user.user_metadata?.role === 'admin' ||
+    user.app_metadata?.role === 'admin'
+
+  return { user, isAdmin }
+}
 
 // GET /api/admin/lecturers
 // Fetches all lecturers with linked faculties and course units,
 // as well as active faculties and course units for dropdown selectors.
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const authClient = await createClient()
-    const { data: { user } } = await authClient.auth.getUser()
+    const { user, isAdmin } = await checkAdmin(request)
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-
-    // Verify requesting user is admin
-    const { data: profile } = await authClient
-      .from('users')
-      .select('role, status')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const isAdmin = profile?.role === 'admin' || (profile as any)?.status === 'admin'
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
-    }
+    if (!isAdmin) return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
 
     const adminSupabase = createAdminClient()
 
@@ -87,21 +105,9 @@ export async function GET() {
 // Creates a new lecturer profile in Supabase Auth & public tables.
 export async function POST(request: Request) {
   try {
-    const authClient = await createClient()
-    const { data: { user } } = await authClient.auth.getUser()
+    const { user, isAdmin } = await checkAdmin(request)
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-
-    // Verify requesting user is admin
-    const { data: profile } = await authClient
-      .from('users')
-      .select('role, status')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const isAdmin = profile?.role === 'admin' || (profile as any)?.status === 'admin'
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
-    }
+    if (!isAdmin) return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
 
     const body = await request.json()
     const { name, email, faculty_id, course_unit_id, password } = body
@@ -249,21 +255,9 @@ export async function POST(request: Request) {
 // Deletes a lecturer profile from public tables and Supabase Auth.
 export async function DELETE(request: Request) {
   try {
-    const authClient = await createClient()
-    const { data: { user } } = await authClient.auth.getUser()
+    const { user, isAdmin } = await checkAdmin(request)
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-
-    // Verify requesting user is admin
-    const { data: profile } = await authClient
-      .from('users')
-      .select('role, status')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const isAdmin = profile?.role === 'admin' || (profile as any)?.status === 'admin'
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
-    }
+    if (!isAdmin) return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
     const lecturerId = searchParams.get('id')

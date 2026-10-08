@@ -6,23 +6,16 @@ import {
   Check,
   Clock3,
   ListChecks,
-  LockKeyhole,
   BookOpen,
-  Calendar,
-  Layers,
   CheckCircle,
-  Plus,
   Trash2,
   Lock,
   Clock,
   ChevronRight,
-  Filter,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
+import { Card, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Select } from '../ui/Select'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'

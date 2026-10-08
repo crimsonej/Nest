@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
 
       if (profile?.role) userRole = profile.role
       if ((profile as any)?.status) userStatus = (profile as any).status
-    } catch (err) {
+    } catch {
       // Ignore DB read errors and rely on the authenticated session metadata.
     }
 
@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
         if (lecturerProfile) {
           userRole = 'lecturer'
         }
-      } catch (err) {
+      } catch {
         // Ignore DB read errors
       }
     }
