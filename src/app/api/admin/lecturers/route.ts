@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge'
+
 async function checkAdmin(request: Request) {
   const adminSupabase = createAdminClient()
   const authClient = await createClient()
