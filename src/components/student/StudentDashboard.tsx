@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 interface MetricCardProps {
   title: string
@@ -189,21 +190,37 @@ export function StudentDashboard() {
           supabase.from('course_units').select('*').eq('is_active', true).in('id', courseUnitFilter),
         ])
 
+        reportStudentQuery('student group memberships', { user_id: 'authenticated profile id', group_status: 'forming or active' }, groupsRes.data, groupsRes.error)
+        reportStudentQuery('student tasks', { user_id: 'authenticated profile id', order: 'created_at desc', limit: 10 }, tasksRes.data, tasksRes.error)
+        reportStudentQuery('student enrollments', { user_id: 'authenticated profile id', status: 'active' }, enrollmentsRes.data, enrollmentsRes.error)
+        reportStudentQuery('published coursework', { is_published: true, course_unit_id_count: allowedCourseUnitIds.length }, cwRes.data, cwRes.error)
+        reportStudentQuery('active course units', { is_active: true, id_filter_count: allowedCourseUnitIds.length }, allUnitsRes.data, allUnitsRes.error)
         const queryError = groupsRes.error || tasksRes.error || enrollmentsRes.error || cwRes.error || allUnitsRes.error
-        if (queryError) {
-          throw queryError
-        }
+        if (queryError) throw queryError
 
         const allowedIds = new Set(allowedCourseUnitIds)
         const groups = (groupsRes.data || []).filter((row: any) => allowedIds.has(row.group?.coursework?.course_unit_id))
+        reportStudentQuery('student groups after faculty course-unit filter', {
+          membership_row_count: (groupsRes.data || []).length,
+          allowed_course_unit_count: allowedCourseUnitIds.length,
+        }, groups, null)
         const tasks = tasksRes.data || []
         const enrolledIds = Array.from(new Set((enrollmentsRes.data || [])
           .map((e: any) => e.course_unit_id)
           .filter((id: string) => id && allowedIds.has(id))))
+        reportStudentQuery('enrollments after faculty course-unit filter', {
+          active_enrollment_row_count: (enrollmentsRes.data || []).length,
+          allowed_course_unit_count: allowedCourseUnitIds.length,
+        }, enrolledIds, null)
         const relevantCourseworks = (cwRes.data || []).filter((coursework: any) => {
           if (!coursework.course_unit_id) return true
           return enrolledIds.includes(coursework.course_unit_id)
         })
+        reportStudentQuery('coursework after active enrollment filter', {
+          published_coursework_count: (cwRes.data || []).length,
+          active_enrollment_count: enrolledIds.length,
+        }, relevantCourseworks, null)
+        reportStudentQuery('in-progress task metric', { task_count: tasks.length, status: 'in_progress' }, tasks.filter((task: { status: string }) => task.status === 'in_progress'), null)
 
         setMetrics({
           myGroups: groups.length,
@@ -219,8 +236,10 @@ export function StudentDashboard() {
         const activeCw = relevantCourseworks.find((coursework: any) => coursework.lock_at && new Date(coursework.lock_at) > new Date())
         setNearestCoursework(activeCw || relevantCourseworks[0] || null)
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-        setDataError(error instanceof Error ? error.message : 'Unable to load dashboard data.')
+        console.error('[student-data][temporary] Dashboard load failed', {
+          errorName: error instanceof Error ? error.name : 'unknown',
+        })
+        setDataError('Unable to load dashboard data. Check the browser console diagnostics and try again.')
       } finally {
         setLoading(false)
       }

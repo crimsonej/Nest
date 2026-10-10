@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User, UserRole } from '@/types'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 interface AuthContextType {
   user: User | null
@@ -45,6 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('id', authUser.id)
           .maybeSingle()
+        reportStudentQuery('profile by auth id', { id: 'current authenticated user' }, byId.data, byId.error)
+        if (byId.error) throw byId.error
 
         if (byId.data) {
           profile = byId.data
@@ -54,8 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .select('*')
             .ilike('email', authUser.email)
             .maybeSingle()
+          reportStudentQuery('profile by email fallback', { email: 'current authenticated user' }, byEmail.data, byEmail.error)
+          if (byEmail.error) throw byEmail.error
 
-          profile = byEmail.data
+          if (byEmail.data?.id === authUser.id) {
+            profile = byEmail.data
+          } else if (byEmail.data) {
+            console.warn('[auth][temporary] Ignored email-matched profile with a different auth id.')
+          }
         }
 
         if (!profile && authUser.email) {
@@ -81,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .upsert(fallbackProfile, { onConflict: 'id' })
             .select('*')
             .single()
+          reportStudentQuery('profile creation fallback', { id: 'current authenticated user' }, insertedProfile, insertError)
 
           if (!insertError) {
             profile = insertedProfile
@@ -95,6 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: authUser.email || '',
             full_name: (authUser.user_metadata?.full_name as string) || 'User Profile',
             role: (authUser.user_metadata?.role as UserRole) || 'student',
+            gender: (authUser.user_metadata?.gender as User['gender']) || 'other',
+            university: (authUser.user_metadata?.university as string) || 'Ndejje University',
+            faculty: (authUser.user_metadata?.faculty as string) || undefined,
+            faculty_id: (authUser.user_metadata?.faculty_id as string) || undefined,
+            course: (authUser.user_metadata?.course as string) || undefined,
+            course_id: (authUser.user_metadata?.course_id as string) || undefined,
+            student_registration_number: (authUser.user_metadata?.student_registration_number as string) || undefined,
             avatar_url: (authUser.user_metadata?.avatar_url as string) || undefined,
             whatsapp_phone: (authUser.user_metadata?.whatsapp_phone as string) || undefined,
             status: (authUser.user_metadata?.status as User['status']) || 'normal',
@@ -106,7 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
       }
     } catch (error) {
-      console.error('Error fetching user:', error)
+      console.error('[auth][temporary] Unable to load the authenticated profile.', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      })
       setUser(null)
     } finally {
       setLoading(false)

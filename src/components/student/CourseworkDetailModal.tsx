@@ -26,6 +26,7 @@ import { Select } from '../ui/Select'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 interface CourseworkDetailModalProps {
   isOpen: boolean
@@ -50,6 +51,8 @@ export function CourseworkDetailModal({
   const [activeTab, setActiveTab] = useState<'info' | 'tasks'>('info')
   const [groupInfo, setGroupInfo] = useState<any>(null)
   const [loadingGroup, setLoadingGroup] = useState(false)
+  const [tasksLoadError, setTasksLoadError] = useState(false)
+  const [groupLoadError, setGroupLoadError] = useState(false)
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -70,6 +73,7 @@ export function CourseworkDetailModal({
   async function fetchTasks() {
     if (!coursework?.id || !user?.id) return
     setLoadingTasks(true)
+    setTasksLoadError(false)
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -78,10 +82,11 @@ export function CourseworkDetailModal({
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      reportStudentQuery('coursework tasks', { coursework_id: 'selected coursework', user_id: 'authenticated profile id' }, data, error)
       if (error) throw error
       setTasks(data || [])
-    } catch (err) {
-      console.error('Error fetching tasks for coursework:', err)
+    } catch {
+      setTasksLoadError(true)
     } finally {
       setLoadingTasks(false)
     }
@@ -90,17 +95,21 @@ export function CourseworkDetailModal({
   async function fetchGroupInfo() {
     if (!coursework?.id || !user?.id) return
     setLoadingGroup(true)
+    setGroupLoadError(false)
     try {
       // Find groups for this coursework where user is a member
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('group_members')
         .select('*, group:groups(*, members:group_members(user_id, role, user:users(full_name, email)))')
         .eq('user_id', user.id)
 
+      reportStudentQuery('current student group memberships', { user_id: 'authenticated profile id' }, data, error)
+      if (error) throw error
       const match = data?.find((m: any) => m.group?.coursework_id === coursework.id)
+      reportStudentQuery('membership for selected coursework', { coursework_id: 'selected coursework', user_id: 'authenticated profile id' }, match ? [match] : [], null)
       setGroupInfo(match ? match.group : null)
-    } catch (err) {
-      console.error('Error fetching group info:', err)
+    } catch {
+      setGroupLoadError(true)
     } finally {
       setLoadingGroup(false)
     }
@@ -307,7 +316,9 @@ export function CourseworkDetailModal({
                         {coursework.max_group_size || 5} members)
                       </p>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        {groupInfo ? (
+                        {groupLoadError ? (
+                          <span role="alert" className="text-danger">Unable to confirm your group membership.</span>
+                        ) : groupInfo ? (
                           <span className="text-success font-bold flex items-center gap-1">
                             <UserCheck className="h-3.5 w-3.5 inline" /> You are in group: "{groupInfo.name}"
                           </span>
@@ -318,12 +329,14 @@ export function CourseworkDetailModal({
                     </div>
                   </div>
 
-                  <Link href="/student/groups" onClick={onClose}>
-                    <Button size="sm" variant={groupInfo ? 'outline' : 'primary'}>
-                      {groupInfo ? 'View Group' : 'Find / Join Group'}
-                      <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-                    </Button>
-                  </Link>
+                  {!groupLoadError && (
+                    <Link href="/student/groups" onClick={onClose}>
+                      <Button size="sm" variant={groupInfo ? 'outline' : 'primary'}>
+                        {groupInfo ? 'View Group' : 'Find / Join Group'}
+                        <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
@@ -423,7 +436,9 @@ export function CourseworkDetailModal({
             </div>
 
             {/* Task List */}
-            {loadingTasks ? (
+            {tasksLoadError ? (
+              <p role="alert" className="py-8 text-center text-sm text-danger">Unable to load tasks. Check the browser console diagnostics and try again.</p>
+            ) : loadingTasks ? (
               <div className="space-y-2">
                 <div className="h-16 animate-pulse rounded-xl bg-surface-hover" />
                 <div className="h-16 animate-pulse rounded-xl bg-surface-hover" />

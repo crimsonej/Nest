@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { DataTable } from '../ui/DataTable'
 import { cn } from '@/lib/utils'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
@@ -97,6 +98,16 @@ export function StudentGroups() {
         supabase.from('selected_coordinators').select('*'),
       ])
 
+      reportStudentQuery('active course units', { is_active: true }, unitsRes.data, unitsRes.error)
+      reportStudentQuery('published coursework', { is_published: true }, cwRes.data, cwRes.error)
+      reportStudentQuery('available groups', { status: 'forming, active, or locked' }, groupsRes.data, groupsRes.error)
+      reportStudentQuery('visible group memberships', { visibility: 'faculty RLS' }, membersRes.data, membersRes.error)
+      reportStudentQuery('visible student profiles', { visibility: 'profile RLS' }, usersRes.data, usersRes.error)
+      reportStudentQuery('active course enrollments', { status: 'active', visibility: 'RLS' }, enrollmentsRes.data, enrollmentsRes.error)
+      reportStudentQuery('selected coordinators', { visibility: 'RLS' }, scRes.data, scRes.error)
+      const queryError = unitsRes.error || cwRes.error || groupsRes.error || membersRes.error || usersRes.error || enrollmentsRes.error || scRes.error
+      if (queryError) throw queryError
+
       const units = (unitsRes.data || []).filter((unit: any) => allowedIds.has(unit.id))
       const cws = (cwRes.data || []).filter((coursework: any) => allowedIds.has(coursework.course_unit_id))
       const grps = (groupsRes.data || []).filter((group: any) => allowedIds.has(group.coursework?.course_unit_id))
@@ -105,6 +116,13 @@ export function StudentGroups() {
       const stus = (usersRes.data || []).filter((student: any) => !student.faculty_id || student.faculty_id === user?.faculty_id)
       const enrs = (enrollmentsRes.data || []).filter((enrollment: any) => allowedIds.has(enrollment.course_unit_id))
       const scs = (scRes.data || []).filter((selection: any) => allowedIds.has(selection.course_unit_id))
+      reportStudentQuery('course units after faculty filter', { allowed_course_unit_count: allowedIds.size }, units, null)
+      reportStudentQuery('coursework after faculty filter', { allowed_course_unit_count: allowedIds.size }, cws, null)
+      reportStudentQuery('groups after coursework course-unit filter', { allowed_course_unit_count: allowedIds.size }, grps, null)
+      reportStudentQuery('enrollments after faculty course-unit filter', {
+        active_enrollment_row_count: (enrollmentsRes.data || []).length,
+        allowed_course_unit_count: allowedIds.size,
+      }, enrs, null)
 
       setCourseUnits(units)
       setCourseworks(cws)
@@ -120,24 +138,23 @@ export function StudentGroups() {
       if (user?.id) {
         const nextGroupIds = new Set<string>()
         const nextMyCourseworkGroups: Record<string, string[]> = {}
-        for (const m of mbrs) {
-          if (m.user_id === user.id) {
-            nextGroupIds.add(m.group_id)
-            const groupObj = grps.find((g: any) => g.id === m.group_id)
-            if (groupObj?.coursework_id) {
-              nextMyCourseworkGroups[groupObj.coursework_id] = [
-                ...(nextMyCourseworkGroups[groupObj.coursework_id] || []),
-                m.group_id,
-              ].filter(Boolean)
-            }
+        const myMemberships = mbrs.filter((member: any) => member.user_id === user.id)
+        reportStudentQuery('current student group memberships', { user_id: 'authenticated profile id', allowed_course_unit_count: allowedIds.size }, myMemberships, null)
+        for (const membership of myMemberships) {
+          nextGroupIds.add(membership.group_id)
+          const groupObj = grps.find((group: any) => group.id === membership.group_id)
+          if (groupObj?.coursework_id) {
+            nextMyCourseworkGroups[groupObj.coursework_id] = [
+              ...(nextMyCourseworkGroups[groupObj.coursework_id] || []),
+              membership.group_id,
+            ].filter(Boolean)
           }
         }
         setMyGroupIds(nextGroupIds)
         setMyCourseworkGroups(nextMyCourseworkGroups)
       }
-    } catch (error) {
-      console.error('Error fetching group data:', error)
-      setJoinMessage(error instanceof Error ? error.message : 'Unable to load group records.')
+    } catch {
+      setJoinMessage('Unable to load group records. Check the browser console diagnostics and try again.')
     } finally {
       setLoading(false)
     }

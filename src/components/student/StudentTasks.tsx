@@ -21,6 +21,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import { CourseworkDetailModal } from './CourseworkDetailModal'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 function daysUntil(dateStr: string) {
   return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000))
@@ -35,6 +36,7 @@ export function StudentTasks() {
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [dataVersion, setDataVersion] = useState(0)
+  const [dataError, setDataError] = useState('')
 
   // Filtering
   const [activeTab, setActiveTab] = useState<'all' | 'coursework' | 'tasks'>('all')
@@ -48,16 +50,19 @@ export function StudentTasks() {
     async function loadData() {
       if (!user) return
       setLoading(true)
+      setDataError('')
 
       try {
         const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
         const allowedIds = new Set(allowedCourseUnitIds)
         // 1. Fetch enrolled course units
-        const { data: enrollments } = await supabase
+        const { data: enrollments, error: enrollmentsError } = await supabase
           .from('student_course_units')
           .select('course_unit_id')
           .eq('user_id', user.id)
           .eq('status', 'active')
+        reportStudentQuery('student enrollments', { user_id: 'authenticated profile id', status: 'active' }, enrollments, enrollmentsError)
+        if (enrollmentsError) throw enrollmentsError
 
         const unitSet = new Set((enrollments || [])
           .map((e: any) => e.course_unit_id)
@@ -65,25 +70,32 @@ export function StudentTasks() {
         setEnrolledUnitIds(unitSet)
 
         // 2. Fetch published courseworks
-        const { data: cwData } = await supabase
+        const { data: cwData, error: courseworkError } = await supabase
           .from('courseworks')
           .select('*, course_unit:course_units(code, name)')
           .eq('is_published', true)
           .in('course_unit_id', allowedCourseUnitIds.length ? allowedCourseUnitIds : ['00000000-0000-0000-0000-000000000000'])
           .order('lock_at', { ascending: true })
 
+        reportStudentQuery('published coursework', { is_published: true, course_unit_id_count: allowedCourseUnitIds.length }, cwData, courseworkError)
+        if (courseworkError) throw courseworkError
         setCourseworks(cwData || [])
 
         // 3. Fetch student tasks
-        const { data: taskData } = await supabase
+        const { data: taskData, error: taskError } = await supabase
           .from('tasks')
           .select('*, coursework:courseworks(title, course_unit:course_units(code, name))')
           .eq('user_id', user.id)
           .order('due_date', { ascending: true })
 
+        reportStudentQuery('student tasks', { user_id: 'authenticated profile id', order: 'due_date asc' }, taskData, taskError)
+        if (taskError) throw taskError
         setTasks(taskData || [])
       } catch (err) {
-        console.error('Error loading student tasks & deadlines:', err)
+        console.error('[student-data][temporary] Task page load failed', {
+          errorName: err instanceof Error ? err.name : 'unknown',
+        })
+        setDataError('Unable to load tasks and deadlines. Check the browser console diagnostics and try again.')
       } finally {
         setLoading(false)
       }
@@ -273,6 +285,8 @@ export function StudentTasks() {
           </label>
         </div>
       </div>
+
+      {dataError && <p role="alert" className="text-sm text-danger">{dataError}</p>}
 
       {/* Main Content Area */}
       {loading ? (

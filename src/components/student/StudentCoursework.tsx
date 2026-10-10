@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { CourseworkDetailModal } from './CourseworkDetailModal'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
+import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
 export function StudentCoursework() {
   const { user } = useAuth()
@@ -27,31 +28,49 @@ export function StudentCoursework() {
   const [selectedCoursework, setSelectedCoursework] = useState<any>(null)
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<Set<string>>(new Set())
+  const [enrollmentsLoaded, setEnrollmentsLoaded] = useState(false)
+  const [dataError, setDataError] = useState('')
 
   useEffect(() => {
     fetchEnrollments()
     fetchCourseworks()
   }, [user])
 
+  useEffect(() => {
+    if (loading || !enrollmentsLoaded) return
+    const enrollmentScopedCourseworks = courseworks.filter(
+      (coursework) => !coursework.course_unit_id || enrolledUnitIds.has(coursework.course_unit_id)
+    )
+    reportStudentQuery('coursework after active enrollment filter', {
+      published_coursework_count: courseworks.length,
+      active_enrollment_count: enrolledUnitIds.size,
+    }, enrollmentScopedCourseworks, null)
+  }, [courseworks, enrolledUnitIds, loading, enrollmentsLoaded])
+
   async function fetchEnrollments() {
     if (!user) {
       setEnrolledUnitIds(new Set())
+      setEnrollmentsLoaded(true)
       return
     }
 
-    const { data, error } = await supabase
-      .from('student_course_units')
-      .select('course_unit_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
+    setEnrollmentsLoaded(false)
+    try {
+      const { data, error } = await supabase
+        .from('student_course_units')
+        .select('course_unit_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
 
-    if (error) {
-      console.error('Error fetching enrolled course units:', error)
+      reportStudentQuery('student enrollments', { user_id: 'authenticated profile id', status: 'active' }, data, error)
+      if (error) throw error
+      setEnrolledUnitIds(new Set((data || []).map((item: { course_unit_id: string }) => item.course_unit_id)))
+    } catch {
       setEnrolledUnitIds(new Set())
-      return
+      setDataError('Unable to load enrolled course units. Check the browser console diagnostics and try again.')
+    } finally {
+      setEnrollmentsLoaded(true)
     }
-
-    setEnrolledUnitIds(new Set((data || []).map((item: { course_unit_id: string }) => item.course_unit_id)))
   }
 
   async function fetchCourseworks() {
@@ -62,7 +81,7 @@ export function StudentCoursework() {
         return
       }
       const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('courseworks')
         .select(`
           *,
@@ -74,9 +93,15 @@ export function StudentCoursework() {
         .in('course_unit_id', allowedCourseUnitIds.length ? allowedCourseUnitIds : ['00000000-0000-0000-0000-000000000000'])
         .order('created_at', { ascending: false })
 
+      reportStudentQuery('published coursework', { is_published: true, course_unit_id_count: allowedCourseUnitIds.length }, data, error)
+      if (error) throw error
       setCourseworks(data || [])
     } catch (error) {
-      console.error('Error fetching courseworks:', error)
+      console.error('[student-data][temporary] Coursework load failed', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      })
+      setCourseworks([])
+      setDataError('Unable to load coursework. Check the browser console diagnostics and try again.')
     } finally {
       setLoading(false)
     }
@@ -225,6 +250,8 @@ export function StudentCoursework() {
           </div>
         </CardContent>
       </Card>
+
+      {dataError && <p role="alert" className="text-sm text-danger">{dataError}</p>}
 
       <DataTable
         columns={columns}
