@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next')
 
+  // Accumulate cookies to apply to the final redirect response
+  const cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = []
+
   if (code) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,10 +21,10 @@ export async function GET(request: NextRequest) {
             return request.cookies.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            NextResponse.next().cookies.set({ name, value, ...options })
+            cookiesToSet.push({ name, value, options })
           },
           remove(name: string, options: CookieOptions) {
-            NextResponse.next().cookies.set({ name, value: '', ...options })
+            cookiesToSet.push({ name, value: '', options })
           },
         },
       }
@@ -29,24 +32,60 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data?.session) {
+      // Determine the correct redirect destination
+      let redirectPath: string
+
       if (next) {
-        return NextResponse.redirect(`${origin}${next}`)
+        redirectPath = next
+      } else {
+        // Check if this is a password recovery flow
+        // Recovery sessions have the aal1 level and the session was just created
+        const isRecovery = next === '/auth/update-password' ||
+          data.session.user?.recovery_sent_at != null
+
+        if (isRecovery) {
+          redirectPath = '/auth/update-password'
+        } else {
+          // Check user role for proper dashboard redirection
+          const { data: profile } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', data.session.user.id)
+            .maybeSingle()
+
+          const userRole = profile?.role ||
+            data.session.user.app_metadata?.role ||
+            data.session.user.user_metadata?.role
+
+          if (userRole === 'admin') {
+            redirectPath = '/admin/dashboard'
+          } else if (userRole === 'lecturer') {
+            redirectPath = '/lecturer/reports'
+          } else if (userRole === 'coordinator') {
+            redirectPath = '/coordinator/dashboard'
+          } else {
+            redirectPath = '/student/dashboard'
+          }
+        }
       }
 
-      // Check user role for proper dashboard redirection
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', data.session.user.id)
-        .single()
+      const response = NextResponse.redirect(`${origin}${redirectPath}`)
 
-      const redirectPath = profile?.role === 'coordinator'
-        ? '/coordinator/dashboard'
-        : '/student/dashboard'
+      // Apply all accumulated cookies to the response
+      for (const cookie of cookiesToSet) {
+        response.cookies.set(cookie.name, cookie.value, cookie.options)
+      }
 
-      return NextResponse.redirect(`${origin}${redirectPath}`)
+      return response
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_callback_failed`)
+  const errorResponse = NextResponse.redirect(`${origin}/auth/login?error=auth_callback_failed`)
+
+  // Even on error, apply cookies so Supabase client state stays consistent
+  for (const cookie of cookiesToSet) {
+    errorResponse.cookies.set(cookie.name, cookie.value, cookie.options)
+  }
+
+  return errorResponse
 }

@@ -462,7 +462,7 @@ function LoginFormSection({
           />
         </motion.div>
 
-        <motion.div variants={fieldVariant} className="relative space-y-1">
+        <motion.div variants={fieldVariant} className="relative">
           <Input
             label="Password"
             type={showPassword ? 'text' : 'password'}
@@ -492,14 +492,15 @@ function LoginFormSection({
               )}
             </motion.span>
           </button>
-          <div className="flex justify-end pt-1">
-            <Link
-              href="/auth/forgot-password"
-              className="text-xs font-bold text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              Forgot password?
-            </Link>
-          </div>
+        </motion.div>
+
+        <motion.div variants={fieldVariant} className="flex justify-end relative z-10">
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs font-bold text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            Forgot password?
+          </Link>
         </motion.div>
 
         <motion.div variants={fieldVariant} className="pt-1">
