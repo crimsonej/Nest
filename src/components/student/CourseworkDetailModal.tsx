@@ -247,7 +247,7 @@ export function CourseworkDetailModal({
             <FileText className="h-4 w-4 shrink-0" />
             Coursework Details & Prompt
           </button>
-          {showTasksTab && (
+          {showTasksTab && tasks.length > 0 && (
             <button
               type="button"
               onClick={() => setActiveTab('tasks')}
@@ -259,7 +259,7 @@ export function CourseworkDetailModal({
               )}
             >
               <CheckCircle className="h-4 w-4 shrink-0" />
-              My Action Items ({tasks.length})
+              &nbsp;
             </button>
           )}
         </div>

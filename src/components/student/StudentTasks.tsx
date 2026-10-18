@@ -401,98 +401,89 @@ export function StudentTasks() {
           )}
 
           {/* SECTION 2: SUB-TASKS & CHECKLIST */}
-          {(activeTab === 'all' || activeTab === 'tasks') && (
+          {(activeTab === 'all' || activeTab === 'tasks') && tasks.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-success" />
-                  Action Items & Personal Tasks
                 </h2>
                 <Badge variant="secondary">{tasks.length}</Badge>
               </div>
 
-              {tasks.length === 0 ? (
-                <Card>
-                  <CardContent className="py-10 text-center text-text-muted text-sm">
-                    No action items created yet. Open any coursework to add personal sub-tasks.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <Card key={task.id} className="p-4 hover:border-primary/30 transition-colors">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => toggleTask(task)}
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <Card key={task.id} className="p-4 hover:border-primary/30 transition-colors">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleTask(task)}
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors',
+                            task.status === 'completed'
+                              ? 'border-success bg-success text-white'
+                              : 'border-border text-transparent hover:border-primary'
+                          )}
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+
+                        <div className="min-w-0">
+                          <p
                             className={cn(
-                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors',
-                              task.status === 'completed'
-                                ? 'border-success bg-success text-white'
-                                : 'border-border text-transparent hover:border-primary'
+                              'font-bold text-sm text-text-primary',
+                              task.status === 'completed' && 'line-through text-text-muted opacity-60'
                             )}
                           >
-                            <Check className="h-4 w-4" />
-                          </button>
-
-                          <div className="min-w-0">
-                            <p
-                              className={cn(
-                                'font-bold text-sm text-text-primary',
-                                task.status === 'completed' && 'line-through text-text-muted opacity-60'
-                              )}
-                            >
-                              {task.title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {task.coursework?.title && (
-                                <span className="text-xs font-semibold text-primary">
-                                  {task.coursework.course_unit?.code || 'CW'}: {task.coursework.title}
-                                </span>
-                              )}
-                              {task.description && (
-                                <span className="text-xs text-text-muted truncate">
-                                  · {task.description}
-                                </span>
-                              )}
-                            </div>
+                            {task.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {task.coursework?.title && (
+                              <span className="text-xs font-semibold text-primary">
+                                {task.coursework.course_unit?.code || 'CW'}: {task.coursework.title}
+                              </span>
+                            )}
+                            {task.description && (
+                              <span className="text-xs text-text-muted truncate">
+                                · {task.description}
+                              </span>
+                            )}
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <Badge
-                            variant={
-                              task.priority === 'high'
-                                ? 'danger'
-                                : task.priority === 'medium'
-                                ? 'warning'
-                                : 'secondary'
-                            }
-                          >
-                            {task.priority}
-                          </Badge>
-
-                          {task.due_date && (
-                            <span className="text-xs text-text-muted hidden sm:inline">
-                              {formatDate(task.due_date)}
-                            </span>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => deleteTask(task.id)}
-                            className="p-1 text-text-muted hover:text-danger transition-colors"
-                            title="Delete task"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Badge
+                          variant={
+                            task.priority === 'high'
+                              ? 'danger'
+                              : task.priority === 'medium'
+                              ? 'warning'
+                              : 'secondary'
+                          }
+                        >
+                          {task.priority}
+                        </Badge>
+
+                        {task.due_date && (
+                          <span className="text-xs text-text-muted hidden sm:inline">
+                            {formatDate(task.due_date)}
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteTask(task.id)}
+                          className="p-1 text-text-muted hover:text-danger transition-colors"
+                          title="Delete task"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </div>
