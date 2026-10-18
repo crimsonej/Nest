@@ -348,7 +348,17 @@ export function CourseworkDetailModal({
                 Instructions & Assignment Prompt
               </h3>
 
-              {coursework.description ? (
+              {/* Show group-specific description for group work, otherwise coursework description */}
+              {coursework.work_style === 'group_work' && groupInfo?.description ? (
+                <>
+                  <div className="rounded-2xl border border-border/80 bg-surface p-5 text-sm text-text-primary leading-relaxed whitespace-pre-wrap font-sans">
+                    {groupInfo.description}
+                  </div>
+                  <p className="mt-2 text-xs text-text-muted italic">
+                    This is the specific task assigned to your group: "{groupInfo.name}"
+                  </p>
+                </>
+              ) : coursework.description ? (
                 <div className="rounded-2xl border border-border/80 bg-surface p-5 text-sm text-text-primary leading-relaxed whitespace-pre-wrap font-sans">
                   {coursework.description}
                 </div>
@@ -359,17 +369,6 @@ export function CourseworkDetailModal({
               )}
             </div>
 
-            {/* Quick action to add a sub-task */}
-            {showTasksTab && (
-              <div className="pt-2 border-t border-border/60 flex items-center justify-between">
-                <p className="text-xs text-text-muted">
-                  Need to break this coursework into sub-tasks?
-                </p>
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('tasks')}>
-                  Manage Sub-tasks ({tasks.length})
-                </Button>
-              </div>
-            )}
           </div>
         )}
 

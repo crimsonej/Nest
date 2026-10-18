@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Check,
@@ -34,12 +34,13 @@ export function StudentTasks() {
   const [courseworks, setCourseworks] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<Set<string>>(new Set())
+  const [groupMemberships, setGroupMemberships] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dataVersion, setDataVersion] = useState(0)
   const [dataError, setDataError] = useState('')
 
   // Filtering
-  const [activeTab, setActiveTab] = useState<'all' | 'coursework' | 'tasks'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'coursework' | 'tasks'>('coursework')
   const [filterEnrolledOnly, setFilterEnrolledOnly] = useState(false)
 
   // Modal State
@@ -53,6 +54,15 @@ export function StudentTasks() {
       setDataError('')
 
       try {
+        // Fetch user's group memberships for enhanced coursework display
+        const { data: groupData, error: groupError } = await supabase
+          .from('group_members')
+          .select('*, group:groups(*, coursework:courseworks(id, title))')
+          .eq('user_id', user.id)
+        reportStudentQuery('user group memberships', { user_id: 'authenticated profile id' }, groupData, groupError)
+        if (groupError) throw groupError
+        setGroupMemberships(groupData || [])
+
         const allowedCourseUnitIds = await getStudentCourseUnitIds(supabase, user)
         const allowedIds = new Set(allowedCourseUnitIds)
         // 1. Fetch enrolled course units
@@ -75,7 +85,7 @@ export function StudentTasks() {
           .select('*, course_unit:course_units(code, name)')
           .eq('is_published', true)
           .in('course_unit_id', allowedCourseUnitIds.length ? allowedCourseUnitIds : ['00000000-0000-0000-0000-000000000000'])
-          .order('lock_at', { ascending: true })
+          .order('lock_at', { ascending: false })
 
         reportStudentQuery('published coursework', { is_published: true, course_unit_id_count: allowedCourseUnitIds.length }, cwData, courseworkError)
         if (courseworkError) throw courseworkError
@@ -86,9 +96,9 @@ export function StudentTasks() {
           .from('tasks')
           .select('*, coursework:courseworks(title, course_unit:course_units(code, name))')
           .eq('user_id', user.id)
-          .order('due_date', { ascending: true })
+          .order('due_date', { ascending: false })
 
-        reportStudentQuery('student tasks', { user_id: 'authenticated profile id', order: 'due_date asc' }, taskData, taskError)
+        reportStudentQuery('student tasks', { user_id: 'authenticated profile id', order: 'due_date desc' }, taskData, taskError)
         if (taskError) throw taskError
         setTasks(taskData || [])
       } catch (err) {
@@ -103,6 +113,17 @@ export function StudentTasks() {
 
     loadData()
   }, [user, dataVersion])
+
+  // Create a map of coursework_id to user's group info for quick lookup
+  const courseworkGroupMap = useMemo(() => {
+    const map = new Map()
+    groupMemberships.forEach(membership => {
+      if (membership.group && membership.group.coursework_id) {
+        map.set(membership.group.coursework_id, membership.group)
+      }
+    })
+    return map
+  }, [groupMemberships])
 
   async function toggleTask(task: any) {
     if (!user?.id) return
@@ -252,13 +273,6 @@ export function StudentTasks() {
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            variant={activeTab === 'all' ? 'primary' : 'outline'}
-            onClick={() => setActiveTab('all')}
-          >
-            All Items ({relevantCourseworks.length + tasks.length})
-          </Button>
-          <Button
-            size="sm"
             variant={activeTab === 'coursework' ? 'primary' : 'outline'}
             onClick={() => setActiveTab('coursework')}
           >
@@ -270,6 +284,13 @@ export function StudentTasks() {
             onClick={() => setActiveTab('tasks')}
           >
             Sub-tasks & Checklist ({tasks.length})
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === 'all' ? 'primary' : 'outline'}
+            onClick={() => setActiveTab('all')}
+          >
+            All Items ({relevantCourseworks.length + tasks.length})
           </Button>
         </div>
 
@@ -357,9 +378,20 @@ export function StudentTasks() {
                                 {cw.title}
                               </h3>
 
-                              <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
-                                {cw.description || 'No detailed instructions provided.'}
-                              </p>
+                              {cw.work_style === 'group_work' && courseworkGroupMap.has(cw.id) ? (
+                                <>
+                                  <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
+                                    {courseworkGroupMap.get(cw.id)?.description || 'No specific task assigned to your group yet.'}
+                                  </p>
+                                  <p className="mt-1 text-xs text-text-muted italic">
+                                    Task assigned to your group: "{courseworkGroupMap.get(cw.id)?.name}"
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
+                                  {cw.description || 'No detailed instructions provided.'}
+                                </p>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/60">
