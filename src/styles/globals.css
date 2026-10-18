@@ -503,6 +503,60 @@ html.dark {
   }
 }
 
+/* Flip Clock Animations */
+@keyframes flip-top-down {
+  0% {
+    transform: perspective(200px) rotateX(0deg);
+  }
+  100% {
+    transform: perspective(200px) rotateX(-90deg);
+  }
+}
+
+@keyframes flip-bottom-up {
+  0% {
+    transform: perspective(200px) rotateX(90deg);
+  }
+  100% {
+    transform: perspective(200px) rotateX(0deg);
+  }
+}
+
+@keyframes flip-digit-glow {
+  0% { opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+.flip-clock-card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  box-shadow:
+    0 4px 20px color-mix(in srgb, var(--color-primary) 8%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.flip-top-old {
+  animation: flip-top-down 0.35s cubic-bezier(0.3, 0, 0.5, 1) forwards;
+  transform-origin: bottom center;
+  backface-visibility: hidden;
+}
+
+.flip-bottom-new {
+  animation: flip-bottom-up 0.35s 0.18s cubic-bezier(0.5, 0, 0.7, 1) forwards;
+  transform-origin: top center;
+  backface-visibility: hidden;
+  transform: perspective(200px) rotateX(90deg);
+}
+
+.flip-glow {
+  animation: flip-digit-glow 0.5s 0.1s ease-out forwards;
+}
+
+
 @layer utilities {
   .gpu-fast {
     transform: translateZ(0);

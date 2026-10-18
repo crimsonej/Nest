@@ -2,15 +2,15 @@
 
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, BookOpen, Target, ArrowRight, Plus, Check } from 'lucide-react'
+import { Users, BookOpen, Target, ArrowRight, Plus, Check, Clock, AlertTriangle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
@@ -59,6 +59,122 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color,
   )
 }
 
+/* ────────────────────────────────────────
+   Flip-Clock Digit Card
+   Airport departure board style animation
+   ──────────────────────────────────────── */
+
+function FlipDigit({ value, prevValue, flipKey }: { value: string; prevValue: string; flipKey: number }) {
+  const isFlipping = value !== prevValue
+
+  return (
+    <div className="flip-clock-card relative" style={{ width: 38, height: 52 }}>
+      {/* ── Static layers (always visible, clipped to top/bottom half) ── */}
+      {/* Top half - current value */}
+      <div
+        className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-b from-surface to-surface-hover/80"
+        style={{ clipPath: 'inset(0 0 50% 0)' }}
+      >
+        <span className="text-[26px] font-black tracking-tight text-text-primary select-none">{value}</span>
+      </div>
+      {/* Bottom half - current value */}
+      <div
+        className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-b-xl bg-gradient-to-t from-surface to-surface-hover/60"
+        style={{ clipPath: 'inset(50% 0 0 0)' }}
+      >
+        <span className="text-[26px] font-black tracking-tight text-text-primary select-none">{value}</span>
+      </div>
+
+      {/* ── Flip animation layers (only while flipping) ── */}
+      {isFlipping && (
+        <>
+          {/* Top flap - old value flipping down */}
+          <div
+            key={`top-${flipKey}`}
+            className="flip-top-old absolute inset-0 flex items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-b from-surface to-surface-hover/80"
+            style={{ clipPath: 'inset(0 0 50% 0)', zIndex: 10 }}
+          >
+            <span className="text-[26px] font-black tracking-tight text-text-primary select-none">{prevValue}</span>
+          </div>
+          {/* Bottom flap - new value flipping up */}
+          <div
+            key={`bot-${flipKey}`}
+            className="flip-bottom-new absolute inset-0 flex items-center justify-center overflow-hidden rounded-b-xl bg-gradient-to-t from-surface to-surface-hover/60"
+            style={{ clipPath: 'inset(50% 0 0 0)', zIndex: 10 }}
+          >
+            <span className="text-[26px] font-black tracking-tight text-text-primary select-none">{value}</span>
+          </div>
+          {/* Glow flash */}
+          <div
+            className="flip-glow absolute inset-0 rounded-xl opacity-0 pointer-events-none"
+            style={{
+              zIndex: 15,
+              background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--color-primary) 25%, transparent), transparent 70%)',
+            }}
+          />
+        </>
+      )}
+
+      {/* Center divider line */}
+      <div
+        className="absolute inset-x-0 pointer-events-none"
+        style={{ top: '50%', height: 1, background: 'color-mix(in srgb, var(--color-border) 60%, transparent)', zIndex: 20, transform: 'translateY(-0.5px)' }}
+      />
+    </div>
+  )
+}
+
+function FlipClockGroup({ value, label }: { value: number; label: string }) {
+  const [displayValue, setDisplayValue] = useState(String(value).padStart(2, '0'))
+  const prevValueRef = useRef(displayValue)
+  const flipKeyRef = useRef(0)
+
+  useEffect(() => {
+    const newVal = String(value).padStart(2, '0')
+    if (newVal !== displayValue) {
+      prevValueRef.current = displayValue
+      flipKeyRef.current += 1
+      setDisplayValue(newVal)
+    }
+  }, [value, displayValue])
+
+  const digits = displayValue.split('')
+  const prevDigits = prevValueRef.current.split('')
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-center gap-[3px]">
+        {digits.map((digit, i) => (
+          <FlipDigit
+            key={i}
+            value={digit}
+            prevValue={prevDigits[i] || digit}
+            flipKey={flipKeyRef.current}
+          />
+        ))}
+      </div>
+      <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-text-muted">
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function FlipClockSeparator() {
+  return (
+    <div className="flex flex-col items-center gap-1.5 pb-4">
+      <motion.div
+        animate={{ opacity: [1, 0.2, 1] }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+        className="flex flex-col gap-1.5"
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-primary" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-primary" />
+      </motion.div>
+    </div>
+  )
+}
+
 function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null)
 
@@ -84,51 +200,100 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
   if (!timeLeft) return null
 
   const isExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0
-  const segments = [
-    { label: 'Days', value: timeLeft.days },
-    { label: 'Hours', value: timeLeft.hours },
-    { label: 'Minutes', value: timeLeft.minutes },
-    { label: 'Seconds', value: timeLeft.seconds },
-  ]
+  const totalSecondsLeft = timeLeft.days * 86400 + timeLeft.hours * 3600 + timeLeft.minutes * 60 + timeLeft.seconds
+  const isUrgent = totalSecondsLeft > 0 && totalSecondsLeft < 3600 // less than 1 hour
+  const isWarning = totalSecondsLeft > 0 && totalSecondsLeft < 86400 // less than 1 day
+
+  const urgencyBorder = isExpired
+    ? 'border-danger/40'
+    : isUrgent
+    ? 'border-rose-500/40'
+    : isWarning
+    ? 'border-amber-500/30'
+    : 'border-primary/30'
+
+  const urgencyGlow = isExpired
+    ? 'shadow-glow-rose'
+    : isUrgent
+    ? 'shadow-glow-rose'
+    : isWarning
+    ? ''
+    : ''
 
   return (
-    <Card className="relative overflow-hidden border-primary/30 bg-surface/90 shadow-xl backdrop-blur-xl">
-      <div className="absolute inset-0 bg-radial-gradient(circle_at_top_right,_rgba(225,29,72,0.12),_transparent_40%) pointer-events-none" />
-      <CardContent className="relative p-6 sm:p-7">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+    <Card className={cn('relative overflow-hidden bg-surface/90 shadow-xl backdrop-blur-xl', urgencyBorder, urgencyGlow)}>
+      {/* Ambient background glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isUrgent
+            ? 'radial-gradient(circle at 80% 20%, rgba(225,29,72,0.12), transparent 50%)'
+            : isWarning
+            ? 'radial-gradient(circle at 80% 20%, rgba(245,158,11,0.10), transparent 50%)'
+            : 'radial-gradient(circle at 80% 20%, rgba(79,70,229,0.10), transparent 50%)',
+        }}
+      />
+
+      <CardContent className="relative p-5 sm:p-7">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          {/* Info section */}
           <div className="max-w-xl">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger"></span>
+                <span className={cn(
+                  'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+                  isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                )} />
+                <span className={cn(
+                  'relative inline-flex rounded-full h-2.5 w-2.5',
+                  isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                )} />
               </span>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-primary">Next Deadline</p>
+              <p className={cn(
+                'text-[11px] font-extrabold uppercase tracking-[0.2em]',
+                isExpired ? 'text-danger' : isUrgent ? 'text-rose-500' : isWarning ? 'text-amber-500' : 'text-primary'
+              )}>
+                {isExpired ? 'Deadline Expired' : isUrgent ? 'Urgent — Due Soon' : 'Next Deadline'}
+              </p>
             </div>
             <h3 className="mt-2 text-xl font-extrabold tracking-tight text-text-primary sm:text-2xl">{title}</h3>
-            <p className="mt-1 text-xs font-medium text-text-muted">
-              Due {new Date(lockAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-            </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <Clock className="h-3.5 w-3.5 text-text-muted" />
+              <p className="text-xs font-medium text-text-muted">
+                Due {new Date(lockAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+              </p>
+            </div>
+            {isUrgent && !isExpired && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-500"
+              >
+                <AlertTriangle className="h-3 w-3" />
+                Less than 1 hour remaining
+              </motion.div>
+            )}
           </div>
 
+          {/* Countdown clock */}
           {isExpired ? (
-            <div className="inline-flex items-center self-start rounded-2xl border border-danger/20 bg-danger-light px-4 py-2 text-xs font-bold text-danger">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-flex items-center self-start gap-2 rounded-2xl border border-danger/20 bg-danger-light px-5 py-3 text-sm font-bold text-danger"
+            >
+              <AlertTriangle className="h-4 w-4" />
               Deadline Expired
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
-              {segments.map((segment) => (
-                <div
-                  key={segment.label}
-                  className="flex w-full sm:w-auto sm:min-w-[80px] flex-col items-center rounded-2xl border border-border/80 bg-surface/95 px-3 py-2 sm:px-3.5 sm:py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
-                >
-                  <span className="text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-                    {String(segment.value).padStart(2, '0')}
-                  </span>
-                  <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
-                    {segment.label}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <FlipClockGroup value={timeLeft.days} label="Days" />
+              <FlipClockSeparator />
+              <FlipClockGroup value={timeLeft.hours} label="Hours" />
+              <FlipClockSeparator />
+              <FlipClockGroup value={timeLeft.minutes} label="Min" />
+              <FlipClockSeparator />
+              <FlipClockGroup value={timeLeft.seconds} label="Sec" />
             </div>
           )}
         </div>
@@ -136,6 +301,64 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
     </Card>
   )
 }
+
+/* ────────────────────────────────────────
+   Loading Skeleton
+   ──────────────────────────────────────── */
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Header skeleton */}
+      <div className="rounded-3xl border border-border/40 bg-surface/60 p-6 sm:p-8">
+        <div className="h-3 bg-border/30 rounded-full w-48 mb-4" />
+        <div className="h-8 bg-border/30 rounded-xl w-72 mb-2" />
+        <div className="h-4 bg-border/20 rounded-lg w-96 max-w-full" />
+      </div>
+
+      {/* Countdown skeleton */}
+      <div className="rounded-3xl border border-border/40 bg-surface/60 p-6">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+          <div className="space-y-2">
+            <div className="h-3 bg-border/30 rounded-full w-24" />
+            <div className="h-6 bg-border/30 rounded-xl w-64" />
+            <div className="h-3 bg-border/20 rounded-lg w-40" />
+          </div>
+          <div className="flex gap-3">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-[38px] h-[52px] sm:w-[52px] sm:h-[68px] rounded-xl bg-border/20" />
+                  <div className="w-[38px] h-[52px] sm:w-[52px] sm:h-[68px] rounded-xl bg-border/20" />
+                </div>
+                <div className="h-2 w-8 bg-border/20 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics skeleton */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="rounded-3xl border border-border/40 bg-surface/60 p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-3">
+                <div className="h-3 bg-border/30 rounded-full w-32" />
+                <div className="h-9 bg-border/30 rounded-xl w-16" />
+              </div>
+              <div className="h-12 w-12 rounded-2xl bg-border/20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────
+   Main Dashboard
+   ──────────────────────────────────────── */
 
 export function StudentDashboard() {
   const { user } = useAuth()
@@ -154,6 +377,8 @@ export function StudentDashboard() {
   const [myCourseUnitIds, setMyCourseUnitIds] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [dataVersion, setDataVersion] = useState(0)
+  const [selectedGroup, setSelectedGroup] = useState<any>(null)
+  const [groupModalOpen, setGroupModalOpen] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -167,7 +392,12 @@ export function StudentDashboard() {
         const [groupsRes, tasksRes, enrollmentsRes, cwRes, allUnitsRes] = await Promise.all([
           supabase
             .from('group_members')
-            .select('group:groups!inner(id, name, status, coursework:courseworks(title, course_unit_id, course_unit:course_units(code)))')
+            .select(`group:groups!inner(
+              id, name, status, description, max_members,
+              leader:users!groups_leader_id_fkey(id, full_name, email, whatsapp_phone),
+              member_count:group_members(count),
+              coursework:courseworks(title, course_unit_id, course_unit:course_units(code, name))
+            )`)
             .eq('user_id', user.id)
             .in('groups.status', ['forming', 'active']),
           supabase
@@ -188,6 +418,7 @@ export function StudentDashboard() {
             .in('course_unit_id', courseUnitFilter)
             .order('lock_at', { ascending: true }),
           supabase.from('course_units').select('*').eq('is_active', true).in('id', courseUnitFilter),
+
         ])
 
         reportStudentQuery('student group memberships', { user_id: 'authenticated profile id', group_status: 'forming or active' }, groupsRes.data, groupsRes.error)
@@ -212,20 +443,28 @@ export function StudentDashboard() {
           active_enrollment_row_count: (enrollmentsRes.data || []).length,
           allowed_course_unit_count: allowedCourseUnitIds.length,
         }, enrolledIds, null)
-        const relevantCourseworks = (cwRes.data || []).filter((coursework: any) => {
+
+        // Show all faculty-accessible coursework for the countdown,
+        // not just enrolled ones (so new students still see deadlines)
+        const allCourseworks = cwRes.data || []
+        const enrolledCourseworks = allCourseworks.filter((coursework: any) => {
           if (!coursework.course_unit_id) return true
           return enrolledIds.includes(coursework.course_unit_id)
         })
-        reportStudentQuery('coursework after active enrollment filter', {
-          published_coursework_count: (cwRes.data || []).length,
-          active_enrollment_count: enrolledIds.length,
+        // Use enrolled coursework if any, otherwise fall back to all accessible
+        const relevantCourseworks = enrolledCourseworks.length > 0 ? enrolledCourseworks : allCourseworks
+
+        reportStudentQuery('coursework for countdown', {
+          published_coursework_count: allCourseworks.length,
+          enrolled_filtered_count: enrolledCourseworks.length,
+          using_all_fallback: enrolledCourseworks.length === 0,
         }, relevantCourseworks, null)
-        reportStudentQuery('in-progress task metric', { task_count: tasks.length, status: 'in_progress' }, tasks.filter((task: { status: string }) => task.status === 'in_progress'), null)
+        reportStudentQuery('active task metric', { task_count: tasks.length, status: 'active' }, tasks.filter((task: { status: string }) => task.status !== 'completed' && task.status !== 'submitted'), null)
 
         setMetrics({
           myGroups: groups.length,
           registeredCourseUnits: enrolledIds.length,
-          activeTasks: tasks.filter((t: { status: string }) => t.status === 'in_progress').length,
+          activeTasks: tasks.filter((t: { status: string }) => t.status !== 'completed' && t.status !== 'submitted').length,
         })
 
         setRecentGroups(groups.slice(0, 5))
@@ -267,20 +506,7 @@ export function StudentDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-secondary/20 rounded w-3/4" />
-                <div className="h-8 bg-secondary/20 rounded w-1/2" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   const containerVariants = {
@@ -348,7 +574,7 @@ export function StudentDashboard() {
       <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard title="My Active Groups" value={metrics.myGroups} icon={<Users className="h-6 w-6" />} color="primary" />
         <MetricCard title="Registered Course Units" value={metrics.registeredCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" onClick={() => setIsModalOpen(true)} />
-        <MetricCard title="In-Progress Tasks" value={metrics.activeTasks} icon={<Target className="h-6 w-6" />} color="warning" />
+        <MetricCard title="Active Tasks" value={metrics.activeTasks} icon={<Target className="h-6 w-6" />} color="warning" />
       </motion.div>
 
       {/* Lists Grid */}
@@ -369,24 +595,41 @@ export function StudentDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {recentGroups.map(({ group }) => (
-                  <div key={group.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
-                        <Users className="h-5 w-5" />
+                {recentGroups.map(({ group }) => {
+                  const memberCount = Array.isArray(group.member_count) && group.member_count[0]?.count != null
+                    ? group.member_count[0].count
+                    : 0;
+                  return (
+                    <div
+                      key={group.id}
+                      onClick={() => {
+                        setSelectedGroup({ ...group, _memberCount: memberCount });
+                        setGroupModalOpen(true);
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
+                          <Users className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-text-primary">{group.name}</p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {group.coursework?.course_unit?.code} - {group.coursework?.title}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-sm text-text-primary">{group.name}</p>
-                        <p className="text-xs text-text-muted mt-0.5">
-                          {group.coursework?.course_unit?.code} - {group.coursework?.title}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-text-muted">
+                          {memberCount}/{group.max_members || '?'}
+                        </span>
+                        <Badge variant={group.status === 'active' ? 'success' : 'warning'} dot>
+                          {group.status}
+                        </Badge>
                       </div>
                     </div>
-                    <Badge variant={group.status === 'active' ? 'success' : 'warning'} dot>
-                      {group.status}
-                    </Badge>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
@@ -474,6 +717,80 @@ export function StudentDashboard() {
 
           <div className="flex justify-end pt-3 border-t border-border/60">
             <Button onClick={() => setIsModalOpen(false)}>Done</Button>
+          </div>
+        </div>
+      </Modal>
+      {/* Group Details Modal */}
+      <Modal isOpen={groupModalOpen} onClose={() => {
+        setGroupModalOpen(false)
+        setSelectedGroup(null)
+      }} title={`Group: ${selectedGroup?.name}`} size="lg">
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
+              <Users className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-text-primary">{selectedGroup?.name}</h2>
+              <p className="mt-1 text-xs text-text-muted">
+                {selectedGroup?.coursework?.course_unit?.code} - {selectedGroup?.coursework?.title}
+              </p>
+
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border/70 bg-surface-hover/40 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Status</p>
+                  <div className="mt-1">
+                    <Badge variant={selectedGroup?.status === 'active' ? 'success' : 'warning'} dot>
+                      {selectedGroup?.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border/70 bg-surface-hover/40 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Members</p>
+                  <p className="mt-1 text-lg font-black text-text-primary">
+                    {selectedGroup?._memberCount ?? 0}
+                    <span className="text-sm font-semibold text-text-muted"> / {selectedGroup?.max_members || '—'}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-border/70 bg-surface-hover/40 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Group Leader</p>
+                <p className="mt-1 text-sm font-semibold text-text-primary">
+                  {selectedGroup?.leader?.full_name || 'Not assigned'}
+                </p>
+                {selectedGroup?.leader?.whatsapp_phone && (
+                  <p className="text-xs text-text-muted mt-0.5">{selectedGroup.leader.whatsapp_phone}</p>
+                )}
+              </div>
+
+              {selectedGroup?.description && (
+                <div className="mt-3 p-3 rounded-xl border border-border/70 bg-surface-hover/40">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Description</p>
+                  <p className="mt-1 text-sm text-text-primary">{selectedGroup?.description}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border/60">
+            <Button variant="outline" onClick={() => {
+              setGroupModalOpen(false)
+              setSelectedGroup(null)
+            }}>Close</Button>
+            {selectedGroup?.leader?.id === user?.id && (
+              <Link href="/student/groups">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => {
+                    setGroupModalOpen(false)
+                    setSelectedGroup(null)
+                  }}
+                >
+                  Manage Members
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </Modal>
