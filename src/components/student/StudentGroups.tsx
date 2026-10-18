@@ -221,6 +221,12 @@ export function StudentGroups() {
   const sortedGroups = useMemo(() => {
     const list = [...selectedGroups]
     return list.sort((a, b) => {
+      // Prioritize groups where the current user is a member
+      const aIsMyGroup = myGroupIds.has(a.id)
+      const bIsMyGroup = myGroupIds.has(b.id)
+      if (aIsMyGroup && !bIsMyGroup) return -1
+      if (!aIsMyGroup && bIsMyGroup) return 1
+      // If both are user's groups or neither, apply the selected sortBy
       const aCount = groupMembers.filter((m) => m.group_id === a.id).length
       const bCount = groupMembers.filter((m) => m.group_id === b.id).length
       const aFullness = a.max_members ? aCount / a.max_members : 0
@@ -235,7 +241,7 @@ export function StudentGroups() {
       if (sortBy === 'oldest') return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
       return 0
     })
-  }, [selectedGroups, groupMembers, sortBy])
+  }, [selectedGroups, groupMembers, sortBy, myGroupIds])
 
   const selectedCourseworks = useMemo(
     () => courseworks.filter((cw) => cw.course_unit_id === selectedCourseUnitId),
