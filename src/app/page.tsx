@@ -28,14 +28,14 @@ export default function HomePage() {
   return (
     <div className="site-grid min-h-screen bg-background relative overflow-hidden transition-colors duration-300 flex flex-col justify-between">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between gap-1 px-4 py-3.5 sm:gap-3 sm:px-6">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-1 px-4 py-3.5 sm:flex-nowrap sm:gap-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 max-[380px]:w-full">
             <motion.div
               whileHover={applyMotionPreference(reducedMotion, { scale: 1.05 }, {})}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               className="shrink-0"
             >
-              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="shrink-0 rounded-2xl" priority />
+              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11" priority />
             </motion.div>
             <div>
               <span className="text-lg font-black tracking-[0.14em] text-text-primary sm:text-xl sm:tracking-[0.2em]">NEST</span>
@@ -43,7 +43,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <nav className="flex shrink-0 items-center gap-1 sm:gap-4">
+          <nav className="flex shrink-0 items-center justify-end gap-1 sm:gap-4 max-[380px]:ml-auto max-[380px]:w-full">
             <Link href="#features" className="hidden text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors md:block">
               Features
             </Link>
@@ -103,7 +103,7 @@ export default function HomePage() {
                 { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
                 { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
               )}
-              className="max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl"
+              className="max-w-3xl text-3xl font-semibold leading-[1.08] sm:text-6xl sm:leading-[1.04] lg:text-7xl"
             >
               A better way to do university work, together.
             </motion.h1>

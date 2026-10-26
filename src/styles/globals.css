@@ -94,7 +94,7 @@ html.dark[data-palette='crimson'] {
   --color-warning-light: #39311e;
   --color-danger: #dc7775;
   --color-danger-light: #3a2528;
-  --color-background: #21171d;
+  --color-background: #080202;
   --color-surface: #302129;
   --color-surface-hover: #3e2c35;
   --color-border: #503944;
@@ -173,7 +173,7 @@ html.dark[data-palette='canopy'] {
 
 ::view-transition-new(root) {
   z-index: 9999;
-  animation: theme-ripple-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: theme-ripple-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes theme-ripple-reveal {
@@ -197,7 +197,7 @@ html.palette-transitioning::after {
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at var(--click-x, 50%) var(--click-y, 50%), color-mix(in srgb, var(--color-secondary) 24%, transparent), transparent 66%), color-mix(in srgb, var(--color-primary) 12%, var(--color-background));
-  animation: palette-fallback-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: palette-fallback-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes palette-fallback-reveal {
