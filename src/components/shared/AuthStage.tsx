@@ -129,10 +129,10 @@ export function AuthStage({ initialMode }: AuthStageProps) {
   return (
     <div className={`w-full ${mode === 'register' ? 'auth-mode-register' : 'auth-mode-login'}`}>
       {/* Tab Row */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-4 sm:gap-2.5 sm:pb-6 mb-6 sm:mb-8">
+      <div className="mb-6 flex flex-col items-stretch gap-2 border-b border-border/60 pb-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:mb-8 sm:gap-2.5 sm:pb-6">
         {/* Segmented Pill Tabs */}
         <div
-          className="relative inline-flex min-w-0 shrink items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner"
+          className="relative inline-flex w-full min-w-0 items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner min-[420px]:w-auto min-[420px]:shrink"
           style={{ backdropFilter: 'blur(12px)' }}
         >
           {/* Shared sliding pill — always rendered, moves between tabs */}
@@ -156,7 +156,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               key={tab}
               type="button"
               onClick={() => handleModeChange(tab)}
-              className={`relative z-10 flex min-h-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 text-[10px] font-bold transition-colors duration-250 select-none sm:min-w-[110px] sm:gap-2 sm:px-5 sm:text-xs ${
+              className={`relative z-10 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 text-[10px] font-bold transition-colors duration-250 select-none min-[420px]:flex-none sm:min-w-[110px] sm:gap-2 sm:px-5 sm:text-xs ${
                 mode === tab
                   ? 'text-white'
                   : 'text-text-muted hover:text-text-primary'
@@ -173,7 +173,9 @@ export function AuthStage({ initialMode }: AuthStageProps) {
         </div>
 
         {/* Theme Toggle */}
-        <ThemeToggle />
+        <div className="self-end min-[420px]:self-auto">
+          <ThemeToggle />
+        </div>
       </div>
 
       {/* Animated Form Panel */}

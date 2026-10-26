@@ -243,7 +243,10 @@ html.palette-transitioning::after {
     min-width: 320px;
     overflow-x: hidden;
     background-color: var(--color-background);
-    background-image: none;
+    background-image:
+      radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--color-ambient-one) 19%, transparent) 0%, transparent 42rem),
+      radial-gradient(ellipse at 96% 18%, color-mix(in srgb, var(--color-ambient-two) 13%, transparent) 0%, transparent 38rem),
+      radial-gradient(ellipse at 48% 100%, color-mix(in srgb, var(--color-ambient-one) 8%, transparent) 0%, transparent 44rem);
     background-attachment: fixed;
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
   }
@@ -253,20 +256,30 @@ html.palette-transitioning::after {
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: url('/paper-grain.svg') repeat;
-    background-size: 96px 96px;
-    opacity: 0.38;
-    mix-blend-mode: soft-light;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--color-border) 12%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-border) 12%, transparent) 1px, transparent 1px),
+      url('/paper-grain.svg');
+    background-size: 34px 34px, 34px 34px, 96px 96px;
+    opacity: 0.28;
+    mix-blend-mode: multiply;
   }
 
   .workspace-surface {
     background-color: var(--color-background);
-    background-image: none;
+    background-image:
+      radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--color-ambient-one) 19%, transparent) 0%, transparent 42rem),
+      radial-gradient(ellipse at 96% 18%, color-mix(in srgb, var(--color-ambient-two) 13%, transparent) 0%, transparent 38rem),
+      radial-gradient(ellipse at 48% 100%, color-mix(in srgb, var(--color-ambient-one) 8%, transparent) 0%, transparent 44rem);
+    background-attachment: fixed;
   }
 
   .site-grid {
     background-color: var(--color-background);
-    background-image: none;
+    background-image:
+      radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--color-ambient-one) 13%, transparent) 0%, transparent 36rem),
+      radial-gradient(ellipse at 96% 18%, color-mix(in srgb, var(--color-ambient-two) 9%, transparent) 0%, transparent 32rem);
+    background-attachment: fixed;
   }
 
   html .workspace-sidebar-content {
@@ -915,24 +928,55 @@ html.palette-transitioning::after {
   }
 
   .workspace-surface main {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
 
-  /* Ensure tables scroll smoothly on small mobile screens */
+  /* Preserve native column alignment and scroll wide data tables within their wrappers. */
   table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-primary) 55%, transparent) transparent;
+    overscroll-behavior-inline: contain;
+  }
+
+  .overflow-x-auto.scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .overflow-x-auto > table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    display: block;
+    height: 4px;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary) 55%, transparent);
   }
 
   table thead th,
   table tbody td {
     padding-left: 0.625rem !important;
     padding-right: 0.625rem !important;
+    vertical-align: top;
+  }
+
+  table th,
+  table td {
+    word-break: normal;
+    overflow-wrap: break-word;
   }
 
   /* Ensure dialogs and modals use maximum screen width safely */
@@ -958,6 +1002,18 @@ html.palette-transitioning::after {
 
   .auth-form-pane {
     background-color: transparent;
+  }
+
+  .workspace-surface {
+    background-image:
+      radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--color-ambient-one) 34%, transparent) 0%, transparent 30rem),
+      radial-gradient(ellipse at 100% 22%, color-mix(in srgb, var(--color-ambient-two) 23%, transparent) 0%, transparent 26rem),
+      radial-gradient(ellipse at 58% 85%, color-mix(in srgb, var(--color-ambient-one) 16%, transparent) 0%, transparent 32rem);
+    background-attachment: scroll;
+  }
+
+  .workspace-surface main {
+    overflow-wrap: normal;
   }
 
   .auth-mode-register {

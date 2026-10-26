@@ -267,7 +267,7 @@ export function Select({
           type="button"
           onClick={toggleOpen}
           className={cn(
-            'input w-full text-left justify-between',
+            'input flex w-full min-w-0 items-center text-left',
             !value && 'text-text-muted',
             disabled && 'opacity-50 cursor-not-allowed',
             error && 'border-danger focus:border-danger focus:ring-danger/20'
@@ -277,7 +277,7 @@ export function Select({
           aria-expanded={isOpen}
           aria-label={label}
         >
-          <span className="truncate">{displayValue}</span>
+          <span className="min-w-0 flex-1 truncate">{displayValue}</span>
           {isOpen ? <ChevronUp className="h-4 w-4 text-text-muted shrink-0" /> : <ChevronDown className="h-4 w-4 text-text-muted shrink-0" />}
         </button>
         {mounted && dropdownMenu && createPortal(dropdownMenu, document.body)}

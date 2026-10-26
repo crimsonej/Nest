@@ -169,33 +169,33 @@ export function CoordinatorDashboard() {
       {/* Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="workspace-dashboard-hero rounded-2xl p-6 sm:p-8"
+        className="workspace-dashboard-hero rounded-2xl p-4 sm:p-8"
       >
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
+        <div className="relative flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
-            <div className="workspace-hero-eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-bold backdrop-blur-md">
+            <div className="workspace-hero-eyebrow mb-3 inline-flex max-w-full items-start gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold leading-snug backdrop-blur-md sm:items-center sm:text-[11px]">
               <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" aria-hidden="true"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-white" aria-hidden="true"></span>
               </span>
               <span>Coordinator Center · Real-Time Supervision</span>
             </div>
-            <h1 className="max-w-2xl text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            <h1 className="max-w-2xl text-xl font-bold leading-tight text-white sm:text-4xl">
               Keep every group moving forward
             </h1>
-            <p className="workspace-hero-copy mt-2 max-w-xl text-xs font-medium sm:text-sm">
+            <p className="workspace-hero-copy mt-2 max-w-xl text-xs leading-relaxed font-medium sm:text-sm">
               Monitor course activity, auto-assign unassigned students, track lock dates, and supervise academic performance.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap sm:gap-3">
             <Link href="/coordinator/coursework">
-              <Button variant="outline" size="sm" className="border-white/35 bg-white/10 text-white hover:border-white/70 hover:bg-white/15">
+              <Button variant="outline" size="sm" className="w-full border-white/35 bg-white/10 text-white hover:border-white/70 hover:bg-white/15 min-[420px]:w-auto">
                 <Plus className="mr-1.5 h-4 w-4" />
                 New Coursework
               </Button>
             </Link>
             <Link href="/coordinator/groups">
-              <Button size="sm" className="workspace-dashboard-action-primary border-0 shadow-md hover:bg-white/90">
+              <Button size="sm" className="workspace-dashboard-action-primary w-full border-0 shadow-md hover:bg-white/90 min-[420px]:w-auto">
                 Review Groups
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Button>
@@ -227,7 +227,7 @@ export function CoordinatorDashboard() {
       )}
 
       {/* Metric Cards Grid */}
-      <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard title="Active Course Units" value={metrics.activeCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" href="/coordinator/course-units" />
         <MetricCard title="Available Courses" value={formatNumber(metrics.totalCourses)} icon={<BookCopy className="h-6 w-6" />} color="success" href="/coordinator/courses" />
         <MetricCard title="Total Students" value={formatNumber(metrics.totalStudents)} icon={<Users className="h-6 w-6" />} color="success" href="/coordinator/students" />

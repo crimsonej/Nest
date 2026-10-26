@@ -27,13 +27,13 @@ export function MetricCard({ title, value, icon, color, onClick, href }: MetricC
   const content = (
     <Card hover={Boolean(onClick || href)} className="group" onClick={handleClick}>
       <div className={`absolute top-0 inset-x-0 h-1 bg-${color === 'primary' ? 'primary' : color === 'success' ? 'var(--color-success)' : color === 'warning' ? 'var(--color-warning)' : 'var(--color-danger)'} opacity-80 transition-opacity group-hover:opacity-100`} />
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-text-muted">{title}</p>
-            <p className="mt-2 text-3xl sm:text-4xl font-black text-text-primary tracking-tight">{value}</p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase leading-snug tracking-[0.1em] text-text-muted sm:text-[11px] sm:tracking-[0.16em]">{title}</p>
+            <p className="mt-2 text-2xl font-black leading-none text-text-primary tracking-tight sm:text-4xl">{value}</p>
           </div>
-          <div className={cn('rounded-2xl p-3 shrink-0', colorClasses[color])}>{icon}</div>
+          <div className={cn('shrink-0 rounded-xl p-2 sm:rounded-2xl sm:p-3', colorClasses[color])}>{icon}</div>
         </div>
       </CardContent>
     </Card>
