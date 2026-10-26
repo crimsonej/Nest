@@ -8,6 +8,7 @@ import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, Fi
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
 
 const navigation = [
   { name: 'Overview', href: '/coordinator/dashboard', icon: LayoutDashboard },
@@ -90,20 +91,17 @@ function SidebarContent({
   isMobile?: boolean
 }) {
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-surface text-text-primary transition-colors duration-300">
-      {/* Decorative ambient glow Orbs inside sidebar */}
-      <div className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full bg-emerald-500/15 blur-3xl dark:bg-emerald-600/20 html.mid:bg-rose-500/20" />
-      <div className="pointer-events-none absolute top-1/2 -right-16 h-48 w-48 rounded-full bg-teal-500/15 blur-3xl dark:bg-teal-600/15 html.mid:bg-amber-500/15" />
+    <div className="workspace-sidebar-content relative flex h-full flex-col overflow-hidden bg-surface text-text-primary transition-colors duration-300">
 
       {/* Sidebar Header / Logo */}
-      <div className="relative z-10 flex h-20 items-center justify-between border-b border-border px-5 backdrop-blur-md">
+      <div className="workspace-sidebar-header relative z-10 flex h-20 items-center justify-between border-b px-5 backdrop-blur-md">
         <Link href="/coordinator/dashboard" onClick={onClose} className="flex items-center gap-3 group">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-600 p-0.5 shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="workspace-brand-mark relative flex h-10 w-10 items-center justify-center rounded-2xl p-0.5 group-hover:scale-105 transition-transform duration-200">
             <Image src="/logo.png" alt="NEST Logo" width={36} height={36} className="rounded-[14px] shrink-0" />
           </div>
           <div>
             <strong className="block text-base tracking-[0.2em] font-extrabold text-text-primary">NEST</strong>
-            <small className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400 html.mid:text-rose-400">Coordinator Portal</small>
+            <small className="workspace-role-chip"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Coordinator Portal</small>
           </div>
         </Link>
         {isMobile && (
@@ -117,11 +115,13 @@ function SidebarContent({
         )}
       </div>
 
+      <SidebarCampusPanel />
+
       {/* Navigation Links */}
-      <nav className="relative z-10 flex-1 space-y-1.5 overflow-y-auto px-3.5 py-5 scrollbar-thin" role="navigation" aria-label="Main navigation">
+      <nav className="workspace-sidebar-nav relative z-10 flex-1 space-y-2 overflow-y-auto px-3.5 pb-5 scrollbar-thin" role="navigation" aria-label="Main navigation">
         <div className="px-3 pb-2 flex items-center justify-between">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-text-muted">Workspace</p>
-          <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <p className="workspace-sidebar-section-label">OPERATIONS</p>
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
         </div>
 
         {navigation.map((item) => {
@@ -133,23 +133,23 @@ function SidebarContent({
               href={item.href}
               onClick={onClose}
               className={cn(
-                'group relative flex items-center gap-3.5 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 select-none',
+                'workspace-nav-link group relative flex items-center gap-3 px-3 text-sm font-medium transition-all duration-200 select-none',
                 isActive
-                  ? 'text-white font-bold'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:translate-x-0.5'
+                  ? 'text-text-primary font-bold'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
               )}
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeCoordNavPill"
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  className="workspace-nav-active absolute inset-0 rounded-[0.85rem]"
+                  transition={{ type: 'spring', stiffness: 320, damping: 30 }}
                 />
               )}
               <div className={cn(
-                'relative z-10 flex h-7 w-7 items-center justify-center rounded-xl transition-all duration-200',
-                isActive ? 'bg-white/20 text-white shadow-sm' : 'text-text-muted group-hover:text-text-primary group-hover:scale-110'
+                'workspace-nav-icon relative z-10 flex items-center justify-center rounded-lg transition-colors duration-200',
+                isActive ? 'workspace-nav-icon-active' : 'text-text-muted group-hover:text-primary'
               )}>
                 <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
               </div>
@@ -160,17 +160,17 @@ function SidebarContent({
       </nav>
 
       {/* Floating User Glass Profile Box */}
-      <div className="relative z-10 border-t border-border p-3.5 backdrop-blur-md">
-        <div className="rounded-2xl border border-border bg-surface-hover/60 p-3 shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-primary/40">
+      <div className="workspace-sidebar-footer relative z-10 border-t p-3.5">
+        <div className="workspace-sidebar-profile p-3 transition-colors duration-200">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 p-0.5 font-bold text-white shadow-md">
-              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-surface font-black text-xs text-emerald-600 dark:text-emerald-300">
+            <div className="workspace-avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0.5 font-bold text-white shadow-md">
+              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-surface font-black text-xs text-primary">
                 <Shield className="h-4 w-4" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-text-primary truncate">{user?.full_name || 'Coordinator'}</p>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 html.mid:text-rose-400 truncate">
+              <span className="workspace-role-label inline-flex items-center gap-1 text-[10px] font-semibold truncate">
                 <Sparkles className="h-3 w-3" /> Academic Supervisor
               </span>
             </div>
@@ -178,7 +178,7 @@ function SidebarContent({
 
           <button
             onClick={signOut}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-bold text-text-secondary hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 active:scale-[0.98]"
+            className="workspace-signout mt-3 flex w-full items-center justify-center gap-2 border border-border/70 px-3 text-xs font-bold text-text-secondary active:scale-[0.98]"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Sign Out</span>

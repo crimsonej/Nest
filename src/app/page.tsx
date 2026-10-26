@@ -25,43 +25,37 @@ export default function HomePage() {
 
   return (
     <div className="site-grid min-h-screen bg-background relative overflow-hidden transition-colors duration-300 flex flex-col justify-between">
-      {/* Background Animated Motion Orbs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="hero-orb hero-orb-one" />
-        <div className="hero-orb hero-orb-two" />
-        <div className="hero-orb hero-orb-three" />
-      </div>
-
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
+        <div className="container mx-auto flex items-center justify-between gap-1 px-4 py-3.5 sm:gap-3 sm:px-6">
           <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="shrink-0"
             >
-              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="rounded-2xl" priority />
+              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="shrink-0 rounded-2xl" priority />
             </motion.div>
             <div>
-              <span className="text-xl font-black tracking-[0.2em] text-text-primary">NEST</span>
+              <span className="text-lg font-black tracking-[0.14em] text-text-primary sm:text-xl sm:tracking-[0.2em]">NEST</span>
               <p className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted md:block">University Workspace</p>
             </div>
           </div>
 
-          <nav className="flex items-center gap-2 sm:gap-4">
+          <nav className="flex shrink-0 items-center gap-1 sm:gap-4">
             <Link href="#features" className="hidden text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors md:block">
               Features
             </Link>
             <ThemeToggle />
             <Link href="/auth/login">
-              <Button variant="outline" size="sm" className="px-3 text-xs font-semibold">
-                <LogIn className="h-3.5 w-3.5 mr-1.5" />
-                Sign In
+              <Button variant="outline" size="sm" className="min-h-11 min-w-11 px-2 text-xs font-semibold sm:min-h-10 sm:min-w-0 sm:px-3">
+                <LogIn className="mr-0 h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="sr-only sm:not-sr-only">Sign In</span>
               </Button>
             </Link>
             <Link href="/auth/register">
-              <Button size="sm" className="px-3.5 text-xs font-semibold">
-                <UserPlus className="h-3.5 w-3.5 mr-1.5" />
-                Sign Up
+              <Button size="sm" className="min-h-11 min-w-11 px-2 text-xs font-semibold sm:min-h-10 sm:min-w-0 sm:px-3.5">
+                <UserPlus className="mr-0 h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="sr-only sm:not-sr-only">Sign Up</span>
               </Button>
             </Link>
           </nav>
@@ -69,55 +63,65 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        <section className="container relative mx-auto px-4 py-20 lg:py-32">
+        <section className="relative isolate flex min-h-[520px] items-end overflow-hidden bg-[#15272b] px-5 pb-12 pt-24 text-white sm:min-h-[600px] sm:px-8 sm:pb-16 lg:min-h-[660px] lg:px-14 lg:pb-20">
+          <Image
+            src="/campus-building.jpg"
+            alt="A university campus building framed by trees and a lawn"
+            fill
+            priority
+            sizes="100vw"
+            className="-z-20 object-cover object-center"
+          />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(13,29,34,0.92)_0%,rgba(13,29,34,0.78)_42%,rgba(13,29,34,0.20)_100%)]" />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(13,29,34,0.64)_0%,transparent_48%)]" />
+          <div className="pointer-events-none absolute right-8 top-8 hidden h-40 w-40 rounded-full border border-white/20 lg:block" />
+          <div className="pointer-events-none absolute right-16 top-16 hidden h-24 w-24 rounded-full border border-white/25 lg:block" />
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="mx-auto max-w-4xl text-center"
+            className="mx-auto w-full max-w-[1440px]"
           >
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary-light/40 px-4 py-1.5 text-xs font-bold text-primary backdrop-blur-md shadow-xs mb-6">
-              <Sparkles className="h-4 w-4 text-amber-400 animate-spin-slow" />
-              <span>Next-Gen University Collaboration Workspace</span>
+            <motion.div variants={itemVariants} className="mb-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80">
+              <span className="h-px w-8 bg-secondary" />
+              Campus collaboration
             </motion.div>
 
-            <motion.h1 variants={itemVariants} className="text-4xl font-black leading-[1.05] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              The clear home for{' '}
-              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                course groups, tasks, & deadlines.
-              </span>
+            <motion.h1 variants={itemVariants} className="max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl">
+              A better way to do university work, together.
             </motion.h1>
 
-            <motion.p variants={itemVariants} className="mx-auto mt-6 mb-10 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg lg:text-xl font-medium">
-              NEST brings students, lecturers, and coordinators into one calm, high-performance workspace for course units, group formation, assignments, and campus coordination without stale data.
+            <motion.p variants={itemVariants} className="mb-8 mt-5 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
+              Bring course groups, assignments, and campus coordination into one shared workspace built for students and faculty.
             </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-4 sm:flex-row mb-12">
+            <motion.div variants={itemVariants} className="mb-10 flex flex-col gap-3 sm:flex-row">
               <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto px-8 shadow-xl shadow-indigo-500/25">
-                  Sign In to Workspace
+                <Button size="lg" className="w-full border-0 bg-white px-8 text-[#1c3238] shadow-lg hover:bg-white/90 sm:w-auto">
+                  Enter workspace
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 border-primary/30 hover:border-primary/60 backdrop-blur-md">
+                <Button variant="outline" size="lg" className="w-full border-white/40 bg-white/10 px-8 text-white backdrop-blur-sm hover:border-white hover:bg-white/15 sm:w-auto">
                   Create Account
                 </Button>
               </Link>
             </motion.div>
 
-            {/* Quick Stat Pill Highlights */}
-            <motion.div variants={itemVariants} className="inline-flex flex-wrap items-center justify-center gap-4 sm:gap-8 rounded-3xl border border-border/80 bg-surface/75 px-6 py-3.5 backdrop-blur-xl shadow-lg">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>100% Real-Time Group Roster</span>
+            <motion.div variants={itemVariants} className="flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-white/80 sm:text-sm">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-secondary" />
+                Student collaboration
               </div>
-              <div className="hidden sm:block h-4 w-px bg-border/80" />
-              <div className="flex items-center gap-2 text-xs font-extrabold text-text-primary">
-                <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                <span>Lecturer & Coordinator Oversight</span>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-secondary" />
+                Coursework management
               </div>
-              <div className="hidden sm:block h-4 w-px bg-border/80" />
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-secondary" />
+                Academic oversight
+              </div>
             </motion.div>
           </motion.div>
         </section>
@@ -192,7 +196,7 @@ function FeatureCard({ icon: Icon, title, description, features }: { icon: React
       className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/85 p-6 shadow-lg backdrop-blur-xl transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 sm:p-8"
     >
       <div>
-        <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center mb-6 text-white shadow-md shadow-indigo-500/30">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-primary to-secondary text-white shadow-md shadow-primary/30">
           <Icon className="h-7 w-7" />
         </div>
         <h3 className="text-xl font-bold text-text-primary mb-3">{title}</h3>

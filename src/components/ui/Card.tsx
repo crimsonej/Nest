@@ -13,12 +13,12 @@ export function Card({ children, className, hover = false, onClick, ...props }: 
   if (hover || onClick) {
     return (
       <motion.div
-        whileHover={{ y: -5, scale: 1.008 }}
-        whileTap={onClick ? { scale: 0.98 } : undefined}
-        transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+        whileHover={{ y: -2 }}
+        whileTap={onClick ? { scale: 0.99 } : undefined}
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
         onClick={onClick}
         className={cn(
-          'card relative overflow-hidden rounded-3xl border border-border/80 bg-surface/85 shadow-md backdrop-blur-xl transition-all duration-300 cursor-pointer hover:shadow-2xl hover:border-primary/50 hover:shadow-primary/10',
+          'card relative overflow-hidden rounded-2xl border border-border/80 shadow-md backdrop-blur-xl transition-all duration-200 cursor-pointer hover:border-primary/50 hover:shadow-primary/10',
           className
         )}
         {...(props as HTMLMotionProps<'div'>)}
@@ -31,7 +31,7 @@ export function Card({ children, className, hover = false, onClick, ...props }: 
   return (
     <div
       className={cn(
-        'card relative overflow-hidden rounded-3xl border border-border/80 bg-surface/85 shadow-md backdrop-blur-xl transition-all duration-300',
+        'card relative overflow-hidden rounded-2xl border border-border/80 shadow-md backdrop-blur-xl transition-all duration-200',
         className
       )}
       {...props}

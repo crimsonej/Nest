@@ -30,7 +30,7 @@ values
   ('Group 4', 'Gomito Joshua'),
   ('Group 4', 'Nambejja Leone'),
   ('Group 4', 'Semakula Rayan'),
-  ('Group 4', 'Nakigudde Winnie'),
+  ('Group 4', 'Nakigudde Winnie')
   ('Group 5', 'Luyima Tonny'),
   ('Group 5', 'Omedo Mark Anthony'),
   ('Group 5', 'Kibirango Musa'),

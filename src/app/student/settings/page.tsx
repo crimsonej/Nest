@@ -14,8 +14,6 @@ export default function StudentSettingsPage() {
   const userId = user?.id
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
-  const [deletingAccount, setDeletingAccount] = useState(false)
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [draftData, setDraftData] = useState({
     fullName: user?.full_name || '',
@@ -33,30 +31,6 @@ export default function StudentSettingsPage() {
     whatsappPhone: user?.whatsapp_phone || '',
     course: user?.course || '',
   })
-
-  async function handleDeleteAccount() {
-    if (!userId) return
-
-    setDeletingAccount(true)
-    try {
-      const res = await fetch('/api/auth/delete-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to delete user account.')
-      }
-
-      await supabase.auth.signOut()
-      window.location.href = '/auth/login'
-    } catch (error) {
-      console.error('Failed to delete account:', error)
-      alert(error instanceof Error ? error.message : 'Unable to delete account. Please try again.')
-    } finally {
-      setDeletingAccount(false)
-    }
-  }
 
   useEffect(() => {
     if (!userId || !user) {
@@ -330,42 +304,6 @@ export default function StudentSettingsPage() {
           )}
         </CardContent>
       </Card>
-
-      <Card className="settings-card border-danger/30 bg-danger/5">
-        <CardHeader>
-          <CardTitle className="text-danger">Danger zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="font-medium text-text-primary">Delete account</p>
-              <p className="text-sm text-text-muted">Permanently delete your account and all associated data.</p>
-            </div>
-            <Button variant="danger" onClick={() => setDeleteModalOpen(true)}>
-              Delete account
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Confirm Account Deletion" size="sm">
-        <div className="space-y-4">
-          <div className="rounded-xl border border-danger/30 bg-danger-light p-3 text-xs font-semibold text-danger">
-            Warning: This will permanently delete your account and remove all your data from Nest. This action CANNOT be undone.
-          </div>
-          <p className="text-sm text-text-primary">
-            Are you sure you want to permanently delete your account?
-          </p>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteModalOpen(false)} disabled={deletingAccount}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleDeleteAccount} loading={deletingAccount}>
-              Delete account
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       <Modal isOpen={isEditOpen} onClose={() => { setIsEditOpen(false); setSaveError(''); }} title="Edit profile" size="md">
         <div className="space-y-4">

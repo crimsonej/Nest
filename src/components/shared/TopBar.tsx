@@ -47,7 +47,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
               aria-label="User menu"
               aria-expanded={userMenuOpen}
             >
-              <div className="h-7 w-7 overflow-hidden rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 p-[1.5px] shadow-sm">
+              <div className="workspace-avatar h-7 w-7 overflow-hidden rounded-xl p-[1.5px] shadow-sm">
                 <div className="h-full w-full rounded-[10px] bg-surface flex items-center justify-center text-primary font-black text-xs">
                   {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
                 </div>

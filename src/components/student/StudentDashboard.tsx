@@ -26,7 +26,7 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, change, changeType = 'neutral', icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
-    primary: 'bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/30',
+    primary: 'bg-primary text-white shadow-md shadow-primary/25',
     success: 'bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30',
     warning: 'bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30',
     danger: 'bg-gradient-to-tr from-rose-600 to-red-600 text-white shadow-md shadow-rose-500/30',
@@ -34,7 +34,7 @@ function MetricCard({ title, value, change, changeType = 'neutral', icon, color,
 
   return (
     <Card hover={Boolean(onClick)} onClick={onClick} className="group">
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute top-0 inset-x-0 h-1 bg-primary opacity-80 transition-opacity group-hover:opacity-100" />
       <CardContent className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -530,32 +530,31 @@ export function StudentDashboard() {
       {/* Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden rounded-3xl border border-indigo-500/25 bg-gradient-to-r from-indigo-950/20 via-violet-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl"
+        className="workspace-dashboard-hero rounded-2xl p-6 sm:p-8"
       >
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-bold text-indigo-400 backdrop-blur-md mb-2.5">
+            <div className="workspace-hero-eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-bold backdrop-blur-md">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
               </span>
               <span>Student Workspace · Ndejje University</span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
-              Welcome back, <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">{user?.full_name?.split(' ')[0] || 'Student'}</span> 👋
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
+              Welcome back, {user?.full_name?.split(' ')[0] || 'Student'}
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
+            <p className="workspace-hero-copy mt-2 max-w-xl text-xs font-medium sm:text-sm">
               Track active coursework deadlines, manage project group tasks, and monitor your academic progress.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)} className="border-indigo-500/30 hover:border-indigo-500/60 shadow-xs">
-              <BookOpen className="h-4 w-4 mr-2 text-indigo-500" />
+            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)} className="border-white/35 bg-white/10 text-white hover:border-white/70 hover:bg-white/15">
+              <BookOpen className="mr-2 h-4 w-4" />
               Course Units ({myCourseUnitIds.length})
             </Button>
             <Link href="/student/coursework">
-              <Button size="sm" className="shadow-lg shadow-indigo-500/25">
+              <Button size="sm" className="workspace-dashboard-action-primary border-0 shadow-md hover:bg-white/90">
                 <Plus className="h-4 w-4 mr-1.5" />
                 Browse Coursework
               </Button>

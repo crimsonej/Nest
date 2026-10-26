@@ -1,4 +1,4 @@
-export type ThemeMode = 'light' | 'mid' | 'dark'
+export type ThemeMode = 'system' | 'light' | 'dark'
 
 export interface UniversityRule {
   university: string
@@ -50,8 +50,8 @@ export function validateRegistrationNumber(regNumber: string, universityName = d
 
 export function getThemeOptions() {
   return [
+    { value: 'system', label: 'System' },
     { value: 'light', label: 'Light' },
-    { value: 'mid', label: 'Mid' },
     { value: 'dark', label: 'Dark' },
   ] as const
 }

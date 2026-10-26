@@ -4,12 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { useTheme } from 'next-themes'
 import {
   LogIn,
   UserPlus,
-  SunMedium,
-  MoonStar,
   Sparkles,
   Mail,
   Lock,
@@ -28,6 +25,9 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { createClient } from '@/lib/supabase/client'
+import OAuthButtons from '@/components/OAuthButtons'
+import ThemeToggle from '@/components/shared/ThemeToggle'
+
 import { studentRegistrationSchema } from '@/lib/validators'
 import {
   defaultUniversity,
@@ -110,8 +110,6 @@ interface AuthStageProps {
 export function AuthStage({ initialMode }: AuthStageProps) {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode)
   const [prevMode, setPrevMode] = useState<'login' | 'register'>(initialMode)
-  const { resolvedTheme, setTheme } = useTheme()
-
   function handleModeChange(newMode: 'login' | 'register') {
     if (newMode === mode) return
     setPrevMode(mode)
@@ -120,12 +118,6 @@ export function AuthStage({ initialMode }: AuthStageProps) {
     if (typeof window !== 'undefined') {
       window.history.pushState(null, '', targetUrl)
     }
-  }
-
-  function cycleTheme() {
-    const order = ['light', 'mid', 'dark'] as const
-    const current = (resolvedTheme as (typeof order)[number]) || 'light'
-    setTheme(order[(order.indexOf(current) + 1) % order.length])
   }
 
   // Determine direction: login→register = right, register→login = left
@@ -162,7 +154,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               key={tab}
               type="button"
               onClick={() => handleModeChange(tab)}
-              className={`relative z-10 flex items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-bold transition-colors duration-250 select-none min-w-[90px] sm:min-w-[110px] justify-center ${
+              className={`relative z-10 flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors duration-250 select-none sm:min-w-[110px] sm:gap-2 sm:px-5 ${
                 mode === tab
                   ? 'text-white'
                   : 'text-text-muted hover:text-text-primary'
@@ -179,50 +171,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
         </div>
 
         {/* Theme Toggle */}
-        <motion.button
-          whileHover={{ scale: 1.12, rotate: 18 }}
-          whileTap={{ scale: 0.88 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          type="button"
-          onClick={cycleTheme}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface/80 text-text-secondary shadow-xs hover:text-text-primary"
-          aria-label="Switch theme"
-          title="Switch theme"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {resolvedTheme === 'dark' ? (
-              <motion.span
-                key="sun"
-                initial={{ rotate: -90, scale: 0.5, opacity: 0 }}
-                animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                exit={{ rotate: 90, scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <SunMedium className="h-4 w-4 text-amber-400" />
-              </motion.span>
-            ) : resolvedTheme === 'mid' ? (
-              <motion.span
-                key="sparkles"
-                initial={{ rotate: -90, scale: 0.5, opacity: 0 }}
-                animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                exit={{ rotate: 90, scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Sparkles className="h-4 w-4 text-rose-500" />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="moon"
-                initial={{ rotate: -90, scale: 0.5, opacity: 0 }}
-                animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                exit={{ rotate: 90, scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MoonStar className="h-4 w-4 text-slate-500" />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <ThemeToggle />
       </div>
 
       {/* Animated Form Panel */}
@@ -417,43 +366,27 @@ function LoginFormSection({
         exit="exit"
         className="space-y-5"
       >
-        {/* Heading & Badge */}
+        {/* Heading */}
         <motion.div variants={fieldVariant} className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary-light/50 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md shadow-xs">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
-            <span>Multi-Identifier Sign In Enabled</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
             Welcome back
           </h1>
-          <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-            Sign in using your Email, Phone Number, or Registration Number.
+          <p className="text-sm leading-relaxed text-text-secondary">
+            Sign in to your campus workspace.
           </p>
         </motion.div>
 
-        {/* Error */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger-light p-3.5 text-xs font-semibold text-danger shadow-sm"
-              role="alert"
-            >
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div variants={fieldVariant}>
+          <OAuthButtons />
+        </motion.div>
 
         {/* Fields */}
         <motion.div variants={fieldVariant} className="space-y-1">
           <Input
-            label="Email, Phone, or Reg Number"
+            label="Account identifier"
             type="text"
-            placeholder="student@nest.edu, +256700..., or 26/2/222/D/2222"
+            placeholder="Email, phone, or reg. no."
+            helperText="Use the email, phone number, or registration number on your account."
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             icon={getIdentifierIcon()}
@@ -472,12 +405,14 @@ function LoginFormSection({
             icon={<Lock className="h-4 w-4" />}
             autoComplete="current-password"
             required
+            className="pr-12"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 top-[38px] text-text-muted hover:text-text-primary transition-colors p-1"
+            className="absolute right-1.5 top-[34px] flex h-11 w-11 items-center justify-center rounded-xl text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
           >
             <motion.span
               key={showPassword ? 'hide' : 'show'}
@@ -493,6 +428,22 @@ function LoginFormSection({
             </motion.span>
           </button>
         </motion.div>
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-light p-3 text-sm font-medium text-danger"
+              role="alert"
+              aria-live="assertive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div variants={fieldVariant} className="flex justify-end relative z-10">
           <Link
@@ -511,8 +462,8 @@ function LoginFormSection({
               className="w-full shadow-xl font-bold tracking-wide transition-all duration-300"
               loading={loading}
             >
-              <LogIn className="h-4 w-4 mr-2" />
-              Sign In to Workspace
+              {!loading && <LogIn className="mr-2 h-4 w-4" />}
+              {loading ? 'Signing in…' : 'Sign in to workspace'}
             </Button>
           </motion.div>
         </motion.div>

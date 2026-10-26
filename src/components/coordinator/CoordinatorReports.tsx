@@ -31,6 +31,7 @@ import {
   Building,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
+import ReportCard from '@/components/shared/ReportCard'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
@@ -297,13 +298,13 @@ export function CoordinatorReports() {
       case 'students':
       case 'orphan_students':
         return [
-          { key: 'full_name', header: 'Student', value: (row) => row.full_name || '—' },
+          { key: 'full_name', header: 'Student Name', value: (row) => row.full_name || '—' },
           { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'student_registration_number', header: 'Reg No.', value: (row) => row.student_registration_number || '—' },
-          { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+          { key: 'course', header: 'Course / Programme', value: (row) => row.course || '—' },
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
           { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
-          { key: 'created_at', header: 'Registered', value: (row) => formatDate(row.created_at) },
+          { key: 'created_at', header: 'Date Registered', value: (row) => formatDate(row.created_at) },
         ]
       case 'groups':
         if (groupReportFormat === 'group_summary') {
@@ -330,54 +331,54 @@ export function CoordinatorReports() {
             { key: 'members_roster', header: 'Roster Breakdown', value: (row) => row.members_roster || '—' },
           ]
         }
-        // Format 1: student_roster (Detailed Student-Level Roster)
+        // Format 1: student_roster
         return [
           { key: 'student_number', header: 'No.', value: (row) => String(row.student_number || '—') },
           { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || '—' },
           { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
+          { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'role', header: 'Role', value: (row) => row.role || 'Member' },
           { key: 'name', header: 'Group Name', value: (row) => row.name || '—' },
           { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
           { key: 'coursework', header: 'Coursework', value: (row) => row.coursework || '—' },
           { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
-          { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
         ]
       case 'course_units':
         return [
           { key: 'code', header: 'Code', value: (row) => row.code || '—' },
-          { key: 'name', header: 'Name', value: (row) => row.name || '—' },
-          { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+          { key: 'name', header: 'Unit Name', value: (row) => row.name || '—' },
+          { key: 'course', header: 'Course Code', value: (row) => row.course || '—' },
           { key: 'course_name', header: 'Course Name', value: (row) => row.course_name || '—' },
-          { key: 'max_group_size', header: 'Max Group', value: (row) => String(row.max_group_size || 0) },
-          { key: 'min_group_size', header: 'Min Group', value: (row) => String(row.min_group_size || 0) },
+          { key: 'max_group_size', header: 'Max Group Size', value: (row) => String(row.max_group_size || 0) },
+          { key: 'min_group_size', header: 'Min Group Size', value: (row) => String(row.min_group_size || 0) },
         ]
       case 'courses':
         return [
           { key: 'code', header: 'Code', value: (row) => row.code || '—' },
-          { key: 'name', header: 'Name', value: (row) => row.name || '—' },
+          { key: 'name', header: 'Programme Name', value: (row) => row.name || '—' },
           { key: 'description', header: 'Description', value: (row) => row.description || '—' },
           { key: 'faculty', header: 'Faculty', value: (row) => row.faculty || '—' },
           { key: 'is_active', header: 'Status', value: (row) => row.is_active || '—' },
         ]
       case 'coursework':
         return [
-          { key: 'title', header: 'Title', value: (row) => row.title || '—' },
+          { key: 'title', header: 'Coursework Title', value: (row) => row.title || '—' },
           { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
           { key: 'type', header: 'Type', value: (row) => row.type || '—' },
           { key: 'status', header: 'Status', value: (row) => row.status || '—' },
           { key: 'self_formation', header: 'Self Formation', value: (row) => row.self_formation || '—' },
-          { key: 'group_size', header: 'Group Size', value: (row) => `${row.min_group_size || 0}-${row.max_group_size || 0}` },
+          { key: 'group_size', header: 'Group Size Range', value: (row) => `${row.min_group_size || 0} – ${row.max_group_size || 0}` },
           { key: 'lock_at', header: 'Lock Date', value: (row) => (row.lock_at ? formatDate(row.lock_at) : '—') },
         ]
       case 'course_unit_students':
       case 'course_students':
         return [
-          { key: 'student_name', header: 'Student', value: (row) => row.student_name || '—' },
+          { key: 'student_name', header: 'Student Name', value: (row) => row.student_name || '—' },
           { key: 'registration_number', header: 'Reg No.', value: (row) => row.registration_number || '—' },
           { key: 'email', header: 'Email', value: (row) => row.email || '—' },
           { key: 'course_unit', header: 'Course Unit', value: (row) => row.course_unit || '—' },
-          { key: 'course', header: 'Course', value: (row) => row.course || '—' },
+          { key: 'course', header: 'Course / Programme', value: (row) => row.course || '—' },
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
           { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
         ]
@@ -570,7 +571,9 @@ export function CoordinatorReports() {
       ...rows.map((row: any) => columns.map((col) => escapeValue(col.value(row))).join(',')),
     ]
 
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    // Prepend UTF-8 BOM for proper Excel encoding
+    const csvContent = '\uFEFF' + csvRows.join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -591,15 +594,38 @@ export function CoordinatorReports() {
       return
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(
-      rows.map((row: any) => Object.fromEntries(columns.map((column) => [column.header, column.value(row)])))
+    // Build data rows
+    const jsonData = rows.map((row: any) =>
+      Object.fromEntries(columns.map((column) => [column.header, column.value(row)]))
     )
+
+    const worksheet = XLSX.utils.json_to_sheet(jsonData)
+
+    // Style header row
+    const headerKeys = columns.map((c) => c.header)
+    headerKeys.forEach((_, colIdx) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIdx })
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '1E293B' } },
+          alignment: { horizontal: 'center' },
+        }
+      }
+    })
+
+    // Auto column widths
+    worksheet['!cols'] = headerKeys.map((header) => ({
+      wch: Math.max(header.length + 4, 14),
+    }))
+
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Report')
-    XLSX.writeFile(workbook, `${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+    const sheetName = selectedCategory.replace(/_/g, ' ').slice(0, 31)
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+    XLSX.writeFile(workbook, `ndejje_${selectedCategory}_report_${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!selectedCategory) return
     const columns = getActiveColumns()
     const rows = getActiveRows()
@@ -634,49 +660,52 @@ export function CoordinatorReports() {
       }, {})
 
       const groupedHtml = Object.entries(groupedUnits).map(([unitName, unitGroups], unitIndex) => `
-        <section class="course-unit ${unitIndex > 0 ? 'page-break' : ''}">
-          <h2 style="background:#1e293b; color:#fff; padding:10px 14px; border-radius:6px; font-size:15px; margin-top:20px;">
-            Course Unit: ${escapeHtml(unitName)}
-          </h2>
+        <section class="${unitIndex > 0 ? 'page-break' : ''}">
+          <div class="cu-heading">
+            <span>Course Unit: ${escapeHtml(unitName)}</span>
+            <span style="font-size:11px; font-weight:400; opacity:0.8;">${unitGroups.length} group${unitGroups.length !== 1 ? 's' : ''}</span>
+          </div>
           ${unitGroups.map((group: any) => {
             const members = group.members || []
             const memberRows = members.length > 0
-              ? members.map((member: any, index: number) => `
-                  <tr>
-                    <td style="width:40px; text-align:center;">${index + 1}</td>
-                    <td><strong>${escapeHtml(member.student_name || member.full_name)}</strong></td>
-                    <td><code>${escapeHtml(member.registration_number)}</code></td>
-                    <td>${member.user_id === group.leader_id || member.role === 'leader' ? '<span style="color:#0284c7; font-weight:bold;">Leader</span>' : 'Member'}</td>
-                    <td>${escapeHtml(member.gender)}</td>
-                    <td>${escapeHtml(member.email)}</td>
-                    <td>${escapeHtml(member.whatsapp_phone)}</td>
-                  </tr>
-                `).join('')
-              : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:12px;">No members assigned yet</td></tr>`
+              ? members.map((member: any, index: number) => {
+                  const isLeader = member.user_id === group.leader_id || member.role === 'leader'
+                  const rowBg = index % 2 === 0 ? '' : 'style="background:#f8fafc;"'
+                  return `
+                    <tr ${rowBg}>
+                      <td style="width:36px; text-align:center; color:#94a3b8;">${index + 1}</td>
+                      <td><strong>${escapeHtml(member.student_name || member.full_name || '—')}</strong></td>
+                      <td style="font-family:monospace; color:#475569;">${escapeHtml(member.registration_number || '—')}</td>
+                      <td>${isLeader ? '<span class="leader-tag">&#9733; Leader</span>' : 'Member'}</td>
+                      <td>${escapeHtml(member.gender || '—')}</td>
+                      <td style="color:#334155;">${escapeHtml(member.email || '—')}</td>
+                      <td style="color:#334155;">${escapeHtml(member.whatsapp_phone || '—')}</td>
+                    </tr>
+                  `
+                }).join('')
+              : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:12px; font-style:italic;">No members assigned yet</td></tr>`
 
             return `
-              <div style="border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:14px; page-break-inside:avoid; background:#fff;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
-                  <h3 style="margin:0; font-size:16px; color:#0f172a;">Group Name: ${escapeHtml(group.name || 'Unnamed Group')}</h3>
-                  <span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">
-                    Capacity: ${members.length} / ${escapeHtml(group.max_members)} Members
-                  </span>
+              <div class="group-card">
+                <div class="group-header">
+                  <span class="group-title">${escapeHtml(group.name || 'Unnamed Group')}</span>
+                  <span class="group-badge">Members: ${members.length} / ${escapeHtml(String(group.max_members || '—'))}</span>
                 </div>
-                <div style="display:flex; gap:20px; font-size:12px; color:#475569; margin-bottom:10px;">
-                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework)}</span>
-                  <span><strong>Group Leader:</strong> ${escapeHtml(group.leader)}</span>
-                  <span><strong>Status:</strong> ${escapeHtml(group.status)}</span>
+                <div class="group-meta">
+                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework || '—')}</span>
+                  <span><strong>Group Leader:</strong> ${escapeHtml(group.leader || 'Not assigned')}</span>
+                  <span><strong>Status:</strong> ${escapeHtml(group.status || '—')}</span>
                 </div>
-                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                <table>
                   <thead>
-                    <tr style="background:#f1f5f9; color:#334155; font-weight:bold;">
-                      <th style="border:1px solid #cbd5e1; padding:6px;">No.</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Student Name</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Registration No.</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Role</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Gender</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Email</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">WhatsApp</th>
+                    <tr>
+                      <th style="width:36px;">#</th>
+                      <th>Student Name</th>
+                      <th>Registration No.</th>
+                      <th>Role</th>
+                      <th>Gender</th>
+                      <th>Email</th>
+                      <th>WhatsApp</th>
                     </tr>
                   </thead>
                   <tbody>${memberRows}</tbody>
@@ -687,38 +716,78 @@ export function CoordinatorReports() {
         </section>
       `).join('')
 
+      const generatedOn = new Date().toLocaleString('en-UG', { dateStyle: 'full', timeStyle: 'short' })
+      const formatLabel = groupReportFormat === 'group_summary' ? 'Group Summary Report' : 'Department Matrix Report'
+
       printWindow.document.write(`
         <!doctype html>
-        <html>
+        <html lang="en">
           <head>
-            <title>Ndejje University - Official Group Roster Report</title>
+            <meta charset="UTF-8" />
+            <title>Ndejje University — ${formatLabel}</title>
             <style>
-              body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #0f172a; line-height:1.4; }
-              .header { text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
-              .header h1 { margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color:#1e293b; }
-              .header h2 { margin: 4px 0 0; font-size: 14px; font-weight: 500; color: #475569; }
-              .header p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
-              .footer-signature { margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; font-size: 12px; }
-              .signature-box { border-top: 1px solid #0f172a; width: 220px; text-align: center; padding-top: 6px; }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #0f172a; padding: 28px 32px; line-height: 1.5; }
+              /* ── Letterhead ── */
+              .lh { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px; }
+              .lh-left h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
+              .lh-left h2 { font-size: 12px; font-weight: 500; color: #475569; margin-top: 3px; }
+              .lh-badge { background: #1e293b; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+              .meta { display: flex; gap: 24px; font-size: 11px; color: #64748b; margin-bottom: 18px; flex-wrap: wrap; }
+              .meta strong { color: #334155; }
+              /* ── Course-unit section ── */
+              .cu-heading { background: #1e293b; color: #fff; padding: 9px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; }
+              /* ── Group card ── */
+              .group-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 14px; page-break-inside: avoid; background: #fff; }
+              .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+              .group-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+              .group-badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+              .group-meta { display: flex; gap: 20px; font-size: 11.5px; color: #475569; margin-bottom: 10px; flex-wrap: wrap; }
+              .group-meta span strong { color: #1e293b; }
+              /* ── Member table ── */
+              table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+              thead tr { background: #f1f5f9; }
+              th { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-weight: 700; color: #334155; }
+              td { border: 1px solid #e2e8f0; padding: 6px 8px; color: #1e293b; }
+              tr:nth-child(even) td { background: #f8fafc; }
+              .leader-tag { color: #0284c7; font-weight: 700; }
+              /* ── Signatures ── */
+              .sigs { display: flex; justify-content: space-between; margin-top: 48px; page-break-inside: avoid; }
+              .sig-box { width: 200px; text-align: center; }
+              .sig-line { border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px; font-weight: 700; }
+              .sig-role { font-size: 10px; color: #64748b; margin-top: 2px; }
               .page-break { page-break-before: always; }
-              @media print { body { padding: 0; } }
+              @media print { body { padding: 0; } thead { display: table-header-group; } tr { page-break-inside: avoid; } }
             </style>
           </head>
           <body>
-            <div class="header">
-              <h1>NDEJJE UNIVERSITY</h1>
-              <h2>Faculty of Science and Computing · Academic Department</h2>
-              <p>Official Group Roster Report · Generated ${escapeHtml(formatDate(new Date().toISOString()))}</p>
-            </div>
-            ${groupedHtml || '<p>No groups found for the selected filters.</p>'}
-            <div class="footer-signature">
-              <div class="signature-box">
-                <strong>Course Coordinator</strong><br/>
-                <span>Signature & Date</span>
+            <div class="lh">
+              <div class="lh-left">
+                <h1>Ndejje University</h1>
+                <h2>Faculty of Science &amp; Computing &nbsp;·&nbsp; Academic Records Office</h2>
               </div>
-              <div class="signature-box">
-                <strong>Head of Department</strong><br/>
-                <span>Signature & Date</span>
+              <span class="lh-badge">${formatLabel}</span>
+            </div>
+
+            <div class="meta">
+              <span><strong>Report:</strong> ${formatLabel}</span>
+              <span><strong>Generated:</strong> ${escapeHtml(generatedOn)}</span>
+            </div>
+
+            ${groupedHtml || '<p style="color:#64748b; font-size:13px;">No groups found for the selected filters.</p>'}
+
+            <div class="sigs">
+              <div class="sig-box">
+                <div class="sig-line">Course Coordinator</div>
+                <div class="sig-role">Signature &amp; Date</div>
+              </div>
+              <div class="sig-box">
+                <div class="sig-line">Head of Department</div>
+                <div class="sig-role">Signature &amp; Date</div>
+              </div>
+              <div class="sig-box">
+                <div class="sig-line">Academic Registrar</div>
+                <div class="sig-role">Signature &amp; Date</div>
               </div>
             </div>
           </body>
@@ -730,38 +799,108 @@ export function CoordinatorReports() {
       return
     }
 
+    // ── Generic branded document for all non-group categories ──
+    const categoryLabel = selectedCategory.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    const generatedOn = new Date().toLocaleString('en-UG', { dateStyle: 'full', timeStyle: 'short' })
+    const totalCount = rows.length
+
+    // Alternating row colours
     const rowsHtml = rows
-      .slice(0, 500)
-      .map((row: any) => {
+      .slice(0, 1000)
+      .map((row: any, idx: number) => {
+        const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc'
         const cells = columns
-          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${escapeHtml(column.value(row))}</td>`)
+          .map((column) => `<td style="border:1px solid #e2e8f0; padding:7px 10px; font-size:11.5px; color:#1e293b; background:${bg};">${escapeHtml(column.value(row))}</td>`)
           .join('')
         return `<tr>${cells}</tr>`
       })
       .join('')
 
     const headerHtml = columns
-      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${escapeHtml(column.header)}</th>`)
+      .map((column) => `<th style="border:1px solid #cbd5e1; padding:8px 10px; text-align:left; background:#1e293b; color:#fff; font-size:11px; font-weight:700; letter-spacing:0.04em; white-space:nowrap;">${escapeHtml(column.header)}</th>`)
       .join('')
 
     printWindow.document.write(`
       <!doctype html>
-      <html>
+      <html lang="en">
         <head>
-          <title>${selectedCategory} Filtered Report</title>
+          <meta charset="UTF-8" />
+          <title>Ndejje University — ${categoryLabel} Report</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-            table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-            th, td { font-size: 12px; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #0f172a; padding: 28px 32px; line-height: 1.5; }
+            /* ── Letterhead ── */
+            .lh { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px; }
+            .lh-left h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #0f172a; }
+            .lh-left h2 { font-size: 12px; font-weight: 500; color: #475569; margin-top: 3px; }
+            .lh-badge { background: #1e293b; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+            /* ── Meta strip ── */
+            .meta { display: flex; gap: 24px; font-size: 11px; color: #64748b; margin-bottom: 18px; flex-wrap: wrap; }
+            .meta strong { color: #334155; }
+            /* ── Table ── */
+            table { border-collapse: collapse; width: 100%; margin-top: 4px; }
+            thead tr { background: #1e293b; }
+            tfoot tr td { background: #f1f5f9; font-size: 11px; color: #475569; padding: 6px 10px; border: 1px solid #e2e8f0; font-style: italic; }
+            /* ── Signatures ── */
+            .sigs { display: flex; justify-content: space-between; margin-top: 44px; page-break-inside: avoid; }
+            .sig-box { width: 200px; text-align: center; }
+            .sig-line { border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px; color: #334155; }
+            .sig-role { font-size: 10px; color: #64748b; margin-top: 2px; }
+            /* ── Print ── */
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none !important; }
+              thead { display: table-header-group; }
+              tr { page-break-inside: avoid; }
+            }
           </style>
         </head>
         <body>
-          <h2>${selectedCategory.replace(/_/g, ' ').toUpperCase()} Filtered Report</h2>
-          <p style="font-size: 12px; color: #6b7280;">Exporting ${rows.length} matching records across ${columns.length} selected columns.</p>
+          <!-- Letterhead -->
+          <div class="lh">
+            <div class="lh-left">
+              <h1>Ndejje University</h1>
+              <h2>Faculty of Science &amp; Computing &nbsp;·&nbsp; Academic Records Office</h2>
+            </div>
+            <span class="lh-badge">${escapeHtml(categoryLabel)}</span>
+          </div>
+
+          <!-- Meta strip -->
+          <div class="meta">
+            <span><strong>Report Type:</strong> ${escapeHtml(categoryLabel)}</span>
+            <span><strong>Total Records:</strong> ${totalCount}</span>
+            <span><strong>Columns Included:</strong> ${columns.length}</span>
+            <span><strong>Generated:</strong> ${escapeHtml(generatedOn)}</span>
+          </div>
+
+          <!-- Data table -->
           <table>
             <thead><tr>${headerHtml}</tr></thead>
             <tbody>${rowsHtml}</tbody>
+            <tfoot>
+              <tr>
+                <td colspan="${columns.length}">
+                  End of report &mdash; ${totalCount} records exported &mdash; Ndejje University Academic System
+                </td>
+              </tr>
+            </tfoot>
           </table>
+
+          <!-- Signature blocks -->
+          <div class="sigs">
+            <div class="sig-box">
+              <div class="sig-line"><strong>Course Coordinator</strong></div>
+              <div class="sig-role">Signature &amp; Date</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-line"><strong>Head of Department</strong></div>
+              <div class="sig-role">Signature &amp; Date</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-line"><strong>Academic Registrar</strong></div>
+              <div class="sig-role">Signature &amp; Date</div>
+            </div>
+          </div>
         </body>
       </html>
     `)

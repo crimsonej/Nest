@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Moon, Sun, Globe, Save, LucideIcon, Trash2 } from 'lucide-react'
+import { Users, Save, Trash2 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -9,11 +9,10 @@ import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { useTheme } from 'next-themes'
+import ThemeToggle from '@/components/shared/ThemeToggle'
 
 export function CoordinatorSettings() {
   const { user, refreshUser } = useAuth()
-  const { theme, setTheme } = useTheme()
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -91,12 +90,6 @@ export function CoordinatorSettings() {
       setDeletingAccount(false)
     }
   }
-
-  const themeOptions: Array<{ value: 'light' | 'mid' | 'dark'; label: string; icon: LucideIcon }> = [
-    { value: 'light', label: 'Light', icon: Sun },
-    { value: 'mid', label: 'Mid', icon: Globe },
-    { value: 'dark', label: 'Dark', icon: Moon },
-  ]
 
   return (
     <div className="settings-page max-w-5xl space-y-6">
@@ -181,18 +174,7 @@ export function CoordinatorSettings() {
           <CardDescription>Choose how the portal looks across the coordinator workspace.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-3">
-            {themeOptions.map(({ value, label, icon: Icon }) => (
-              <Button
-                key={value}
-                variant={theme === value ? 'primary' : 'outline'}
-                onClick={() => setTheme(value)}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Button>
-            ))}
-          </div>
+          <ThemeToggle />
         </CardContent>
       </Card>
 
