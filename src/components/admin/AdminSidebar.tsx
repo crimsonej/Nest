@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useRoutePrefetchEnabled } from '@/hooks/useConnectionPreferences'
 import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
@@ -28,6 +29,7 @@ export function AdminSidebar() {
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const reducedMotion = useReducedMotion()
+  const routePrefetchEnabled = useRoutePrefetchEnabled()
 
   return (
     <>
@@ -45,7 +47,7 @@ export function AdminSidebar() {
         className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border bg-surface/95 text-text-primary backdrop-blur-2xl shadow-xl transition-colors duration-300 lg:flex"
         aria-label="Administrator navigation"
       >
-        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} />
+        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} routePrefetchEnabled={routePrefetchEnabled} />
       </aside>
 
       <AnimatePresence>
@@ -67,7 +69,7 @@ export function AdminSidebar() {
               className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-border bg-surface text-text-primary shadow-2xl lg:hidden"
               aria-label="Administrator mobile navigation"
             >
-              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => setMobileMenuOpen(false)} isMobile />
+              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} routePrefetchEnabled={routePrefetchEnabled} onClose={() => setMobileMenuOpen(false)} isMobile />
             </motion.aside>
           </>
         )}
@@ -76,7 +78,7 @@ export function AdminSidebar() {
   )
 }
 
-function SidebarContent({ pathname, user, signOut, reducedMotion, onClose, isMobile = false }: { pathname: string; user: any; signOut: () => void; reducedMotion: boolean; onClose?: () => void; isMobile?: boolean }) {
+function SidebarContent({ pathname, user, signOut, reducedMotion, routePrefetchEnabled, onClose, isMobile = false }: { pathname: string; user: any; signOut: () => void; reducedMotion: boolean; routePrefetchEnabled: boolean; onClose?: () => void; isMobile?: boolean }) {
   return (
     <div className="workspace-sidebar-content relative flex h-full flex-col overflow-hidden bg-surface text-text-primary transition-colors duration-300">
 
@@ -114,6 +116,7 @@ function SidebarContent({ pathname, user, signOut, reducedMotion, onClose, isMob
             <Link
               key={item.href}
               href={item.href}
+              prefetch={routePrefetchEnabled ? undefined : false}
               onClick={onClose}
               className={cn(
                 'workspace-nav-link group relative flex items-center gap-3 px-3 text-sm font-medium transition-all duration-200 select-none',

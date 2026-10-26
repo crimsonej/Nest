@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Bot, GraduationCap, Layers3, BookCopy, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
+import { useRoutePrefetchEnabled } from '@/hooks/useConnectionPreferences'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
@@ -28,6 +29,7 @@ export function CoordinatorSidebar() {
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const reducedMotion = useReducedMotion()
+  const routePrefetchEnabled = useRoutePrefetchEnabled()
 
   function SidebarContent({
     pathname,
@@ -83,6 +85,7 @@ export function CoordinatorSidebar() {
             <Link
               key={item.name}
               href={item.href}
+              prefetch={routePrefetchEnabled ? undefined : false}
               onClick={onClose}
               className={cn(
                 'workspace-nav-link group relative flex items-center gap-3 px-3 text-sm font-medium transition-all duration-200 select-none',

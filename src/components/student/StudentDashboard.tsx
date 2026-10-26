@@ -465,11 +465,11 @@ export function StudentDashboard() {
     }
   }
 
+  const reducedMotion = useReducedMotion()
+
   if (loading) {
     return <DashboardSkeleton />
   }
-
-  const reducedMotion = useReducedMotion();
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, User, ListChecks, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
+import { useRoutePrefetchEnabled } from '@/hooks/useConnectionPreferences'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
@@ -24,6 +25,7 @@ export function StudentSidebar() {
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const reducedMotion = useReducedMotion()
+  const routePrefetchEnabled = useRoutePrefetchEnabled()
 
   return (
     <>
@@ -43,7 +45,7 @@ export function StudentSidebar() {
         className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[17rem] flex-col border-r border-border bg-surface/95 text-text-primary backdrop-blur-2xl shadow-xl transition-colors duration-300"
         aria-label="Student navigation"
       >
-        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => {}} />
+        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} routePrefetchEnabled={routePrefetchEnabled} onClose={() => {}} />
       </aside>
 
       {/* Mobile Drawer Slide-in */}
@@ -66,7 +68,7 @@ export function StudentSidebar() {
               className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-border bg-surface text-text-primary shadow-2xl lg:hidden"
               aria-label="Student mobile navigation"
             >
-              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => setMobileMenuOpen(false)} isMobile />
+              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} routePrefetchEnabled={routePrefetchEnabled} onClose={() => setMobileMenuOpen(false)} isMobile />
             </motion.aside>
           </>
         )}
@@ -80,6 +82,7 @@ function SidebarContent({
   user,
   signOut,
   reducedMotion,
+  routePrefetchEnabled,
   onClose,
   isMobile = false,
 }: {
@@ -87,6 +90,7 @@ function SidebarContent({
   user: any
   signOut: () => void
   reducedMotion: boolean
+  routePrefetchEnabled: boolean
   onClose: () => void
   isMobile?: boolean
 }) {
@@ -131,6 +135,7 @@ function SidebarContent({
             <Link
               key={item.name}
               href={item.href}
+              prefetch={routePrefetchEnabled ? undefined : false}
               onClick={onClose}
               className={cn(
                 'workspace-nav-link group relative flex items-center gap-3 px-3 text-sm font-medium transition-all duration-200 select-none',
