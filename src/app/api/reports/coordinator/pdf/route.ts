@@ -1,66 +1,175 @@
-import { NextResponse } from 'next/server';
-import PDFDocument from 'pdfkit';
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { formatDate } from '@/lib/utils';
+import { NextResponse } from 'next/server'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+
+export const runtime = 'edge'
+
+const PAGE_WIDTH = 595.28
+const PAGE_HEIGHT = 841.89
+const MARGIN = 42
+const ROW_HEIGHT = 22
+const BODY_SIZE = 8
+
+function printable(value: string, font: Awaited<ReturnType<PDFDocument['embedFont']>>, maxWidth: number) {
+  let clean = value.replace(/[^\x20-\x7E]/g, '?')
+  while (clean.length && font.widthOfTextAtSize(clean, BODY_SIZE) > maxWidth) {
+    clean = `${clean.slice(0, -2)}...`
+  }
+  return clean
+}
 
 export async function GET() {
-  // 1️⃣ Gather data
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('id, full_name, email, whatsapp_phone, last_login, role')
-    .eq('role', 'coordinator');
+  try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adminClient = createAdminClient()
+    const { data: profile } = await adminClient
+      .from('users')
+      .select('role, status')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const isAdmin = profile?.role === 'admin' || profile?.status === 'admin'
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Administrator permissions required' }, { status: 403 })
+    }
+
+    const { data, error } = await adminClient
+      .from('users')
+      .select('id, full_name, email, whatsapp_phone, last_login')
+      .eq('role', 'coordinator')
+      .order('full_name', { ascending: true })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const pdf = await PDFDocument.create()
+    const font = await pdf.embedFont(StandardFonts.Helvetica)
+    const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold)
+    const rows = data ?? []
+    const columns = [
+      { label: 'Name', width: 120, value: (row: (typeof rows)[number]) => row.full_name || 'Not provided' },
+      { label: 'Email', width: 155, value: (row: (typeof rows)[number]) => row.email || 'Not provided' },
+      { label: 'Phone', width: 90, value: (row: (typeof rows)[number]) => row.whatsapp_phone || 'Not provided' },
+      {
+        label: 'Last login',
+        width: 105,
+        value: (row: (typeof rows)[number]) => row.last_login
+          ? new Date(row.last_login).toLocaleDateString('en-GB')
+          : 'Never',
+      },
+    ]
+
+    const pages: ReturnType<typeof pdf.addPage>[] = []
+    let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+    pages.push(page)
+    let y = PAGE_HEIGHT - MARGIN
+
+    const drawHeader = () => {
+      page.drawText('NDEJJE UNIVERSITY', {
+        x: MARGIN,
+        y: y - 20,
+        size: 18,
+        font: boldFont,
+        color: rgb(0.12, 0.2, 0.24),
+      })
+      page.drawText('Coordinator Report', {
+        x: MARGIN,
+        y: y - 40,
+        size: 11,
+        font,
+        color: rgb(0.34, 0.4, 0.43),
+      })
+      page.drawText(`Generated ${new Date().toLocaleDateString('en-GB')}`, {
+        x: MARGIN,
+        y: y - 56,
+        size: 8,
+        font,
+        color: rgb(0.42, 0.48, 0.5),
+      })
+
+      y -= 78
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 1,
+        color: rgb(0.78, 0.82, 0.83),
+      })
+      y -= 20
+
+      let x = MARGIN
+      for (const column of columns) {
+        page.drawText(column.label, {
+          x,
+          y,
+          size: BODY_SIZE,
+          font: boldFont,
+          color: rgb(0.16, 0.25, 0.28),
+        })
+        x += column.width
+      }
+
+      y -= 10
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 0.6,
+        color: rgb(0.84, 0.87, 0.88),
+      })
+      y -= 16
+    }
+
+    drawHeader()
+
+    for (const row of rows) {
+      if (y < MARGIN + 42) {
+        page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+        pages.push(page)
+        y = PAGE_HEIGHT - MARGIN
+        drawHeader()
+      }
+
+      let x = MARGIN
+      columns.forEach((column) => {
+        page.drawText(printable(column.value(row), font, column.width - 10), {
+          x,
+          y,
+          size: BODY_SIZE,
+          font,
+          color: rgb(0.18, 0.24, 0.26),
+        })
+        x += column.width
+      })
+
+      y -= ROW_HEIGHT
+    }
+
+    pages.forEach((currentPage, index) => {
+      currentPage.drawText(`Generated by NEST Campus Network  |  Page ${index + 1} of ${pages.length}`, {
+        x: MARGIN,
+        y: 24,
+        size: 8,
+        font,
+        color: rgb(0.42, 0.48, 0.5),
+      })
+    })
+
+    const bytes = await pdf.save()
+    return new NextResponse(bytes, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="coordinator-report.pdf"',
+        'Cache-Control': 'no-store',
+      },
+    })
+  } catch (error) {
+    console.error('Coordinator PDF report error:', error)
+    return NextResponse.json({ error: 'Unable to generate coordinator report' }, { status: 500 })
   }
-
-  // 2️⃣ Build PDF with branding
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
-  const buffers: Buffer[] = [];
-  doc.on('data', (b) => buffers.push(b));
-  doc.on('end', () => {});
-
-  // Header
-  doc
-    .fontSize(24)
-    .fillColor('#1e293b')
-    .text('NDEJJE UNIVERSITY', { align: 'center' })
-    .moveDown(0.5);
-  doc
-    .fontSize(18)
-    .fillColor('#475569')
-    .text('Coordinator Report', { align: 'center' })
-    .moveDown(1);
-
-  // Table headers
-  const headers = ['ID', 'Name', 'Email', 'Phone', 'Last login'];
-  doc.fontSize(12).fillColor('#334155').text(headers.join('   |   '));
-  doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#cbd5e1');
-
-  // Rows
-  data?.forEach((row) => {
-    const line = `${row.id}   |   ${row.full_name || '—'}   |   ${row.email || '—'}   |   ${row.whatsapp_phone || '—'}   |   ${row.last_login ? formatDate(row.last_login) : '—'}`;
-    doc.text(line);
-  });
-
-  // Footer branding
-  doc
-    .fontSize(10)
-    .fillColor('#64748b')
-    .text('Generated by Ndejje University Admin Portal', 50, 770, { align: 'center' });
-
-  doc.end();
-
-  // Wait for the stream to finish then return
-  const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-    doc.on('end', () => resolve(Buffer.concat(buffers)));
-    doc.on('error', reject);
-  });
-
-  return new NextResponse(pdfBuffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="coordinator-report.pdf"',
-    },
-  });
 }
