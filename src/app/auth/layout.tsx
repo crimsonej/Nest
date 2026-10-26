@@ -4,16 +4,18 @@ import { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const reducedMotion = useReducedMotion()
   return (
     <div className="auth-stage min-h-dvh bg-background transition-colors duration-300 lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(460px,0.92fr)]">
       <section className="auth-visual relative hidden min-h-dvh flex-col justify-between overflow-hidden px-10 py-9 text-white lg:flex xl:px-16 xl:py-12">
         <div className="auth-visual-shade absolute inset-0" />
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
+          initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 8 }, {})}
+          animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+          transition={applyMotionPreference(reducedMotion, { duration: 0.45, ease: 'easeOut' }, { duration: 0.45, ease: 'easeOut' })}
           className="relative z-10 flex items-center gap-3"
         >
           <Image src="/logo.png" alt="NEST" width={46} height={46} className="rounded-xl border border-white/25 bg-white p-1 shadow-lg" />
@@ -24,9 +26,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.08, ease: 'easeOut' }}
+          initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 18 }, {})}
+          animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+          transition={applyMotionPreference(reducedMotion, { duration: 0.55, delay: 0.08, ease: 'easeOut' }, { duration: 0.55, delay: 0.08, ease: 'easeOut' })}
           className="relative z-10 mb-8 max-w-xl"
         >
           <p className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/75">
@@ -52,9 +54,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       </section>
 
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35 }}
+        initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+        animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+        transition={applyMotionPreference(reducedMotion, { duration: 0.35 }, { duration: 0.35 })}
         className="auth-form-pane relative flex min-h-dvh items-center justify-center overflow-hidden px-5 py-8 sm:px-10 lg:px-12"
       >
         <div className="auth-form-pattern pointer-events-none absolute inset-0" />

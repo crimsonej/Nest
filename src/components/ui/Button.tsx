@@ -4,6 +4,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { motion, HTMLMotionProps } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success'
@@ -20,8 +21,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-gradient-to-r from-secondary to-secondary-hover text-white shadow-md hover:brightness-110 active:brightness-95',
       outline: 'border border-border/80 bg-surface/75 hover:bg-surface-hover/90 text-text-primary backdrop-blur-md hover:border-primary/40 shadow-xs',
       ghost: 'bg-transparent hover:bg-surface-hover/80 text-text-primary',
-      danger: 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/40',
-      success: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/40',
+      danger: 'bg-gradient-to-r from-[var(--color-danger)] to-[var(--color-danger-light)] text-white shadow-md shadow-[var(--color-danger)]/25 hover:shadow-lg shadow-[var(--color-danger)]/40',
+      success: 'bg-gradient-to-r from-[var(--color-success)] to-[var(--color-success-light)] text-white shadow-md shadow-[var(--color-success)]/25 hover:shadow-lg shadow-[var(--color-success)]/40',
     }
 
     const sizeClasses = {
@@ -31,12 +32,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     const isDisabled = disabled || loading
+    const reducedMotion = useReducedMotion()
 
     return (
       <motion.button
         ref={ref}
-        whileHover={isDisabled ? undefined : { scale: 1.02 }}
-        whileTap={isDisabled ? undefined : { scale: 0.97 }}
+        whileHover={isDisabled ? undefined : applyMotionPreference(reducedMotion, { scale: 1.02 }, {})}
+        whileTap={isDisabled ? undefined : applyMotionPreference(reducedMotion, { scale: 0.97 }, {})}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
         disabled={isDisabled}

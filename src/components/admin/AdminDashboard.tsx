@@ -8,7 +8,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { MetricCard } from '../ui/MetricCard'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 export function AdminDashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -55,10 +57,10 @@ export function AdminDashboard() {
   }
 
   const cards = [
-    { label: 'Faculties', value: totals.faculties, icon: Building2, color: 'from-rose-600 to-pink-600' },
-    { label: 'Academic Courses', value: totals.courses, icon: BookOpen, color: 'from-indigo-600 to-purple-600' },
-    { label: 'Course Units', value: totals.units, icon: Layers3, color: 'from-amber-500 to-orange-600' },
-    { label: 'Enrolled Students', value: totals.students, icon: GraduationCap, color: 'from-emerald-500 to-teal-600' },
+    { title: 'Faculties', value: totals.faculties, icon: <Building2 className="h-6 w-6" />, color: 'danger' as const },
+    { title: 'Academic Courses', value: totals.courses, icon: <BookOpen className="h-6 w-6" />, color: 'primary' as const },
+    { title: 'Course Units', value: totals.units, icon: <Layers3 className="h-6 w-6" />, color: 'warning' as const },
+    { title: 'Enrolled Students', value: totals.students, icon: <GraduationCap className="h-6 w-6" />, color: 'success' as const },
   ]
 
   const quickLinks = [
@@ -68,19 +70,25 @@ export function AdminDashboard() {
     { label: 'Manage Students', href: '/coordinator/students', icon: GraduationCap },
   ]
 
+  const reducedMotion = useReducedMotion();
+
   return (
-    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-8">
+    <motion.div
+      initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 15 }, {})}
+      animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+      transition={applyMotionPreference(reducedMotion, { duration: 0.4 }, {})}
+      className="space-y-8">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-rose-500/25 bg-gradient-to-r from-rose-950/20 via-rose-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-[var(--color-danger)]/25 bg-gradient-to-r from-[var(--color-danger)]/950 via-[var(--color-danger)]/900 to-[var(--color-surface)]/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-[var(--color-danger)]/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-400 backdrop-blur-md mb-2.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-rose-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 px-3 py-1 text-[11px] font-bold text-[var(--color-danger)] backdrop-blur-md mb-2.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-[var(--color-danger)]" aria-hidden="true" />
               <span>Super Administrator Control Hub</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
-              University <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">Overview</span>
+              University <span className="bg-gradient-to-r from-[var(--color-danger)] via-[var(--color-danger)] to-[var(--color-danger-light)] bg-clip-text text-transparent">Overview</span>
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
               Manage system faculties, lecturer credentials, course unit structures, and global student enrollments.
@@ -88,7 +96,7 @@ export function AdminDashboard() {
           </div>
           <div className="flex flex-wrap gap-2.5">
             <Link href="/admin/lecturers">
-              <Button size="sm" className="bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-600 shadow-lg shadow-rose-500/25 border-0">
+              <Button size="sm" className="bg-gradient-to-tr from-[var(--color-danger)] via-[var(--color-danger)] to-[var(--color-danger-light)] shadow-lg shadow-[var(--color-danger)]/25 border-0">
                 <UserCog className="h-4 w-4 mr-1.5" />
                 Manage Lecturers
               </Button>
@@ -106,52 +114,39 @@ export function AdminDashboard() {
 
       {/* Metric Cards Grid */}
       <motion.div
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+        variants={applyMotionPreference(reducedMotion, { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }, { hidden: {}, visible: { transition: { staggerChildren: 0 } } })}
         initial="hidden"
         animate="visible"
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
-        {cards.map(({ label, value, icon: Icon, color }) => (
-          <motion.div key={label} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.25 } } }}>
-          <Card className="relative overflow-hidden group">
-            <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${color}`} />
-            <CardContent className="p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-text-muted">{label}</p>
-                  <p className="mt-2 text-3xl sm:text-4xl font-black text-text-primary tracking-tight">{value}</p>
-                </div>
-                <div className={`rounded-2xl p-3 text-white bg-gradient-to-tr ${color} shadow-md shadow-rose-500/20`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {cards.map((card) => (
+          <motion.div key={card.title} variants={applyMotionPreference(reducedMotion, { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.25 } } }, { hidden: { opacity: 0 }, visible: { opacity: 1, y: 0 } })}>
+            <MetricCard {...card} />
           </motion.div>
         ))}
       </motion.div>
 
       {/* Quick Navigation Cards */}
       <motion.div
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        variants={applyMotionPreference(reducedMotion, { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }, { hidden: {}, visible: { transition: { staggerChildren: 0 } } })}
         initial="hidden"
         animate="visible"
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
       >
         {quickLinks.map(({ label, href, icon: Icon, highlight }) => (
-          <motion.div key={href} variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.22 } } }}>
+          <motion.div key={href} variants={applyMotionPreference(reducedMotion, { hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.22 } } }, { hidden: { opacity: 0 }, visible: { opacity: 1, y: 0 } })}>
           <Link href={href}>
             <motion.div
-              whileHover={{ y: -3, scale: 1.01 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              whileHover={applyMotionPreference(reducedMotion, { y: -3, scale: 1.01 }, {})}
+              transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 25 }, {})}
               className={`flex items-center justify-between rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-all ${
                 highlight
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-400 hover:border-rose-500/70'
+                  ? 'border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 text-[var(--color-danger)] hover:border-[var(--color-danger)]/70'
                   : 'border-border/80 bg-surface/90 text-text-primary hover:border-primary/40'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`h-5 w-5 ${highlight ? 'text-rose-500' : 'text-primary'}`} />
+                <Icon className={`h-5 w-5 ${highlight ? 'text-[var(--color-danger)]' : 'text-primary'}`} />
                 <span className="text-xs font-extrabold tracking-tight">{label}</span>
               </div>
               <ArrowRight className="h-4 w-4 opacity-60" />
@@ -178,7 +173,7 @@ export function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-4 text-xs font-semibold text-text-secondary">
                   <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-surface/80 px-3 py-1.5">
-                    <BookOpen className="h-3.5 w-3.5 text-primary" />
+                    <BookOpen className="h-3.5 w-3.5 text-[var(--color-primary)]" />
                     <span>{row.courses} courses</span>
                   </div>
                   <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-surface/80 px-3 py-1.5">
@@ -186,7 +181,7 @@ export function AdminDashboard() {
                     <span>{row.units} units</span>
                   </div>
                   <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-surface/80 px-3 py-1.5">
-                    <GraduationCap className="h-3.5 w-3.5 text-emerald-500" />
+                    <GraduationCap className="h-3.5 w-3.5 text-[var(--color-success)]" />
                     <span>{row.students} students</span>
                   </div>
                 </div>

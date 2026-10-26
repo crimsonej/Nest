@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { motion, HTMLMotionProps } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
@@ -10,11 +11,13 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Card({ children, className, hover = false, onClick, ...props }: CardProps) {
+  const reducedMotion = useReducedMotion();
+
   if (hover || onClick) {
     return (
       <motion.div
-        whileHover={{ y: -2 }}
-        whileTap={onClick ? { scale: 0.99 } : undefined}
+        whileHover={applyMotionPreference(reducedMotion, { y: -2 }, {})}
+        whileTap={onClick ? applyMotionPreference(reducedMotion, { scale: 0.99 }, {}) : undefined}
         transition={{ type: 'spring', stiffness: 420, damping: 34 }}
         onClick={onClick}
         className={cn(

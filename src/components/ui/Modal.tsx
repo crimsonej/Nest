@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from './Button'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 interface ModalProps {
   isOpen: boolean
@@ -28,6 +29,7 @@ export function Modal({
 }: ModalProps) {
   const [mounted, setMounted] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     setMounted(true)
@@ -72,10 +74,10 @@ export function Modal({
         >
           {/* Animated Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+            exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+            transition={applyMotionPreference(reducedMotion, { duration: 0.2 }, { duration: 0 })}
             className="fixed inset-0 bg-black/60 backdrop-blur-md"
             onClick={onClose}
           />
@@ -83,10 +85,10 @@ export function Modal({
           {/* Animated Modal Body */}
           <motion.div
             ref={contentRef}
-            initial={{ opacity: 0, scale: 0.96, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 20 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0, scale: 0.96, y: 24 }, { opacity: 0, scale: 1, y: 0 })}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1, scale: 1, y: 0 }, { opacity: 1, scale: 1, y: 0 })}
+            exit={applyMotionPreference(reducedMotion, { opacity: 0, scale: 0.96, y: 20 }, { opacity: 0, scale: 1, y: 0 })}
+            transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 400, damping: 30 }, { type: 'spring', stiffness: 0, damping: 0 })}
             className={cn(
               'relative z-10 w-full rounded-2xl sm:rounded-3xl border border-border/80 bg-surface shadow-2xl overflow-hidden pointer-events-auto max-h-[calc(100dvh-1.25rem)] sm:max-h-[88dvh] flex flex-col',
               sizeClasses[size]
@@ -109,8 +111,8 @@ export function Modal({
                 </div>
                 {showCloseButton && (
                   <motion.button
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={applyMotionPreference(reducedMotion, { scale: 1.1, rotate: 90 }, {})}
+                    whileTap={applyMotionPreference(reducedMotion, { scale: 0.9 }, {})}
                     onClick={onClose}
                     className="p-1.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors shrink-0 ml-1"
                     aria-label="Close modal"

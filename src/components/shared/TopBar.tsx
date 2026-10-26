@@ -31,7 +31,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
             </p>
           </div>
           <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-primary-light/40 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md lg:flex shrink-0 shadow-xs">
-            <MapPin className="h-3 w-3 text-primary" />Kampala Campus
+            <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />Kampala Campus
           </div>
         </div>
 
@@ -49,13 +49,13 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
             >
               <div className="workspace-avatar h-7 w-7 overflow-hidden rounded-xl p-[1.5px] shadow-sm">
                 <div className="h-full w-full rounded-[10px] bg-surface flex items-center justify-center text-primary font-black text-xs">
-                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User className="h-4 w-4" aria-hidden="true" />}
                 </div>
               </div>
               <span className="hidden sm:block text-xs font-bold text-text-primary truncate max-w-[120px]">
                 {user?.full_name}
               </span>
-              <ChevronDown className={`hidden h-3.5 w-3.5 text-text-muted transition-transform duration-200 sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`hidden h-4 w-4 text-text-muted transition-transform duration-200 sm:block ${userMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
             </motion.button>
 
             <AnimatePresence>

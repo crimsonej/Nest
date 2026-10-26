@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { createClient } from '@/lib/supabase/client'
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
@@ -22,6 +23,7 @@ function passwordStrength(pwd: string): { score: number; label: string; color: s
 }
 
 export function LecturerChangePassword() {
+  const reducedMotion = useReducedMotion()
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showNew, setShowNew] = useState(false)
@@ -70,8 +72,8 @@ export function LecturerChangePassword() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
         <motion.div
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={applyMotionPreference(reducedMotion, { scale: 0.85, opacity: 0 }, {})}
+          animate={applyMotionPreference(reducedMotion, { scale: 1, opacity: 1 }, {})}
           className="text-center p-10"
         >
           <div className="w-20 h-20 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-5">
@@ -87,9 +89,9 @@ export function LecturerChangePassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-4">
       <motion.div
-        initial={{ y: 24, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
+        initial={applyMotionPreference(reducedMotion, { y: 24, opacity: 0 }, {})}
+        animate={applyMotionPreference(reducedMotion, { y: 0, opacity: 1 }, {})}
+        transition={applyMotionPreference(reducedMotion, { duration: 0.45, ease: 'easeOut' }, {})}
         className="w-full max-w-md"
       >
         {/* Logo + Header */}
@@ -102,7 +104,7 @@ export function LecturerChangePassword() {
             </div>
           </div>
           <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck className="h-7 w-7 text-violet-400" />
+            <ShieldCheck className="h-7 w-7 text-violet-400" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Set Your Password</h1>
           <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
@@ -228,8 +230,8 @@ export function LecturerChangePassword() {
             <motion.button
               type="submit"
               disabled={!canSubmit}
-              whileHover={canSubmit ? { scale: 1.02 } : {}}
-              whileTap={canSubmit ? { scale: 0.98 } : {}}
+              whileHover={applyMotionPreference(reducedMotion, canSubmit ? { scale: 1.02 } : {}, {})}
+              whileTap={applyMotionPreference(reducedMotion, canSubmit ? { scale: 0.98 } : {}, {})}
               className="w-full py-3.5 rounded-xl font-semibold text-sm text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-violet-600/20"
             >
               {loading ? 'Updating…' : 'Set New Password'}

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation';
 
 // Simple Google “G” logo – keeps the design lightweight
 function GoogleIcon() {
@@ -22,6 +23,7 @@ export default function OAuthButtons() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -46,8 +48,8 @@ export default function OAuthButtons() {
     <div className="flex w-full flex-col gap-4">
       {error && (
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+          animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
           className="text-sm text-red-500 text-center"
         >
           {error}
@@ -66,11 +68,11 @@ export default function OAuthButtons() {
       </Button>
 
       <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-border/80" />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+        <span className="h-px flex-1 bg-border/80" aria-hidden="true" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted" aria-hidden="true">
           or continue with email
         </span>
-        <span className="h-px flex-1 bg-border/80" />
+        <span className="h-px flex-1 bg-border/80" aria-hidden="true" />
       </div>
     </div>
   );

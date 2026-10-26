@@ -18,7 +18,7 @@ function PaletteInitializer() {
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="nest-appearance">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="nest-appearance-system">
       <MotionConfig reducedMotion="user">
         <PaletteInitializer />
         <AuthProvider>{children}</AuthProvider>

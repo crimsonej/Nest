@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth
+      .exchangeCodeForSession(code)
+      .catch(() => ({ data: null, error: true as const }))
     if (!error && data?.session) {
       // Determine the correct redirect destination
       let redirectPath: string

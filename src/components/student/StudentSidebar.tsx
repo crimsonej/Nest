@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 const navigation = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
@@ -22,18 +23,19 @@ export function StudentSidebar() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const reducedMotion = useReducedMotion()
 
   return (
     <>
       {/* Mobile Toggle Button */}
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={applyMotionPreference(reducedMotion, { scale: 1.05 }, {})}
+        whileTap={applyMotionPreference(reducedMotion, { scale: 0.95 }, {})}
         className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-lg lg:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open navigation menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-5 w-5" aria-hidden="true" />
       </motion.button>
 
       {/* Desktop Sidebar */}
@@ -41,7 +43,7 @@ export function StudentSidebar() {
         className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[17rem] flex-col border-r border-border bg-surface/95 text-text-primary backdrop-blur-2xl shadow-xl transition-colors duration-300"
         aria-label="Student navigation"
       >
-        <SidebarContent pathname={pathname} user={user} signOut={signOut} onClose={() => {}} />
+        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => {}} />
       </aside>
 
       {/* Mobile Drawer Slide-in */}
@@ -49,9 +51,9 @@ export function StudentSidebar() {
         {mobileMenuOpen && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+              exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
               aria-hidden="true"
@@ -60,11 +62,11 @@ export function StudentSidebar() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 30 }, {})}
               className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-border bg-surface text-text-primary shadow-2xl lg:hidden"
               aria-label="Student mobile navigation"
             >
-              <SidebarContent pathname={pathname} user={user} signOut={signOut} onClose={() => setMobileMenuOpen(false)} isMobile />
+              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => setMobileMenuOpen(false)} isMobile />
             </motion.aside>
           </>
         )}
@@ -77,12 +79,14 @@ function SidebarContent({
   pathname,
   user,
   signOut,
+  reducedMotion,
   onClose,
   isMobile = false,
 }: {
   pathname: string
   user: any
   signOut: () => void
+  reducedMotion: boolean
   onClose: () => void
   isMobile?: boolean
 }) {
@@ -106,7 +110,7 @@ function SidebarContent({
             onClick={onClose}
             aria-label="Close menu"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -140,14 +144,14 @@ function SidebarContent({
                 <motion.div
                   layoutId="activeStudentNavPill"
                   className="workspace-nav-active absolute inset-0 rounded-[0.85rem]"
-                  transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                  transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 320, damping: 30 }, {})}
                 />
               )}
               <div className={cn(
                 'workspace-nav-icon relative z-10 flex items-center justify-center rounded-lg transition-colors duration-200',
                 isActive ? 'workspace-nav-icon-active' : 'text-text-muted group-hover:text-primary'
               )}>
-                <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
               </div>
               <span className="relative z-10">{item.name}</span>
             </Link>

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { LogIn, UserPlus } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 
@@ -12,6 +13,7 @@ interface AuthNavHeaderProps {
 
 export function AuthNavHeader({ activeTab }: AuthNavHeaderProps) {
   const router = useRouter()
+  const reducedMotion = useReducedMotion()
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border/70 pb-6 mb-6">
       {/* Sliding Tab Switcher */}
@@ -27,10 +29,10 @@ export function AuthNavHeader({ activeTab }: AuthNavHeaderProps) {
             <motion.div
               layoutId="activeAuthTabPill"
               className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/30"
-              transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 450, damping: 35 }, { type: 'spring', stiffness: 0, damping: 0 })}
             />
           )}
-          <LogIn className="relative z-10 h-3.5 w-3.5" />
+          <LogIn className="relative z-10 h-4 w-4" aria-hidden="true" />
           <span className="relative z-10">Sign In</span>
         </button>
 
@@ -45,10 +47,10 @@ export function AuthNavHeader({ activeTab }: AuthNavHeaderProps) {
             <motion.div
               layoutId="activeAuthTabPill"
               className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/30"
-              transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 450, damping: 35 }, { type: 'spring', stiffness: 0, damping: 0 })}
             />
           )}
-          <UserPlus className="relative z-10 h-3.5 w-3.5" />
+          <UserPlus className="relative z-10 h-4 w-4" aria-hidden="true" />
           <span className="relative z-10">Create Account</span>
         </button>
       </div>

@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { SidebarCampusPanel } from '@/components/shared/SidebarCampusPanel'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 const navigation = [
   { name: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -26,12 +27,13 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const reducedMotion = useReducedMotion()
 
   return (
     <>
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={applyMotionPreference(reducedMotion, { scale: 1.05 }, {})}
+        whileTap={applyMotionPreference(reducedMotion, { scale: 0.95 }, {})}
         className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-surface text-text-primary shadow-lg lg:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open administrator navigation"
@@ -43,16 +45,16 @@ export function AdminSidebar() {
         className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] flex-col border-r border-border bg-surface/95 text-text-primary backdrop-blur-2xl shadow-xl transition-colors duration-300 lg:flex"
         aria-label="Administrator navigation"
       >
-        <SidebarContent pathname={pathname} user={user} signOut={signOut} />
+        <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} />
       </aside>
 
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+              exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
               aria-hidden="true"
@@ -61,11 +63,11 @@ export function AdminSidebar() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 30 }, {})}
               className="fixed inset-y-0 left-0 z-50 w-[17rem] border-r border-border bg-surface text-text-primary shadow-2xl lg:hidden"
               aria-label="Administrator mobile navigation"
             >
-              <SidebarContent pathname={pathname} user={user} signOut={signOut} onClose={() => setMobileMenuOpen(false)} isMobile />
+              <SidebarContent pathname={pathname} user={user} signOut={signOut} reducedMotion={reducedMotion} onClose={() => setMobileMenuOpen(false)} isMobile />
             </motion.aside>
           </>
         )}
@@ -74,7 +76,7 @@ export function AdminSidebar() {
   )
 }
 
-function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: { pathname: string; user: any; signOut: () => void; onClose?: () => void; isMobile?: boolean }) {
+function SidebarContent({ pathname, user, signOut, reducedMotion, onClose, isMobile = false }: { pathname: string; user: any; signOut: () => void; reducedMotion: boolean; onClose?: () => void; isMobile?: boolean }) {
   return (
     <div className="workspace-sidebar-content relative flex h-full flex-col overflow-hidden bg-surface text-text-primary transition-colors duration-300">
 
@@ -91,7 +93,7 @@ function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: 
         </Link>
         {isMobile && (
           <button className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors" onClick={onClose} aria-label="Close menu">
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -122,7 +124,7 @@ function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: 
                 <motion.div
                   layoutId="activeAdminNavPill"
                   className="workspace-nav-active absolute inset-0 rounded-[0.85rem]"
-                  transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                  transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 320, damping: 30 }, {})}
                 />
               )}
               <div className={cn(
@@ -143,13 +145,13 @@ function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: 
           <div className="flex items-center gap-3">
             <div className="workspace-avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0.5 font-bold text-white shadow-md">
               <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-surface font-black text-xs text-primary">
-                <Shield className="h-4 w-4" />
+                <Shield className="h-4 w-4" aria-hidden="true" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-text-primary truncate">{user?.full_name || 'Administrator'}</p>
               <span className="workspace-role-label inline-flex items-center gap-1 text-[10px] font-semibold truncate">
-                <Sparkles className="h-3 w-3 text-amber-500" /> Super Admin
+                <Sparkles className="h-3 w-3 text-amber-500" aria-hidden="true" /> Super Admin
               </span>
             </div>
           </div>
@@ -158,7 +160,7 @@ function SidebarContent({ pathname, user, signOut, onClose, isMobile = false }: 
             onClick={signOut}
             className="workspace-signout mt-3 flex w-full items-center justify-center gap-2 border border-border/70 px-3 text-xs font-bold text-text-secondary active:scale-[0.98]"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Sign Out</span>
           </button>
         </div>

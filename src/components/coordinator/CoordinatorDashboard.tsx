@@ -6,66 +6,14 @@ import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowUpRight, ArrowDo
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { MetricCard } from '../ui/MetricCard'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
-interface MetricCardProps {
-  title: string
-  value: string | number
-  change?: string
-  changeType?: 'increase' | 'decrease' | 'neutral'
-  icon: React.ReactNode
-  color: 'primary' | 'success' | 'warning' | 'danger'
-  href?: string
-}
-
-function MetricCard({ title, value, change, changeType = 'neutral', icon, color, href }: MetricCardProps) {
-  const colorClasses = {
-    primary: 'bg-primary text-white shadow-md shadow-primary/25',
-    success: 'bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30',
-    warning: 'bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30',
-    danger: 'bg-gradient-to-tr from-rose-600 to-red-600 text-white shadow-md shadow-rose-500/30',
-  }
-
-  const content = (
-    <Card hover={Boolean(href)} className="group">
-      <div className="absolute top-0 inset-x-0 h-1 bg-primary opacity-80 transition-opacity group-hover:opacity-100" />
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-text-muted">{title}</p>
-            <p className="mt-2 text-3xl sm:text-4xl font-black text-text-primary tracking-tight">{value}</p>
-            {change && (
-              <div className="mt-1.5 flex items-center gap-1">
-                {changeType === 'increase' && <ArrowUpRight className="h-4 w-4 text-emerald-500" />}
-                {changeType === 'decrease' && <ArrowDownRight className="h-4 w-4 text-rose-500" />}
-                <p
-                  className={cn('text-xs font-semibold', {
-                    'text-emerald-500': changeType === 'increase',
-                    'text-rose-500': changeType === 'decrease',
-                    'text-text-muted': changeType === 'neutral',
-                  })}
-                >
-                  {change}
-                </p>
-              </div>
-            )}
-          </div>
-          <div className={cn('p-3 rounded-2xl shrink-0', colorClasses[color])}>{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  if (href) {
-    return <Link href={href}>{content}</Link>
-  }
-
-  return content
-}
 
 export function CoordinatorDashboard() {
   const { user } = useAuth()
@@ -85,6 +33,7 @@ export function CoordinatorDashboard() {
   const [recentCourseworks, setRecentCourseworks] = useState<any[]>([])
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([])
   const [dataVersion] = useState(0)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
     fetchMetrics()
@@ -198,12 +147,15 @@ export function CoordinatorDashboard() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+    visible: {
+      opacity: 1,
+      transition: applyMotionPreference(reducedMotion, { staggerChildren: 0.1 }, { staggerChildren: 0 })
+    },
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+    hidden: applyMotionPreference(reducedMotion, { opacity: 0, y: 15 }, { opacity: 0 }),
+    visible: applyMotionPreference(reducedMotion, { opacity: 1, y: 0, transition: { duration: 0.4 } }, { opacity: 1, y: 0 }),
   }
 
   return (
@@ -222,9 +174,9 @@ export function CoordinatorDashboard() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
             <div className="workspace-hero-eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-bold backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" aria-hidden="true"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" aria-hidden="true"></span>
               </span>
               <span>Coordinator Center · Real-Time Supervision</span>
             </div>

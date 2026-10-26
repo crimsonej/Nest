@@ -31,6 +31,22 @@ GitHub: https://github.com/crimsonej/crimsonej
 - **Charts**: Recharts
 - **Tables**: TanStack Table
 
+## Design System
+
+NEST implements a sophisticated design system built on CSS variables and Tailwind CSS:
+
+### Color System
+- **Semantic Colors**: All colors are defined as CSS variables (`--color-primary`, `--color-secondary`, etc.)
+- **Three Palettes**: Harbor (default), Crimson, and Canary themes with dark mode support
+- **Theme Persistence**: User theme preferences are saved in localStorage
+- **Automatic Dark Mode**: Respects system prefers-color-scheme preference
+
+### Key Design Principles
+- **CSS Variable First**: All semantic colors use CSS variables for true theme support
+- **Tailwind Integration**: Tailwind configuration maps to CSS variables for seamless usage
+- **Accessibility Focus**: Color combinations meet WCAG contrast guidelines
+- **Motion Safety**: Animations respect prefers-reduced-motion user preference
+
 ## Getting Started
 
 ### Prerequisites

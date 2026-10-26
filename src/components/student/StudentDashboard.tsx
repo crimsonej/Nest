@@ -11,53 +11,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
+import { MetricCard } from '../ui/MetricCard'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
-interface MetricCardProps {
-  title: string
-  value: string | number
-  change?: string
-  changeType?: 'increase' | 'decrease' | 'neutral'
-  icon: React.ReactNode
-  color: 'primary' | 'success' | 'warning' | 'danger'
-  onClick?: () => void
-}
-
-function MetricCard({ title, value, change, changeType = 'neutral', icon, color, onClick }: MetricCardProps) {
-  const colorClasses = {
-    primary: 'bg-primary text-white shadow-md shadow-primary/25',
-    success: 'bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30',
-    warning: 'bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30',
-    danger: 'bg-gradient-to-tr from-rose-600 to-red-600 text-white shadow-md shadow-rose-500/30',
-  }
-
-  return (
-    <Card hover={Boolean(onClick)} onClick={onClick} className="group">
-      <div className="absolute top-0 inset-x-0 h-1 bg-primary opacity-80 transition-opacity group-hover:opacity-100" />
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-text-muted">{title}</p>
-            <p className="mt-2 text-3xl sm:text-4xl font-black text-text-primary tracking-tight">{value}</p>
-            {change && (
-              <p
-                className={cn('mt-1.5 text-xs font-semibold', {
-                  'text-emerald-500': changeType === 'increase',
-                  'text-rose-500': changeType === 'decrease',
-                  'text-text-muted': changeType === 'neutral',
-                })}
-              >
-                {change}
-              </p>
-            )}
-          </div>
-          <div className={cn('rounded-2xl p-3 shrink-0', colorClasses[color])}>{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 /* ────────────────────────────────────────
    Flip-Clock Digit Card
@@ -161,11 +119,12 @@ function FlipClockGroup({ value, label }: { value: number; label: string }) {
 }
 
 function FlipClockSeparator() {
+  const reducedMotion = useReducedMotion()
   return (
     <div className="flex flex-col items-center gap-1.5 pb-4">
       <motion.div
-        animate={{ opacity: [1, 0.2, 1] }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+        animate={applyMotionPreference(reducedMotion, { opacity: [1, 0.2, 1] }, { opacity: [1] })}
+        transition={applyMotionPreference(reducedMotion, { duration: 1, repeat: Infinity, ease: 'easeInOut' }, { duration: 0, repeat: 0 })}
         className="flex flex-col gap-1.5"
       >
         <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-primary" />
@@ -176,6 +135,7 @@ function FlipClockSeparator() {
 }
 
 function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
+  const reducedMotion = useReducedMotion()
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null)
 
   useEffect(() => {
@@ -239,15 +199,15 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
           {/* Info section */}
           <div className="max-w-xl">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
+              <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
                 <span className={cn(
                   'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
                   isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
-                )} />
+                )} aria-hidden="true"/>
                 <span className={cn(
                   'relative inline-flex rounded-full h-2.5 w-2.5',
                   isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
-                )} />
+                )} aria-hidden="true"/>
               </span>
               <p className={cn(
                 'text-[11px] font-extrabold uppercase tracking-[0.2em]',
@@ -265,8 +225,8 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
             </div>
             {isUrgent && !isExpired && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 5 }, {})}
+                animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
                 className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-500"
               >
                 <AlertTriangle className="h-3 w-3" />
@@ -278,8 +238,8 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
           {/* Countdown clock */}
           {isExpired ? (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              initial={applyMotionPreference(reducedMotion, { scale: 0.9, opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { scale: 1, opacity: 1 }, {})}
               className="inline-flex items-center self-start gap-2 rounded-2xl border border-danger/20 bg-danger-light px-5 py-3 text-sm font-bold text-danger"
             >
               <AlertTriangle className="h-4 w-4" />
@@ -509,14 +469,19 @@ export function StudentDashboard() {
     return <DashboardSkeleton />
   }
 
+  const reducedMotion = useReducedMotion();
+
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+    visible: {
+      opacity: 1,
+      transition: applyMotionPreference(reducedMotion, { staggerChildren: 0.1 }, { staggerChildren: 0 })
+    },
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+    hidden: applyMotionPreference(reducedMotion, { opacity: 0, y: 15 }, { opacity: 0 }),
+    visible: applyMotionPreference(reducedMotion, { opacity: 1, y: 0, transition: { duration: 0.4 } }, { opacity: 1, y: 0 }),
   }
 
   return (
@@ -536,8 +501,8 @@ export function StudentDashboard() {
           <div>
             <div className="workspace-hero-eyebrow mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-bold backdrop-blur-md">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" aria-hidden="true"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" aria-hidden="true"></span>
               </span>
               <span>Student Workspace · Ndejje University</span>
             </div>

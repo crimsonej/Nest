@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Anchor, Flame, Leaf } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 const palettes = [
   { id: 'harbor', name: 'Harbor', primary: '#24586a', secondary: '#a95535', icon: Anchor },
@@ -16,6 +17,7 @@ type PaletteId = (typeof palettes)[number]['id']
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false)
   const [palette, setPalette] = useState<PaletteId>('harbor')
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
     const storedPalette = window.localStorage.getItem('nest-color-palette')
@@ -70,34 +72,36 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div className="palette-switcher relative inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-surface/90 p-1 shadow-sm backdrop-blur-xl sm:gap-1" role="group" aria-label="Color palette" suppressHydrationWarning>
-      {palettes.map((option) => {
-        const isActive = palette === option.id
+    <div className="flex shrink-0 items-center">
+      <div className="palette-switcher relative inline-flex items-center gap-0.5 rounded-full border border-border bg-surface/90 p-1 shadow-sm backdrop-blur-xl sm:gap-1" role="group" aria-label="Color palette" suppressHydrationWarning>
+        {palettes.map((option) => {
+          const isActive = palette === option.id
 
-        return (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={isActive}
-            aria-label={`${option.name} palette`}
-            title={`${option.name} palette`}
-            onClick={(event) => selectPalette(option.id, event)}
-            className={`palette-option relative z-10 flex h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-3 ${isActive ? 'text-white' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            {isActive && (
-              <motion.span
-                layoutId="palette-selection"
-                className="palette-selection absolute inset-0 rounded-full"
-                transition={{ type: 'spring', stiffness: 240, damping: 28, mass: 0.9 }}
-                aria-hidden="true"
-              />
-            )}
-            <span className="palette-swatches relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: option.primary, color: '#fff' }} aria-hidden="true">
-              <option.icon className="h-4 w-4" strokeWidth={2.2} />
-            </span>
-          </button>
-        )
-      })}
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={isActive}
+              aria-label={`${option.name} palette`}
+              title={`${option.name} palette`}
+              onClick={(event) => selectPalette(option.id, event)}
+              className={`palette-option relative z-10 flex h-11 min-w-11 items-center justify-center gap-2 rounded-full px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-3 ${isActive ? 'text-white' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              {isActive && (
+                <motion.span
+                  layoutId="palette-selection"
+                  className="palette-selection absolute inset-0 rounded-full"
+                  transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 240, damping: 28, mass: 0.9 }, {})}
+                  aria-hidden="true"
+                />
+              )}
+              <span className="palette-swatches relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: option.primary, color: '#fff' }} aria-hidden="true">
+                <option.icon className="h-4 w-4" strokeWidth={2.2} />
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

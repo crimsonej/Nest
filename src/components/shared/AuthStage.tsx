@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import {
   LogIn,
   UserPlus,

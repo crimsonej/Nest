@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Users, BookOpen, Shield, CheckCircle, LogIn, UserPlus, ArrowRight, Sparkles } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 export default function HomePage() {
+  const reducedMotion = useReducedMotion()
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -21,7 +23,7 @@ export default function HomePage() {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  }
+  };
 
   return (
     <div className="site-grid min-h-screen bg-background relative overflow-hidden transition-colors duration-300 flex flex-col justify-between">
@@ -29,7 +31,7 @@ export default function HomePage() {
         <div className="container mx-auto flex items-center justify-between gap-1 px-4 py-3.5 sm:gap-3 sm:px-6">
           <div className="flex items-center gap-3">
             <motion.div
-              whileHover={{ scale: 1.05 }}
+              whileHover={applyMotionPreference(reducedMotion, { scale: 1.05 }, {})}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               className="shrink-0"
             >
@@ -77,25 +79,52 @@ export default function HomePage() {
           <div className="pointer-events-none absolute right-8 top-8 hidden h-40 w-40 rounded-full border border-white/20 lg:block" />
           <div className="pointer-events-none absolute right-16 top-16 hidden h-24 w-24 rounded-full border border-white/25 lg:block" />
           <motion.div
-            variants={containerVariants}
+            variants={applyMotionPreference(reducedMotion,
+              { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15 } } },
+              { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+            )}
             initial="hidden"
             animate="visible"
             className="mx-auto w-full max-w-[1440px]"
           >
-            <motion.div variants={itemVariants} className="mb-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80">
+            <motion.div
+              variants={applyMotionPreference(reducedMotion,
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
+              )}
+              className="mb-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80"
+            >
               <span className="h-px w-8 bg-secondary" />
               Campus collaboration
             </motion.div>
 
-            <motion.h1 variants={itemVariants} className="max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl">
+            <motion.h1
+              variants={applyMotionPreference(reducedMotion,
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
+              )}
+              className="max-w-3xl text-4xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl"
+            >
               A better way to do university work, together.
             </motion.h1>
 
-            <motion.p variants={itemVariants} className="mb-8 mt-5 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
+            <motion.p
+              variants={applyMotionPreference(reducedMotion,
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
+              )}
+              className="mb-8 mt-5 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8"
+            >
               Bring course groups, assignments, and campus coordination into one shared workspace built for students and faculty.
             </motion.p>
 
-            <motion.div variants={itemVariants} className="mb-10 flex flex-col gap-3 sm:flex-row">
+            <motion.div
+              variants={applyMotionPreference(reducedMotion,
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
+              )}
+              className="mb-10 flex flex-col gap-3 sm:flex-row"
+            >
               <Link href="/auth/login" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full border-0 bg-white px-8 text-[#1c3238] shadow-lg hover:bg-white/90 sm:w-auto">
                   Enter workspace
@@ -109,7 +138,13 @@ export default function HomePage() {
               </Link>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-white/80 sm:text-sm">
+            <motion.div
+              variants={applyMotionPreference(reducedMotion,
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
+                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
+              )}
+              className="flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-white/80 sm:text-sm"
+            >
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-secondary" />
                 Student collaboration
@@ -129,10 +164,10 @@ export default function HomePage() {
         {/* Features Section */}
         <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 14 }, {})}
+            whileInView={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
             viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.45, ease: 'easeOut' }}
+            transition={applyMotionPreference(reducedMotion, { duration: 0.45, ease: 'easeOut' }, { duration: 0.45, ease: 'easeOut' })}
             className="mb-16 text-center"
           >
             <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-text-primary lg:text-5xl">
@@ -144,7 +179,10 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+            variants={applyMotionPreference(reducedMotion,
+              { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } },
+              { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }
+            )}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.12 }}
@@ -188,11 +226,16 @@ export default function HomePage() {
 }
 
 function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; features: string[] }) {
+  const reducedMotion = useReducedMotion();
+
   return (
     <motion.div
-      variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } }}
-      whileHover={{ y: -6, scale: 1.01 }}
-      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+      variants={applyMotionPreference(reducedMotion,
+        { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } },
+        { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } }
+      )}
+      whileHover={applyMotionPreference(reducedMotion, { y: -6, scale: 1.01 }, {})}
+      transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 25 }, {})}
       className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/85 p-6 shadow-lg backdrop-blur-xl transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 sm:p-8"
     >
       <div>

@@ -3,6 +3,7 @@
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -14,6 +15,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, helperText, id, icon, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+    const reducedMotion = useReducedMotion()
 
     return (
       <div className="w-full space-y-1.5">
@@ -24,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {icon && (
-            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-text-muted transition-colors">
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-text-muted transition-colors" aria-hidden="true">
               {icon}
             </span>
           )}
@@ -44,8 +46,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
         {error && (
           <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0, y: -4 }, {})}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
             id={`${inputId}-error`}
             className="text-xs font-medium text-danger"
             role="alert"

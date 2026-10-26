@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import {
   UserCheck,
   UserPlus,
@@ -55,6 +56,7 @@ interface Lecturer {
 }
 
 export function AdminLecturers() {
+  const reducedMotion = useReducedMotion()
   const [lecturers, setLecturers] = useState<Lecturer[]>([])
   const [faculties, setFaculties] = useState<Faculty[]>([])
   const [courseUnits, setCourseUnits] = useState<CourseUnit[]>([])
@@ -291,9 +293,9 @@ export function AdminLecturers() {
       <AnimatePresence>
         {successMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+            exit={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
             className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400 shadow-lg"
           >
             <div className="flex items-center gap-3">
@@ -308,9 +310,9 @@ export function AdminLecturers() {
 
         {error && !isAddModalOpen && !isResetModalOpen && !isDeleteModalOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+            exit={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
             className="flex items-center justify-between rounded-2xl border border-danger/30 bg-danger-light/40 p-4 text-danger shadow-lg"
           >
             <div className="flex items-center gap-3">
@@ -373,7 +375,7 @@ export function AdminLecturers() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by lecturer name, email or course code..."
-            className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
           />
         </div>
 
@@ -383,7 +385,7 @@ export function AdminLecturers() {
             <select
               value={selectedFacultyFilter}
               onChange={(e) => setSelectedFacultyFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
             >
               <option value="all">All Faculties</option>
               {faculties.map((fac) => (
@@ -541,17 +543,17 @@ export function AdminLecturers() {
         {isAddModalOpen && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+              exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setIsAddModalOpen(false)}
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
+              animate={applyMotionPreference(reducedMotion, { scale: 1, opacity: 1, y: 0 }, {})}
+              exit={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
               className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-surface p-7 shadow-2xl z-10"
             >
               <div className="flex items-center justify-between border-b border-border pb-4">
@@ -590,7 +592,7 @@ export function AdminLecturers() {
                     value={addForm.name}
                     onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                     placeholder="e.g. Dr. Jane Smith"
-                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
                   />
                 </div>
 
@@ -604,7 +606,7 @@ export function AdminLecturers() {
                     value={addForm.email}
                     onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                     placeholder="e.g. j.smith@university.ac.ug"
-                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
                   />
                   <p className="mt-1 text-[11px] text-text-muted">The lecturer will use this email to log in to NEST.</p>
                 </div>
@@ -617,7 +619,7 @@ export function AdminLecturers() {
                     <select
                       value={addForm.faculty_id}
                       onChange={(e) => setAddForm({ ...addForm, faculty_id: e.target.value })}
-                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
                     >
                       <option value="">Select Faculty</option>
                       {faculties.map((fac) => (
@@ -635,7 +637,7 @@ export function AdminLecturers() {
                     <select
                       value={addForm.course_unit_id}
                       onChange={(e) => setAddForm({ ...addForm, course_unit_id: e.target.value })}
-                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
                     >
                       <option value="">Select Course Unit</option>
                       {courseUnits.map((cu) => (
@@ -668,7 +670,7 @@ export function AdminLecturers() {
                       value={addForm.password}
                       onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                       placeholder="e.g. Lecturer123!"
-                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
                     />
                     <button
                       type="button"
@@ -719,17 +721,17 @@ export function AdminLecturers() {
         {isResetModalOpen && targetLecturer && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+              exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setIsResetModalOpen(false)}
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
+              animate={applyMotionPreference(reducedMotion, { scale: 1, opacity: 1, y: 0 }, {})}
+              exit={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
               className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface p-7 shadow-2xl z-10"
             >
               <div className="flex items-center justify-between border-b border-border pb-4">
@@ -785,7 +787,7 @@ export function AdminLecturers() {
                       value={resetPassword}
                       onChange={(e) => setResetPassword(e.target.value)}
                       placeholder="e.g. Lecturer123!"
-                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-secondary)]/40"
                     />
                     <button
                       type="button"
@@ -849,17 +851,17 @@ export function AdminLecturers() {
         {isDeleteModalOpen && targetLecturer && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+              animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+              exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setIsDeleteModalOpen(false)}
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
+              animate={applyMotionPreference(reducedMotion, { scale: 1, opacity: 1, y: 0 }, {})}
+              exit={applyMotionPreference(reducedMotion, { scale: 0.95, opacity: 0, y: 20 }, {})}
               className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface p-7 shadow-2xl z-10"
             >
               <div className="flex items-center gap-3 text-danger mb-3">

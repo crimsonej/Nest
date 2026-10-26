@@ -33,6 +33,7 @@ import { Badge } from '../ui/Badge'
 import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
+import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import * as XLSX from 'xlsx'
@@ -55,6 +56,7 @@ const reportTiles = [
 export function LecturerReports() {
   const { user } = useAuth()
   const supabase = createClient()
+  const reducedMotion = useReducedMotion()
 
   const [assignedCourseUnit, setAssignedCourseUnit] = useState<{ id: string; code: string; name: string } | null>(null)
   const [loadingUnit, setLoadingUnit] = useState(true)
@@ -790,7 +792,7 @@ export function LecturerReports() {
       {!loading && (
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 text-xs text-text-secondary flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <Sparkles className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
             <span>Select any report tile below to view interactive controls, live search, 4 layout modes, 3 report formats, and custom CSV/PDF/Excel exports.</span>
           </div>
         </div>
@@ -800,9 +802,9 @@ export function LecturerReports() {
         {loading ? (
           <motion.div
             key="reports-loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
+            animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
+            exit={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
             className="flex min-h-[20vh] items-center justify-center"
             role="status"
             aria-label="Loading reports"
@@ -812,10 +814,10 @@ export function LecturerReports() {
         ) : viewMode === 'tiles' ? (
         <motion.div
           key="reports-tiles"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+          initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 8 }, {})}
+          animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+          exit={applyMotionPreference(reducedMotion, { opacity: 0, y: -6 }, {})}
+          transition={applyMotionPreference(reducedMotion, { duration: 0.18, ease: 'easeOut' }, {})}
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           {reportTiles.map((tile) => {
@@ -856,10 +858,10 @@ export function LecturerReports() {
         ) : (
         <motion.div
           key="reports-list"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+          initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 8 }, {})}
+          animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
+          exit={applyMotionPreference(reducedMotion, { opacity: 0, y: -6 }, {})}
+          transition={applyMotionPreference(reducedMotion, { duration: 0.18, ease: 'easeOut' }, {})}
         >
         <Card>
           <CardContent className="divide-y divide-border p-0">
