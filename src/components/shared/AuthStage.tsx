@@ -228,6 +228,8 @@ function LoginFormSection({
   const [loading, setLoading] = useState(false)
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [error, setError] = useState('')
+  const [passkeyPromptOpen, setPasskeyPromptOpen] = useState(false)
+  const [pendingDestination, setPendingDestination] = useState('')
 
   // Determine icon based on input format
   const getIdentifierIcon = () => {
@@ -346,9 +348,18 @@ function LoginFormSection({
         return
       }
 
-      window.location.href = isCoord
+      const destination = isCoord
         ? '/coordinator/dashboard'
         : '/student/dashboard'
+
+      const { data: passkeys, error: passkeyListError } = await supabase.auth.passkey.list()
+      if (!passkeyListError && passkeys.length === 0) {
+        setPendingDestination(destination)
+        setPasskeyPromptOpen(true)
+        return
+      }
+
+      window.location.href = destination
     } catch (err) {
       setError(
         err instanceof Error
@@ -410,7 +421,27 @@ function LoginFormSection({
     }
   }
 
+  async function handlePasskeyRegistration() {
+    setPasskeyLoading(true)
+    setError('')
+    try {
+      const { error: registrationError } = await supabase.auth.registerPasskey()
+      if (registrationError) throw registrationError
+      window.location.href = pendingDestination
+    } catch (registrationError) {
+      setError(registrationError instanceof Error ? registrationError.message : 'Unable to register a passkey.')
+    } finally {
+      setPasskeyLoading(false)
+    }
+  }
+
+  function continueWithoutPasskey() {
+    setPasskeyPromptOpen(false)
+    if (pendingDestination) window.location.href = pendingDestination
+  }
+
   return (
+    <>
     <form onSubmit={handleLogin}>
       <motion.div
         variants={staggerContainer}
@@ -543,6 +574,27 @@ function LoginFormSection({
         </motion.div>
       </motion.div>
     </form>
+    <Modal
+      isOpen={passkeyPromptOpen}
+      onClose={continueWithoutPasskey}
+      title="Add a passkey?"
+      description="This account does not have a passkey yet. Add one now for faster, phishing-resistant sign-in next time."
+      size="sm"
+    >
+      <div className="space-y-4">
+        {error && <p className="rounded-xl border border-danger/30 bg-danger-light p-3 text-sm text-danger" role="alert">{error}</p>}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={continueWithoutPasskey} disabled={passkeyLoading}>
+            Continue without one
+          </Button>
+          <Button onClick={handlePasskeyRegistration} loading={passkeyLoading}>
+            <Fingerprint className="h-4 w-4" />
+            Add passkey
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   )
 }
 
