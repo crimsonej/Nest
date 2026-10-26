@@ -127,12 +127,12 @@ export function AuthStage({ initialMode }: AuthStageProps) {
     prevMode === 'login' && mode === 'register' ? 'right' : 'left'
 
   return (
-    <div className="w-full">
+    <div className={`w-full ${mode === 'register' ? 'auth-mode-register' : 'auth-mode-login'}`}>
       {/* Tab Row */}
-      <div className="flex items-center justify-between gap-2.5 border-b border-border/60 pb-4 sm:pb-6 mb-6 sm:mb-8">
+      <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-4 sm:gap-2.5 sm:pb-6 mb-6 sm:mb-8">
         {/* Segmented Pill Tabs */}
         <div
-          className="relative inline-flex items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner max-w-full"
+          className="relative inline-flex min-w-0 shrink items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner"
           style={{ backdropFilter: 'blur(12px)' }}
         >
           {/* Shared sliding pill — always rendered, moves between tabs */}
@@ -156,16 +156,16 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               key={tab}
               type="button"
               onClick={() => handleModeChange(tab)}
-              className={`relative z-10 flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors duration-250 select-none sm:min-w-[110px] sm:gap-2 sm:px-5 ${
+              className={`relative z-10 flex min-h-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 text-[10px] font-bold transition-colors duration-250 select-none sm:min-w-[110px] sm:gap-2 sm:px-5 sm:text-xs ${
                 mode === tab
                   ? 'text-white'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
               {tab === 'login' ? (
-                <LogIn className="h-3.5 w-3.5 shrink-0" />
+                <LogIn className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
               ) : (
-                <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                <UserPlus className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
               )}
               <span>{tab === 'login' ? 'Sign In' : 'Create Account'}</span>
             </button>

@@ -57,17 +57,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
         animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
         transition={applyMotionPreference(reducedMotion, { duration: 0.35 }, { duration: 0.35 })}
-        className="auth-form-pane relative flex min-h-dvh items-center justify-center overflow-hidden px-5 py-8 sm:px-10 lg:px-12"
+        className="auth-form-pane relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-5 sm:px-10 lg:px-12 lg:py-8"
       >
         <div className="auth-form-pattern pointer-events-none absolute inset-0" />
-        <div className="relative z-10 w-full max-w-[440px]">
-          <div className="mb-9 flex items-center gap-3 lg:hidden">
-            <Image src="/logo.png" alt="NEST" width={42} height={42} className="rounded-xl border border-border bg-surface p-1 shadow-sm" />
-            <div>
-              <p className="text-base font-bold tracking-[0.17em] text-text-primary">NEST</p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">University Portal</p>
-            </div>
-          </div>
+        <div className="auth-form-surface relative z-10 w-full max-w-[440px] rounded-3xl border border-white/70 bg-surface/95 p-4 shadow-2xl backdrop-blur-xl sm:p-6 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
           {children}
         </div>
       </motion.div>

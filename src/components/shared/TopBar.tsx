@@ -13,8 +13,8 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-surface/70 backdrop-blur-2xl transition-colors duration-300 shadow-xs">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center justify-between gap-1.5 pl-14 pr-2.5 py-2 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1600px] items-center gap-2 px-2.5 py-2 pl-14 sm:justify-between sm:px-6 lg:px-8">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <div className="hidden h-6 w-px bg-border/80 sm:block" />
           <div className="min-w-0 truncate">
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -26,16 +26,16 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                 {role === 'student' ? 'Student Workspace' : role === 'admin' ? 'Admin Workspace' : role === 'lecturer' ? 'Lecturer Workspace' : 'Coordinator Workspace'}
               </p>
             </div>
-            <p className="mt-0.5 hidden max-w-[42rem] text-xs font-medium text-text-secondary md:block">
+            <p className="mt-0.5 hidden max-w-[42rem] truncate text-xs font-medium text-text-secondary xl:block">
               {role === 'student' ? 'Stay on top of your coursework and group collaboration' : role === 'admin' ? 'University-wide overview across faculties and academic data' : role === 'lecturer' ? 'View your assigned course unit — groups, students, and reports' : 'Real-time overview of courses, groups, and assignments'}
             </p>
           </div>
-          <div className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-primary-light/40 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md lg:flex shrink-0 shadow-xs">
+          <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary-light/40 px-3 py-1 text-[11px] font-bold text-primary shadow-xs backdrop-blur-md 2xl:flex">
             <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />Kampala Campus
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeToggle />
 
           <div className="relative">

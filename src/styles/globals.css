@@ -876,6 +876,23 @@ html.palette-transitioning::after {
 }
 
 @media (max-width: 640px) {
+  .auth-stage .palette-option {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .auth-stage .palette-swatches {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .auth-stage .palette-swatches svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
   .card-header,
   .card-content {
     padding-left: 0.875rem;
@@ -883,8 +900,8 @@ html.palette-transitioning::after {
   }
 
   .auth-form-pane {
-    padding-top: 5rem;
-    padding-bottom: 2rem;
+    padding-top: 1.25rem;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 
   .hero-orb {
@@ -927,6 +944,26 @@ html.palette-transitioning::after {
   /* Select and Input mobile safety */
   .input, select {
     font-size: 16px !important; /* Prevents auto-zoom on iOS safari */
+  }
+}
+
+@media (max-width: 1023px) {
+  .auth-stage {
+    background-color: #173b36;
+    background-image: linear-gradient(180deg, rgba(12, 31, 29, 0.16), rgba(12, 31, 29, 0.64)), url('/campus-building.jpg');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+
+  .auth-form-pane {
+    background-color: transparent;
+  }
+
+  .auth-mode-register {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
   }
 }
 
