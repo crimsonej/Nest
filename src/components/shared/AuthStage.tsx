@@ -20,6 +20,7 @@ import {
   CheckCircle,
   BookOpen,
   Loader2,
+  Fingerprint,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -225,6 +226,7 @@ function LoginFormSection({
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [error, setError] = useState('')
 
   // Determine icon based on input format
@@ -358,6 +360,56 @@ function LoginFormSection({
     }
   }
 
+  async function handlePasskeyLogin() {
+    setPasskeyLoading(true)
+    setError('')
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPasskey()
+      if (signInError) throw signInError
+      if (!data.user) throw new Error('Passkey sign-in completed without a user session.')
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role, status')
+        .eq('id', data.user.id)
+        .maybeSingle()
+      let role = profile?.role || data.user.app_metadata?.role || data.user.user_metadata?.role
+      let needsPasswordChange = role === 'lecturer' && (
+        data.user.user_metadata?.must_change_password === true ||
+        data.user.app_metadata?.must_change_password === true
+      )
+
+      const { data: lecturer } = await supabase
+        .from('lecturers')
+        .select('must_change_password, temp_password')
+        .eq('id', data.user.id)
+        .maybeSingle()
+      if (lecturer) {
+        role = 'lecturer'
+        if (lecturer.must_change_password === true ||
+          (lecturer.must_change_password !== false && !!lecturer.temp_password)) {
+          needsPasswordChange = true
+        }
+      }
+
+      if (role === 'lecturer') {
+        if (needsPasswordChange) {
+          window.location.href = '/lecturer/change-password'
+          return
+        }
+        window.location.href = '/lecturer/reports'
+      } else if (role === 'coordinator' || profile?.status === 'coordinator' || profile?.status === 'selected_coordinator') {
+        window.location.href = '/coordinator/dashboard'
+      } else {
+        window.location.href = '/student/dashboard'
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to sign in with a passkey.')
+    } finally {
+      setPasskeyLoading(false)
+    }
+  }
+
   return (
     <form onSubmit={handleLogin}>
       <motion.div
@@ -379,6 +431,13 @@ function LoginFormSection({
 
         <motion.div variants={fieldVariant}>
           <OAuthButtons />
+        </motion.div>
+
+        <motion.div variants={fieldVariant}>
+          <Button type="button" variant="outline" className="w-full" onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={loading}>
+            <Fingerprint className="h-4 w-4" />
+            Sign in with a passkey
+          </Button>
         </motion.div>
 
         {/* Fields */}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { FileText, Users, GraduationCap, LogOut, Menu, X, BookCopy, Sparkles, User } from 'lucide-react'
+import { FileText, Users, GraduationCap, LogOut, Menu, X, BookCopy, Sparkles, User, Settings } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,6 +17,7 @@ const navigation = [
   { name: 'Courseworks', href: '/lecturer/courseworks', icon: BookCopy },
   { name: 'Groups', href: '/lecturer/groups', icon: Users },
   { name: 'Students', href: '/lecturer/students', icon: GraduationCap },
+  { name: 'Settings', href: '/lecturer/settings', icon: Settings },
 ]
 
 export function LecturerSidebar() {

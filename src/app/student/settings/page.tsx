@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
+import { PasskeySettings } from '@/components/shared/PasskeySettings'
 
 export default function StudentSettingsPage() {
   const { user, refreshUser } = useAuth()
@@ -213,6 +214,8 @@ export default function StudentSettingsPage() {
           <p className="mt-2 text-lg font-semibold text-text-primary">{formData.whatsappPhone || 'Not added'}</p>
         </div>
       </div>
+
+      <PasskeySettings />
 
       <Card className="settings-card">
         <CardHeader className="border-b border-border pb-4">

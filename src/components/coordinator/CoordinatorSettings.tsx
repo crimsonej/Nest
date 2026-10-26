@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import { PasskeySettings } from '@/components/shared/PasskeySettings'
 
 export function CoordinatorSettings() {
   const { user, refreshUser } = useAuth()
@@ -177,6 +178,8 @@ export function CoordinatorSettings() {
           <ThemeToggle />
         </CardContent>
       </Card>
+
+      <PasskeySettings />
 
       <Card className="settings-card border-danger/30">
         <CardHeader>
