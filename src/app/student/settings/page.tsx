@@ -16,9 +16,15 @@ export default function StudentSettingsPage() {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [faculties, setFaculties] = useState<any[]>([])
+  const [courses, setCourses] = useState<any[]>([])
+  const [academicOptionsError, setAcademicOptionsError] = useState('')
   const [draftData, setDraftData] = useState({
     fullName: user?.full_name || '',
+    studentRegistrationNumber: user?.student_registration_number || '',
     whatsappPhone: user?.whatsapp_phone || '',
+    facultyId: user?.faculty_id || '',
+    courseId: user?.course_id || '',
   })
   const [courseUnits, setCourseUnits] = useState<any[]>([])
   const [enrolledUnitIds, setEnrolledUnitIds] = useState<string[]>([])
@@ -31,7 +37,30 @@ export default function StudentSettingsPage() {
     studentRegistrationNumber: user?.student_registration_number || '',
     whatsappPhone: user?.whatsapp_phone || '',
     course: user?.course || '',
+    faculty: user?.faculty || '',
+    facultyId: user?.faculty_id || '',
+    courseId: user?.course_id || '',
   })
+
+  useEffect(() => {
+    async function fetchAcademicOptions() {
+      const [facultiesResult, coursesResult] = await Promise.all([
+        supabase.from('faculties').select('id, code, name').eq('is_active', true).order('name'),
+        supabase.from('courses').select('id, code, name, faculty_id').eq('is_active', true).order('name'),
+      ])
+
+      if (facultiesResult.error || coursesResult.error) {
+        setAcademicOptionsError('Unable to load faculty and course options.')
+        console.error('Error fetching academic options:', facultiesResult.error || coursesResult.error)
+        return
+      }
+
+      setFaculties(facultiesResult.data || [])
+      setCourses(coursesResult.data || [])
+    }
+
+    fetchAcademicOptions()
+  }, [supabase])
 
   useEffect(() => {
     if (!userId || !user) {
@@ -72,7 +101,10 @@ export default function StudentSettingsPage() {
   useEffect(() => {
     setDraftData({
       fullName: user?.full_name || '',
+      studentRegistrationNumber: user?.student_registration_number || '',
       whatsappPhone: user?.whatsapp_phone || '',
+      facultyId: user?.faculty_id || '',
+      courseId: user?.course_id || '',
     })
     setFormData({
       fullName: user?.full_name || '',
@@ -80,6 +112,9 @@ export default function StudentSettingsPage() {
       studentRegistrationNumber: user?.student_registration_number || '',
       whatsappPhone: user?.whatsapp_phone || '',
       course: user?.course || '',
+      faculty: user?.faculty || '',
+      facultyId: user?.faculty_id || '',
+      courseId: user?.course_id || '',
     })
   }, [user])
 
@@ -88,6 +123,13 @@ export default function StudentSettingsPage() {
   async function handleSave() {
     if (!userId && !user?.email) return
 
+    const selectedFaculty = faculties.find((faculty) => faculty.id === draftData.facultyId)
+    const selectedCourse = courses.find((course) => course.id === draftData.courseId)
+    if (!selectedFaculty || !selectedCourse || selectedCourse.faculty_id !== selectedFaculty.id) {
+      setSaveError('Select a valid faculty and course.')
+      return
+    }
+
     setSaving(true)
     setSaveError('')
     try {
@@ -95,7 +137,12 @@ export default function StudentSettingsPage() {
         .from('users')
         .update({
           full_name: draftData.fullName.trim(),
-          whatsapp_phone: draftData.whatsappPhone,
+          student_registration_number: draftData.studentRegistrationNumber.trim(),
+          whatsapp_phone: draftData.whatsappPhone.trim(),
+          faculty: selectedFaculty.code,
+          faculty_id: selectedFaculty.id,
+          course: selectedCourse.code,
+          course_id: selectedCourse.id,
           updated_at: new Date().toISOString(),
         })
 
@@ -116,7 +163,12 @@ export default function StudentSettingsPage() {
       setFormData((current) => ({
         ...current,
         fullName: updatedProfile?.full_name || draftData.fullName.trim(),
+        studentRegistrationNumber: updatedProfile?.student_registration_number || draftData.studentRegistrationNumber.trim(),
         whatsappPhone: updatedProfile?.whatsapp_phone || draftData.whatsappPhone,
+        faculty: updatedProfile?.faculty || selectedFaculty.code,
+        facultyId: updatedProfile?.faculty_id || selectedFaculty.id,
+        course: updatedProfile?.course || selectedCourse.code,
+        courseId: updatedProfile?.course_id || selectedCourse.id,
       }))
 
       setIsEditOpen(false)
@@ -171,10 +223,16 @@ export default function StudentSettingsPage() {
   const openEditor = () => {
     setDraftData({
       fullName: formData.fullName,
+      studentRegistrationNumber: formData.studentRegistrationNumber,
       whatsappPhone: formData.whatsappPhone,
+      facultyId: formData.facultyId || faculties.find((faculty) => faculty.code === formData.faculty || faculty.name === formData.faculty)?.id || '',
+      courseId: formData.courseId || courses.find((course) => course.code === formData.course || course.name === formData.course)?.id || '',
     })
     setIsEditOpen(true)
   }
+
+  const availableCourses = courses.filter((course) => course.faculty_id === draftData.facultyId)
+  const selectedCourseName = courses.find((course) => course.id === formData.courseId)?.name || formData.course
 
   return (
     <div className="settings-page max-w-5xl space-y-6">
@@ -201,7 +259,7 @@ export default function StudentSettingsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="settings-stat rounded-2xl p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">Course</p>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{formData.course || 'Not provided'}</p>
+          <p className="mt-2 text-lg font-semibold text-text-primary">{selectedCourseName || 'Not provided'}</p>
         </div>
 
         <div className="settings-stat rounded-2xl p-4">
@@ -224,7 +282,7 @@ export default function StudentSettingsPage() {
         <CardContent className="space-y-4 pt-5">
           <div className="rounded-xl border border-border bg-surface-hover/50 p-4">
             <p className="text-sm font-medium text-text-primary">Account information</p>
-            <p className="mt-1 text-sm text-text-muted">Your personal contact details are editable. Course and registration number are shown here as read-only academic details.</p>
+            <p className="mt-1 text-sm text-text-muted">Update your contact and academic information here.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -326,7 +384,18 @@ export default function StudentSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="label">WhatsApp phone number</label>
+            <label className="label">Registration number</label>
+            <input
+              type="text"
+              value={draftData.studentRegistrationNumber}
+              onChange={(e) => setDraftData({ ...draftData, studentRegistrationNumber: e.target.value })}
+              className="input"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="label">Phone number</label>
             <input
               type="tel"
               value={draftData.whatsappPhone}
@@ -336,8 +405,39 @@ export default function StudentSettingsPage() {
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="label">Faculty</label>
+            <select
+              value={draftData.facultyId}
+              onChange={(e) => setDraftData({ ...draftData, facultyId: e.target.value, courseId: '' })}
+              className="input"
+              required
+            >
+              <option value="">Select a faculty</option>
+              {faculties.map((faculty) => (
+                <option key={faculty.id} value={faculty.id}>{faculty.code} - {faculty.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="label">Course</label>
+            <select
+              value={draftData.courseId}
+              onChange={(e) => setDraftData({ ...draftData, courseId: e.target.value })}
+              className="input"
+              disabled={!draftData.facultyId}
+              required
+            >
+              <option value="">Select a course</option>
+              {availableCourses.map((course) => (
+                <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="rounded-xl border border-border bg-surface-hover/60 p-3 text-sm text-text-muted">
-            Course and registration number are displayed as academic details and cannot be changed here.
+            {academicOptionsError || 'Email is managed as part of your account and cannot be changed here.'}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
