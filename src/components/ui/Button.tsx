@@ -21,8 +21,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-gradient-to-r from-secondary to-secondary-hover text-white shadow-md hover:brightness-110 active:brightness-95',
       outline: 'border border-border/80 bg-surface/75 hover:bg-surface-hover/90 text-text-primary backdrop-blur-md hover:border-primary/40 shadow-xs',
       ghost: 'bg-transparent hover:bg-surface-hover/80 text-text-primary',
-      danger: 'bg-gradient-to-r from-[var(--color-danger)] to-[var(--color-danger-light)] text-white shadow-md shadow-[var(--color-danger)]/25 hover:shadow-lg shadow-[var(--color-danger)]/40',
-      success: 'bg-gradient-to-r from-[var(--color-success)] to-[var(--color-success-light)] text-white shadow-md shadow-[var(--color-success)]/25 hover:shadow-lg shadow-[var(--color-success)]/40',
+      danger: 'bg-danger text-white shadow-md shadow-[var(--color-danger)]/25 hover:brightness-110 active:brightness-95',
+      success: 'bg-success text-white shadow-md shadow-[var(--color-success)]/25 hover:brightness-110 active:brightness-95',
     }
 
     const sizeClasses = {
@@ -46,7 +46,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...(props as HTMLMotionProps<'button'>)}
         onClick={onClick}
       >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
         {children}
       </motion.button>
     )

@@ -47,10 +47,10 @@ type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
 type GroupReportFormat = 'student_roster' | 'group_summary' | 'department_matrix'
 
 const reportTiles = [
-  { id: 'students', label: 'Student List', description: 'All students in your course unit', icon: Users, color: 'from-blue-500 to-cyan-500' },
-  { id: 'orphan_students', label: 'Orphan List', description: 'Students not assigned to a group', icon: UserX, color: 'from-amber-500 to-orange-500' },
-  { id: 'groups', label: 'Group List', description: 'All groups with member rosters', icon: Layers3, color: 'from-violet-500 to-purple-500' },
-  { id: 'course_unit_students', label: 'Students per Course Unit', description: 'Roster for your assigned unit', icon: Grid3X3, color: 'from-emerald-500 to-teal-500' },
+  { id: 'students', label: 'Student List', description: 'All students in your course unit', icon: Users, color: 'from-primary to-primary-hover' },
+  { id: 'orphan_students', label: 'Orphan List', description: 'Students not assigned to a group', icon: UserX, color: 'from-warning to-secondary' },
+  { id: 'groups', label: 'Group List', description: 'All groups with member rosters', icon: Layers3, color: 'from-secondary to-secondary-hover' },
+  { id: 'course_unit_students', label: 'Students per Course Unit', description: 'Roster for your assigned unit', icon: Grid3X3, color: 'from-success to-primary' },
 ] as const
 
 export function LecturerReports() {
@@ -76,6 +76,7 @@ export function LecturerReports() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({})
+  const [exportNotice, setExportNotice] = useState<string | null>(null)
 
   // Step 1: Fetch the lecturer's assigned course unit
   useEffect(() => {
@@ -366,10 +367,11 @@ export function LecturerReports() {
 
   const handleExportCsv = () => {
     if (!selectedCategory) return
+    setExportNotice(null)
     const columns = getActiveColumns()
     const rows = getActiveRows()
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
       return
     }
     const escapeValue = (v: unknown) => {
@@ -393,10 +395,11 @@ export function LecturerReports() {
 
   const handleExportXlsx = () => {
     if (!selectedCategory) return
+    setExportNotice(null)
     const columns = getActiveColumns()
     const rows = getActiveRows()
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
       return
     }
     const ws = XLSX.utils.json_to_sheet(rows.map((r: any) => Object.fromEntries(columns.map((c) => [c.header, c.value(r)]))))
@@ -407,11 +410,12 @@ export function LecturerReports() {
 
   const handleExportPdf = () => {
     if (!selectedCategory) return
+    setExportNotice(null)
     const columns = getActiveColumns()
     const rows = getActiveRows()
 
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
       return
     }
 
@@ -693,7 +697,7 @@ export function LecturerReports() {
                 className="w-full flex items-center justify-between p-4 bg-surface-hover/40 text-left font-bold text-sm text-text-primary hover:bg-surface-hover transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  {isOpen ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                  {isOpen ? <ChevronDown className="h-4 w-4 text-primary" aria-hidden="true" /> : <ChevronRight className="h-4 w-4 text-text-muted" aria-hidden="true" />}
                   <span>{groupTitle}</span>
                   <Badge variant="primary" className="ml-2 font-mono text-xs">
                     {groupRows.length} {groupRows.length === 1 ? 'Record' : 'Records'}
@@ -736,13 +740,12 @@ export function LecturerReports() {
   if (!assignedCourseUnit) {
     return (
       <div className="space-y-6">
-        <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-          <AlertCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-4 rounded-2xl border border-warning/30 bg-warning-light/60 p-6">
+          <AlertCircle className="h-6 w-6 text-warning shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <h2 className="font-bold text-text-primary text-lg">No Course Unit Assigned</h2>
             <p className="text-text-secondary mt-1 text-sm">
-              You haven't been assigned to a course unit yet. Please contact your administrator to set your{' '}
-              <code className="text-primary font-mono text-xs bg-primary/10 px-1 py-0.5 rounded">lecturer_id</code> on a course unit in the database.
+              You haven't been assigned to a course unit yet. Ask your administrator to assign you to one, then refresh this page.
             </p>
           </div>
         </div>
@@ -755,35 +758,39 @@ export function LecturerReports() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-r from-violet-950/20 via-purple-900/10 to-surface/90 p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-r from-primary-light via-surface to-surface p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-bold text-violet-400 backdrop-blur-md mb-2.5">
-              <FileText className="h-3.5 w-3.5 text-violet-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md mb-2.5">
+              <FileText className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               <span>Lecturer Supervision Portal</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
-              Reports & <span className="bg-gradient-to-r from-violet-500 via-purple-400 to-indigo-500 bg-clip-text text-transparent">Analytics</span>
+              Reports & <span className="text-primary">Analytics</span>
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
-              Assigned Course Unit: <span className="font-bold text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+              Assigned Course Unit: <span className="font-bold text-primary">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setViewMode('tiles')}
-              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'tiles' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500/50 shadow-md shadow-violet-500/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
+              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'tiles' ? 'bg-primary text-white border-primary/50 shadow-md shadow-[var(--color-primary)]/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
               title="Tile View"
+              aria-label="Show reports as tiles"
+              aria-pressed={viewMode === 'tiles'}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'list' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500/50 shadow-md shadow-violet-500/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
+              className={cn('p-2.5 rounded-xl border text-xs font-medium transition-all shadow-xs', viewMode === 'list' ? 'bg-primary text-white border-primary/50 shadow-md shadow-[var(--color-primary)]/20' : 'border-border/80 bg-surface/80 text-text-muted hover:text-text-primary')}
               title="List View"
+              aria-label="Show reports as a list"
+              aria-pressed={viewMode === 'list'}
             >
-              <List className="h-4 w-4" />
+              <List className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -838,7 +845,7 @@ export function LecturerReports() {
                     <div>
                       <div className="flex items-start justify-between gap-3">
                         <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-3 text-white shadow-sm`}>
-                          <Icon className="h-5 w-5" />
+                          <Icon className="h-5 w-5" aria-hidden="true" />
                         </div>
                         <Badge variant="secondary" className="text-xs font-bold tabular-nums">{count}</Badge>
                       </div>
@@ -879,7 +886,7 @@ export function LecturerReports() {
                   className="flex w-full items-center gap-4 p-4 text-left hover:bg-surface-hover transition-colors"
                 >
                   <div className={`rounded-lg bg-gradient-to-br ${tile.color} p-2.5 text-white shadow-sm shrink-0`}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-text-primary">{tile.label}</p>
@@ -888,7 +895,7 @@ export function LecturerReports() {
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-semibold text-primary">Open Roster →</span>
                     <Badge variant="secondary" className="shrink-0">{count}</Badge>
-                    <ChevronRight className="h-4 w-4 text-text-muted shrink-0" />
+                    <ChevronRight className="h-4 w-4 text-text-muted shrink-0" aria-hidden="true" />
                   </div>
                 </button>
               )
@@ -991,9 +998,10 @@ export function LecturerReports() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 {/* Search Bar */}
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-text-muted" />
+                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
                   <input
-                    type="text"
+                    type="search"
+                    aria-label="Filter records"
                     placeholder="Filter by keyword (name, reg no, email, leader)..."
                     value={inModalSearch}
                     onChange={(e) => setInModalSearch(e.target.value)}
@@ -1001,10 +1009,12 @@ export function LecturerReports() {
                   />
                   {inModalSearch && (
                     <button
+                      type="button"
                       onClick={() => setInModalSearch('')}
-                      className="absolute right-2.5 top-2 text-xs text-text-muted hover:text-text-primary"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-1.5 text-sm leading-none text-text-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label="Clear search"
                     >
-                      ×
+                      <span aria-hidden="true">×</span>
                     </button>
                   )}
                 </div>
@@ -1013,7 +1023,7 @@ export function LecturerReports() {
                 {selectedCategory && (
                   <div className="flex items-center gap-1.5 border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0">
                     <div className="flex items-center gap-1 text-[11px] font-bold text-text-secondary uppercase tracking-wider shrink-0">
-                      <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+                      <ArrowUpDown className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                       <span className="hidden sm:inline">Sort:</span>
                     </div>
                     <select
@@ -1047,8 +1057,9 @@ export function LecturerReports() {
                       modalLayoutMode === 'table' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Table View"
+                    aria-pressed={modalLayoutMode === 'table'}
                   >
-                    <Table className="h-3.5 w-3.5" />
+                    <Table className="h-3.5 w-3.5" aria-hidden="true" />
                     <span className="hidden xs:inline text-[11px]">Table</span>
                   </button>
 
@@ -1060,8 +1071,9 @@ export function LecturerReports() {
                       modalLayoutMode === 'cards' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Card Grid View"
+                    aria-pressed={modalLayoutMode === 'cards'}
                   >
-                    <LayoutGrid className="h-3.5 w-3.5" />
+                    <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
                     <span className="hidden xs:inline text-[11px]">Cards</span>
                   </button>
 
@@ -1073,8 +1085,9 @@ export function LecturerReports() {
                       modalLayoutMode === 'roster' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Compact Roster View"
+                    aria-pressed={modalLayoutMode === 'roster'}
                   >
-                    <ListFilter className="h-3.5 w-3.5" />
+                    <ListFilter className="h-3.5 w-3.5" aria-hidden="true" />
                     <span className="hidden xs:inline text-[11px]">Compact</span>
                   </button>
 
@@ -1086,8 +1099,9 @@ export function LecturerReports() {
                       modalLayoutMode === 'accordion' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     )}
                     title="Grouped Accordion View"
+                    aria-pressed={modalLayoutMode === 'accordion'}
                   >
-                    <Layers className="h-3.5 w-3.5" />
+                    <Layers className="h-3.5 w-3.5" aria-hidden="true" />
                     <span className="hidden xs:inline text-[11px]">Grouped</span>
                   </button>
                 </div>
@@ -1099,8 +1113,9 @@ export function LecturerReports() {
                   onClick={() => setIsFullScreen((prev) => !prev)}
                   className="shrink-0 text-xs py-1 px-2.5 h-8"
                   title="Toggle Fullscreen"
+                  aria-pressed={isFullScreen}
                 >
-                  {isFullScreen ? <Minimize2 className="h-3.5 w-3.5 mr-1" /> : <Maximize2 className="h-3.5 w-3.5 mr-1" />}
+                  {isFullScreen ? <Minimize2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" /> : <Maximize2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />}
                   <span className="hidden sm:inline">{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
                 </Button>
               </div>
@@ -1111,7 +1126,7 @@ export function LecturerReports() {
               <div className="rounded-xl border border-border bg-surface-hover/50 p-3 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                    <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                     <span>Customize Included Columns ({getActiveColumns().length} / {getColumnsForCategory(selectedCategory).length})</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-medium">
@@ -1177,6 +1192,12 @@ export function LecturerReports() {
                 {inModalSearch && (
                   <span className="text-xs text-text-muted">matching "{inModalSearch}"</span>
                 )}
+                {exportNotice && (
+                  <span role="status" className="inline-flex items-center gap-1 text-xs font-semibold text-warning">
+                    <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                    {exportNotice}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -1186,7 +1207,7 @@ export function LecturerReports() {
                   onClick={handleExportCsv}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
-                  <Download className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                  <Download className="h-3.5 w-3.5 mr-1.5 text-success" aria-hidden="true" />
                   CSV
                 </Button>
                 <Button
@@ -1195,7 +1216,7 @@ export function LecturerReports() {
                   onClick={handleExportXlsx}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
-                  <Download className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
+                  <Download className="h-3.5 w-3.5 mr-1.5 text-primary" aria-hidden="true" />
                   Excel
                 </Button>
                 <Button
@@ -1204,7 +1225,7 @@ export function LecturerReports() {
                   onClick={handleExportPdf}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
-                  <FileText className="h-3.5 w-3.5 mr-1.5 text-rose-600" />
+                  <FileText className="h-3.5 w-3.5 mr-1.5 text-danger" aria-hidden="true" />
                   Export PDF
                 </Button>
               </div>

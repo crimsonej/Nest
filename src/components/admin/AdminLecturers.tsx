@@ -264,15 +264,15 @@ export function AdminLecturers() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-danger/20 bg-gradient-to-r from-danger/10 via-warning/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-              <Shield className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
+              <Shield className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
               Administrator Platform
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Lecturer <span className="bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">Management</span>
+              Lecturer <span className="bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Management</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary max-w-2xl">
               Create lecturer profiles in Supabase, assign faculties & course units, set initial login credentials, and perform default password resets.
@@ -281,7 +281,7 @@ export function AdminLecturers() {
 
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-rose-600/20 hover:from-rose-700 hover:to-amber-700 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-danger to-warning px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--color-danger)]/20 hover:brightness-110 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             <span>Add New Lecturer</span>
@@ -296,14 +296,14 @@ export function AdminLecturers() {
             initial={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
             animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
             exit={applyMotionPreference(reducedMotion, { opacity: 0, y: -10 }, {})}
-            className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400 shadow-lg"
+            className="flex items-center justify-between rounded-2xl border border-success/30 bg-success/10 p-4 text-success shadow-lg"
           >
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <p className="text-sm font-semibold">{successMessage}</p>
             </div>
-            <button onClick={() => setSuccessMessage(null)} className="p-1 opacity-70 hover:opacity-100">
-              <X className="h-4 w-4" />
+            <button type="button" onClick={() => setSuccessMessage(null)} className="p-1 opacity-70 hover:opacity-100" aria-label="Dismiss message">
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </motion.div>
         )}
@@ -319,8 +319,8 @@ export function AdminLecturers() {
               <AlertCircle className="h-5 w-5 shrink-0" />
               <p className="text-sm font-semibold">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="p-1 opacity-70 hover:opacity-100">
-              <X className="h-4 w-4" />
+            <button type="button" onClick={() => setError(null)} className="p-1 opacity-70 hover:opacity-100" aria-label="Dismiss error">
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </motion.div>
         )}
@@ -331,7 +331,7 @@ export function AdminLecturers() {
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-text-muted">Total Lecturers</p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success">
               <UserCheck className="h-5 w-5" />
             </div>
           </div>
@@ -342,7 +342,7 @@ export function AdminLecturers() {
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-text-muted">Assigned Course Units</p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <BookOpen className="h-5 w-5" />
             </div>
           </div>
@@ -355,7 +355,7 @@ export function AdminLecturers() {
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-text-muted">Default Password Active</p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 text-warning">
               <KeyRound className="h-5 w-5" />
             </div>
           </div>
@@ -375,7 +375,7 @@ export function AdminLecturers() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by lecturer name, email or course code..."
-            className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+            className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
@@ -385,7 +385,7 @@ export function AdminLecturers() {
             <select
               value={selectedFacultyFilter}
               onChange={(e) => setSelectedFacultyFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <option value="all">All Faculties</option>
               {faculties.map((fac) => (
@@ -410,12 +410,12 @@ export function AdminLecturers() {
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         {loading ? (
           <div className="flex flex-col items-center justify-center p-12 text-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-emerald-600 mb-3" />
+            <RefreshCw className="h-8 w-8 animate-spin text-success mb-3" />
             <p className="text-sm font-medium text-text-secondary">Loading lecturer profiles from Supabase...</p>
           </div>
         ) : filteredLecturers.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 mb-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-success/10 text-success mb-4">
               <Users className="h-8 w-8" />
             </div>
             <h3 className="text-lg font-bold text-text-primary">No Lecturers Found</h3>
@@ -427,7 +427,7 @@ export function AdminLecturers() {
             {!searchQuery && selectedFacultyFilter === 'all' && (
               <button
                 onClick={openAddModal}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors"
               >
                 <UserPlus className="h-4 w-4" /> Add Lecturer Profile
               </button>
@@ -450,7 +450,7 @@ export function AdminLecturers() {
                   <tr key={lecturer.id} className="hover:bg-surface-hover/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600/10 text-emerald-600 font-bold shrink-0">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10 text-success font-bold shrink-0">
                           {lecturer.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -467,7 +467,7 @@ export function AdminLecturers() {
                       {lecturer.faculties ? (
                         <div>
                           <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-semibold text-text-secondary">
-                            <Building2 className="h-3.5 w-3.5 text-emerald-600" />
+                            <Building2 className="h-3.5 w-3.5 text-success" />
                             {lecturer.faculties.name} ({lecturer.faculties.code})
                           </span>
                         </div>
@@ -482,7 +482,7 @@ export function AdminLecturers() {
                           <span className="font-semibold text-text-primary text-xs">
                             {lecturer.course_units.name}
                           </span>
-                          <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                          <span className="text-[11px] font-mono text-success font-bold">
                             {lecturer.course_units.code}
                           </span>
                         </div>
@@ -494,7 +494,7 @@ export function AdminLecturers() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         {lecturer.temp_password ? (
-                          <div className="flex items-center gap-1.5 font-mono text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg w-fit border border-amber-500/20">
+                          <div className="flex items-center gap-1.5 font-mono text-xs text-warning bg-warning/10 px-2.5 py-1 rounded-lg w-fit border border-warning/20">
                             <KeyRound className="h-3 w-3 shrink-0" />
                             <span>{lecturer.temp_password}</span>
                           </div>
@@ -512,7 +512,7 @@ export function AdminLecturers() {
                         {/* Reset Password Button */}
                         <button
                           onClick={() => openResetModal(lecturer)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-bold text-warning hover:bg-warning/20 transition-colors"
                           title="Reset lecturer password to default password"
                         >
                           <KeyRound className="h-3.5 w-3.5" />
@@ -558,7 +558,7 @@ export function AdminLecturers() {
             >
               <div className="flex items-center justify-between border-b border-border pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-success/10 text-success">
                     <UserPlus className="h-5 w-5" />
                   </div>
                   <div>
@@ -569,8 +569,9 @@ export function AdminLecturers() {
                 <button
                   onClick={() => setIsAddModalOpen(false)}
                   className="rounded-xl border border-border p-2 text-text-muted hover:bg-surface-hover transition-colors"
+                  aria-label="Close dialog"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
 
@@ -592,7 +593,7 @@ export function AdminLecturers() {
                     value={addForm.name}
                     onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                     placeholder="e.g. Dr. Jane Smith"
-                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
 
@@ -606,7 +607,7 @@ export function AdminLecturers() {
                     value={addForm.email}
                     onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
                     placeholder="e.g. j.smith@university.ac.ug"
-                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+                    className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <p className="mt-1 text-[11px] text-text-muted">The lecturer will use this email to log in to NEST.</p>
                 </div>
@@ -619,7 +620,7 @@ export function AdminLecturers() {
                     <select
                       value={addForm.faculty_id}
                       onChange={(e) => setAddForm({ ...addForm, faculty_id: e.target.value })}
-                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       <option value="">Select Faculty</option>
                       {faculties.map((fac) => (
@@ -637,7 +638,7 @@ export function AdminLecturers() {
                     <select
                       value={addForm.course_unit_id}
                       onChange={(e) => setAddForm({ ...addForm, course_unit_id: e.target.value })}
-                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+                      className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       <option value="">Select Course Unit</option>
                       {courseUnits.map((cu) => (
@@ -657,7 +658,7 @@ export function AdminLecturers() {
                     <button
                       type="button"
                       onClick={() => setAddForm({ ...addForm, password: generateRandomPassword() })}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-success hover:underline"
                     >
                       <Sparkles className="h-3 w-3" /> Generate Random
                     </button>
@@ -670,7 +671,7 @@ export function AdminLecturers() {
                       value={addForm.password}
                       onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                       placeholder="e.g. Lecturer123!"
-                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-primary)]/40"
+                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                     <button
                       type="button"
@@ -696,7 +697,7 @@ export function AdminLecturers() {
                   <button
                     type="submit"
                     disabled={submittingAdd}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-xl bg-success px-5 py-2.5 text-sm font-bold text-white hover:bg-success disabled:opacity-50 transition-colors"
                   >
                     {submittingAdd ? (
                       <>
@@ -736,7 +737,7 @@ export function AdminLecturers() {
             >
               <div className="flex items-center justify-between border-b border-border pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/10 text-warning">
                     <KeyRound className="h-5 w-5" />
                   </div>
                   <div>
@@ -747,8 +748,9 @@ export function AdminLecturers() {
                 <button
                   onClick={() => setIsResetModalOpen(false)}
                   className="rounded-xl border border-border p-2 text-text-muted hover:bg-surface-hover transition-colors"
+                  aria-label="Close dialog"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
 
@@ -774,7 +776,7 @@ export function AdminLecturers() {
                     <button
                       type="button"
                       onClick={() => setResetPassword(generateRandomPassword())}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-warning hover:underline"
                     >
                       <Sparkles className="h-3 w-3" /> Generate Random
                     </button>
@@ -787,7 +789,7 @@ export function AdminLecturers() {
                       value={resetPassword}
                       onChange={(e) => setResetPassword(e.target.value)}
                       placeholder="e.g. Lecturer123!"
-                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus-[var(--color-secondary)]/40"
+                      className="w-full rounded-xl border border-border bg-background pl-3.5 pr-10 py-2.5 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-secondary/40"
                     />
                     <button
                       type="button"
@@ -808,7 +810,7 @@ export function AdminLecturers() {
                       setCopiedKey(true)
                       setTimeout(() => setCopiedKey(false), 2000)
                     }}
-                    className="flex items-center gap-1 text-xs font-bold text-amber-600 hover:underline"
+                    className="flex items-center gap-1 text-xs font-bold text-warning hover:underline"
                   >
                     {copiedKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     <span>{copiedKey ? 'Copied' : 'Copy'}</span>
@@ -826,7 +828,7 @@ export function AdminLecturers() {
                   <button
                     type="submit"
                     disabled={submittingReset}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-xl bg-warning px-5 py-2.5 text-sm font-bold text-white hover:bg-warning disabled:opacity-50 transition-colors"
                   >
                     {submittingReset ? (
                       <>

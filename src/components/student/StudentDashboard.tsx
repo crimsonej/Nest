@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { Users, BookOpen, Target, ArrowRight, Plus, Check, Clock, AlertTriangle } from 'lucide-react'
+import { Users, BookOpen, Target, ArrowRight, Plus, Check, Clock, AlertTriangle, AlertCircle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -13,6 +13,8 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { MetricCard } from '../ui/MetricCard'
+import { ErrorBanner } from '../ui/ErrorBanner'
+import { EmptyState } from '../ui/EmptyState'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
 
@@ -167,9 +169,9 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
   const urgencyBorder = isExpired
     ? 'border-danger/40'
     : isUrgent
-    ? 'border-rose-500/40'
+    ? 'border-danger/40'
     : isWarning
-    ? 'border-amber-500/30'
+    ? 'border-warning/30'
     : 'border-primary/30'
 
   const urgencyGlow = isExpired
@@ -187,11 +189,12 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
         className="absolute inset-0 pointer-events-none"
         style={{
           background: isUrgent
-            ? 'radial-gradient(circle at 80% 20%, rgba(225,29,72,0.12), transparent 50%)'
+            ? 'radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--color-danger) 12%, transparent), transparent 50%)'
             : isWarning
-            ? 'radial-gradient(circle at 80% 20%, rgba(245,158,11,0.10), transparent 50%)'
-            : 'radial-gradient(circle at 80% 20%, rgba(79,70,229,0.10), transparent 50%)',
+            ? 'radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--color-warning) 10%, transparent), transparent 50%)'
+            : 'radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 50%)',
         }}
+        aria-hidden="true"
       />
 
       <CardContent className="relative p-5 sm:p-7">
@@ -202,23 +205,23 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
               <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
                 <span className={cn(
                   'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
-                  isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                  isExpired ? 'bg-danger' : isUrgent ? 'bg-danger' : isWarning ? 'bg-warning' : 'bg-primary'
                 )} aria-hidden="true"/>
                 <span className={cn(
                   'relative inline-flex rounded-full h-2.5 w-2.5',
-                  isExpired ? 'bg-danger' : isUrgent ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                  isExpired ? 'bg-danger' : isUrgent ? 'bg-danger' : isWarning ? 'bg-warning' : 'bg-primary'
                 )} aria-hidden="true"/>
               </span>
               <p className={cn(
                 'text-[11px] font-extrabold uppercase tracking-[0.2em]',
-                isExpired ? 'text-danger' : isUrgent ? 'text-rose-500' : isWarning ? 'text-amber-500' : 'text-primary'
+                isExpired ? 'text-danger' : isUrgent ? 'text-danger' : isWarning ? 'text-warning' : 'text-primary'
               )}>
                 {isExpired ? 'Deadline Expired' : isUrgent ? 'Urgent — Due Soon' : 'Next Deadline'}
               </p>
             </div>
             <h3 className="mt-2 text-xl font-extrabold tracking-tight text-text-primary sm:text-2xl">{title}</h3>
             <div className="flex items-center gap-2 mt-1.5">
-              <Clock className="h-3.5 w-3.5 text-text-muted" />
+              <Clock className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
               <p className="text-xs font-medium text-text-muted">
                 Due {new Date(lockAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
               </p>
@@ -227,9 +230,9 @@ function CountdownWidget({ lockAt, title }: { lockAt: string; title: string }) {
               <motion.div
                 initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 5 }, {})}
                 animate={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-500"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-danger/20 bg-danger/10 px-2.5 py-1 text-[10px] font-bold text-danger"
               >
-                <AlertTriangle className="h-3 w-3" />
+                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
                 Less than 1 hour remaining
               </motion.div>
             )}
@@ -337,6 +340,8 @@ export function StudentDashboard() {
   const [myCourseUnitIds, setMyCourseUnitIds] = useState<string[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [dataVersion, setDataVersion] = useState(0)
+  const [pendingUnitId, setPendingUnitId] = useState<string | null>(null)
+  const [enrollmentError, setEnrollmentError] = useState<string | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   const [groupModalOpen, setGroupModalOpen] = useState(false)
 
@@ -438,7 +443,7 @@ export function StudentDashboard() {
         console.error('[student-data][temporary] Dashboard load failed', {
           errorName: error instanceof Error ? error.name : 'unknown',
         })
-        setDataError('Unable to load dashboard data. Check the browser console diagnostics and try again.')
+        setDataError('We couldn’t load your dashboard. Check your connection and try again.')
       } finally {
         setLoading(false)
       }
@@ -448,20 +453,27 @@ export function StudentDashboard() {
   }, [user, dataVersion])
 
   async function toggleCourseUnitEnrollment(unitId: string) {
-    if (!user) return
+    if (!user || pendingUnitId) return
     const isEnrolled = myCourseUnitIds.includes(unitId)
+    setPendingUnitId(unitId)
+    setEnrollmentError(null)
 
     try {
       if (isEnrolled) {
-        await supabase.from('student_course_units').delete().eq('user_id', user.id).eq('course_unit_id', unitId)
+        const { error } = await supabase.from('student_course_units').delete().eq('user_id', user.id).eq('course_unit_id', unitId)
+        if (error) throw error
         setMyCourseUnitIds((prev) => prev.filter((id) => id !== unitId))
       } else {
-        await supabase.from('student_course_units').insert({ user_id: user.id, course_unit_id: unitId, status: 'active' })
+        const { error } = await supabase.from('student_course_units').insert({ user_id: user.id, course_unit_id: unitId, status: 'active' })
+        if (error) throw error
         setMyCourseUnitIds((prev) => [...prev, unitId])
       }
       setDataVersion((v) => v + 1)
     } catch (err) {
       console.error('Failed to toggle course unit enrollment:', err)
+      setEnrollmentError(isEnrolled ? 'Couldn’t remove that course unit. Please try again.' : 'Couldn’t register that course unit. Please try again.')
+    } finally {
+      setPendingUnitId(null)
     }
   }
 
@@ -487,9 +499,14 @@ export function StudentDashboard() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
       {dataError && (
-        <div className="rounded-2xl border border-danger/20 bg-danger-light p-4 text-xs font-semibold text-danger" role="alert">
-          Unable to load live dashboard data: {dataError}
-        </div>
+        <ErrorBanner
+          title="Dashboard unavailable"
+          message={dataError}
+          onRetry={() => {
+            setDataError('')
+            setDataVersion((v) => v + 1)
+          }}
+        />
       )}
 
       {/* Header Banner */}
@@ -515,14 +532,15 @@ export function StudentDashboard() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)} className="border-white/35 bg-white/10 text-white hover:border-white/70 hover:bg-white/15">
-              <BookOpen className="mr-2 h-4 w-4" />
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
               Course Units ({myCourseUnitIds.length})
             </Button>
-            <Link href="/student/coursework">
-              <Button size="sm" className="workspace-dashboard-action-primary border-0 shadow-md hover:bg-white/90">
-                <Plus className="h-4 w-4 mr-1.5" />
-                Browse Coursework
-              </Button>
+            <Link
+              href="/student/coursework"
+              className="workspace-dashboard-action-primary inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-md transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Browse Coursework
             </Link>
           </div>
         </div>
@@ -547,16 +565,17 @@ export function StudentDashboard() {
           <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
             <CardTitle>My Groups</CardTitle>
             <Link href="/student/groups" className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-              View all <ArrowRight className="h-3.5 w-3.5" />
+              View all <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </CardHeader>
           <CardContent className="px-6 py-4">
             {recentGroups.length === 0 ? (
-              <div className="text-center py-10">
-                <Users className="h-10 w-10 mx-auto text-text-muted opacity-60" />
-                <p className="mt-2 text-sm font-semibold text-text-secondary">You haven't joined any groups yet</p>
-                <p className="text-xs text-text-muted mt-1">Browse coursework to find or create project groups</p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="You haven't joined any groups yet"
+                description="Browse coursework to find or create a project group."
+                action={{ label: 'Browse coursework', href: '/student/coursework' }}
+              />
             ) : (
               <div className="space-y-3">
                 {recentGroups.map(({ group }) => {
@@ -564,17 +583,19 @@ export function StudentDashboard() {
                     ? group.member_count[0].count
                     : 0;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={group.id}
                       onClick={() => {
                         setSelectedGroup({ ...group, _memberCount: memberCount });
                         setGroupModalOpen(true);
                       }}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors cursor-pointer"
+                      aria-label={`View details for ${group.name}`}
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 text-left shadow-xs transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
-                          <Users className="h-5 w-5" />
+                          <Users className="h-5 w-5" aria-hidden="true" />
                         </div>
                         <div>
                           <p className="font-bold text-sm text-text-primary">{group.name}</p>
@@ -591,7 +612,7 @@ export function StudentDashboard() {
                           {group.status}
                         </Badge>
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -603,23 +624,24 @@ export function StudentDashboard() {
           <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
             <CardTitle>Recent Tasks</CardTitle>
             <Link href="/student/tasks" className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-              View all <ArrowRight className="h-3.5 w-3.5" />
+              View all <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </CardHeader>
           <CardContent className="px-6 py-4">
             {recentTasks.length === 0 ? (
-              <div className="text-center py-10">
-                <BookOpen className="h-10 w-10 mx-auto text-text-muted opacity-60" />
-                <p className="mt-2 text-sm font-semibold text-text-secondary">No tasks assigned yet</p>
-                <p className="text-xs text-text-muted mt-1">Create tasks to track your coursework progress</p>
-              </div>
+              <EmptyState
+                icon={Target}
+                title="No tasks yet"
+                description="Create tasks to track your coursework progress."
+                action={{ label: 'Add a task', href: '/student/tasks' }}
+              />
             ) : (
               <div className="space-y-3">
                 {recentTasks.map((task) => (
                   <div key={task.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-surface/80 p-3.5 shadow-xs hover:border-primary/40 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
-                        <Target className="h-5 w-5" />
+                        <Target className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div>
                         <p className="font-bold text-sm text-text-primary">{task.title}</p>
@@ -648,7 +670,17 @@ export function StudentDashboard() {
             Select or remove course units you are taking this semester. Group discovery and coursework deadlines will be tailored to these selections.
           </p>
 
+          {enrollmentError && (
+            <p role="alert" className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger-light/60 px-3 py-2 text-xs font-semibold text-danger">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {enrollmentError}
+            </p>
+          )}
+
           <div className="max-h-96 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
+            {allCourseUnits.length === 0 && (
+              <EmptyState icon={BookOpen} title="No course units available" description="Your faculty hasn't published any course units yet." />
+            )}
             {allCourseUnits.map((unit) => {
               const isEnrolled = myCourseUnitIds.includes(unit.id)
               return (
@@ -661,15 +693,24 @@ export function StudentDashboard() {
                     <p className="text-xs text-text-muted mt-0.5">{unit.description || 'Ndejje University Course Unit'}</p>
                   </div>
 
-                  <Button size="sm" variant={isEnrolled ? 'outline' : 'primary'} onClick={() => toggleCourseUnitEnrollment(unit.id)}>
-                    {isEnrolled ? (
+                  <Button
+                    size="sm"
+                    variant={isEnrolled ? 'outline' : 'primary'}
+                    onClick={() => toggleCourseUnitEnrollment(unit.id)}
+                    loading={pendingUnitId === unit.id}
+                    disabled={Boolean(pendingUnitId) && pendingUnitId !== unit.id}
+                    aria-label={`${isEnrolled ? 'Remove' : 'Register'} ${unit.code} ${unit.name}`}
+                  >
+                    {pendingUnitId === unit.id ? (
+                      isEnrolled ? 'Removing…' : 'Registering…'
+                    ) : isEnrolled ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-success mr-1" />
+                        <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" />
                         Registered
                       </>
                     ) : (
                       <>
-                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                         Register
                       </>
                     )}

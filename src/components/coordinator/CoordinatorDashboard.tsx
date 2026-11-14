@@ -2,18 +2,18 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownRight, ArrowRight, Plus, BookCopy } from 'lucide-react'
+import { Users, BookOpen, Target, TrendingUp, AlertCircle, ArrowRight, Plus, BookCopy, CheckCircle2, UserPlus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
-import { Button } from '../ui/Button'
+import { ErrorBanner } from '../ui/ErrorBanner'
+import { EmptyState } from '../ui/EmptyState'
 import { MetricCard } from '../ui/MetricCard'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { cn, formatDate, formatNumber } from '@/lib/utils'
+import { formatDate, formatNumber } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { motion } from 'framer-motion'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
-
 
 export function CoordinatorDashboard() {
   const { user } = useAuth()
@@ -32,10 +32,11 @@ export function CoordinatorDashboard() {
   const [recentGroups, setRecentGroups] = useState<any[]>([])
   const [recentCourseworks, setRecentCourseworks] = useState<any[]>([])
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([])
-  const [dataVersion] = useState(0)
+  const [dataVersion, setDataVersion] = useState(0)
   const reducedMotion = useReducedMotion()
 
   useEffect(() => {
+    setDataError('')
     fetchMetrics()
     fetchRecentData()
   }, [user, dataVersion])
@@ -74,7 +75,7 @@ export function CoordinatorDashboard() {
       })
     } catch (error) {
       console.error('Error fetching metrics:', error)
-      setDataError(error instanceof Error ? error.message : 'Unable to load coordinator metrics from Supabase.')
+      setDataError('Some dashboard figures couldn’t be loaded. Check your connection and try again.')
     }
   }
 
@@ -120,7 +121,7 @@ export function CoordinatorDashboard() {
       setUnassignedStudents(unassigned)
     } catch (error) {
       console.error('Error fetching recent data:', error)
-      setDataError(error instanceof Error ? error.message : 'Unable to load coordinator data from Supabase.')
+      setDataError('Some dashboard figures couldn’t be loaded. Check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -128,18 +129,21 @@ export function CoordinatorDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="animate-pulse space-y-6" role="status" aria-label="Loading coordinator dashboard">
+        <div className="h-40 rounded-2xl bg-border/30" />
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse space-y-2">
-                  <div className="h-4 bg-secondary/20 rounded w-3/4" />
-                  <div className="h-8 bg-secondary/20 rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <div key={i} className="h-28 rounded-2xl bg-border/25" />
           ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 rounded-2xl bg-border/25" />
+          ))}
+        </div>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="h-72 rounded-2xl bg-border/20" />
+          <div className="h-72 rounded-2xl bg-border/20" />
         </div>
       </div>
     )
@@ -161,9 +165,7 @@ export function CoordinatorDashboard() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
       {dataError && (
-        <div className="rounded-2xl border border-danger/20 bg-danger-light p-4 text-xs font-semibold text-danger" role="alert">
-          Unable to load live dashboard data: {dataError}
-        </div>
+        <ErrorBanner title="Live data unavailable" message={dataError} onRetry={() => setDataVersion((v) => v + 1)} />
       )}
 
       {/* Header Banner */}
@@ -188,17 +190,19 @@ export function CoordinatorDashboard() {
             </p>
           </div>
           <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap sm:gap-3">
-            <Link href="/coordinator/coursework">
-              <Button variant="outline" size="sm" className="w-full border-white/35 bg-white/10 text-white hover:border-white/70 hover:bg-white/15 min-[420px]:w-auto">
-                <Plus className="mr-1.5 h-4 w-4" />
-                New Coursework
-              </Button>
+            <Link
+              href="/coordinator/coursework"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition hover:border-white/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white min-[420px]:w-auto"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              New Coursework
             </Link>
-            <Link href="/coordinator/groups">
-              <Button size="sm" className="workspace-dashboard-action-primary w-full border-0 shadow-md hover:bg-white/90 min-[420px]:w-auto">
-                Review Groups
-                <ArrowRight className="h-4 w-4 ml-1.5" />
-              </Button>
+            <Link
+              href="/coordinator/groups"
+              className="workspace-dashboard-action-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-md transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white min-[420px]:w-auto"
+            >
+              Review Groups
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -211,7 +215,7 @@ export function CoordinatorDashboard() {
           className="flex flex-col gap-3 rounded-2xl border border-warning/30 bg-warning-light/50 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between backdrop-blur-sm"
         >
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning animate-pulse" />
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
             <p className="text-xs font-semibold text-text-primary leading-relaxed">
               <span className="font-extrabold text-warning">Attention Needed:</span>{' '}
               {metrics.unassignedStudents > 0 && `${metrics.unassignedStudents} student${metrics.unassignedStudents === 1 ? '' : 's'} without a group`}
@@ -221,21 +225,30 @@ export function CoordinatorDashboard() {
           </div>
           <Link href="/coordinator/groups" className="inline-flex items-center gap-1 text-xs font-bold text-warning hover:underline">
             Open groups
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </motion.div>
       )}
 
-      {/* Metric Cards Grid */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        <MetricCard title="Active Course Units" value={metrics.activeCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" href="/coordinator/course-units" />
-        <MetricCard title="Available Courses" value={formatNumber(metrics.totalCourses)} icon={<BookCopy className="h-6 w-6" />} color="success" href="/coordinator/courses" />
-        <MetricCard title="Total Students" value={formatNumber(metrics.totalStudents)} icon={<Users className="h-6 w-6" />} color="success" href="/coordinator/students" />
-        <MetricCard title="Active Groups" value={formatNumber(metrics.totalGroups)} icon={<Target className="h-6 w-6" />} color="warning" />
-        <MetricCard title="Formation Rate" value={`${metrics.groupFormationRate}%`} icon={<TrendingUp className="h-6 w-6" />} color="primary" />
-        <MetricCard title="Unassigned Students" value={formatNumber(metrics.unassignedStudents)} icon={<AlertCircle className="h-6 w-6" />} color="danger" href="/coordinator/students?status=orphan" />
-        <MetricCard title="Pending Requests" value={formatNumber(metrics.pendingJoinRequests)} icon={<AlertCircle className="h-6 w-6" />} color="warning" />
-      </motion.div>
+      {/* Metric Cards: academic structure, then group health */}
+      <motion.section variants={itemVariants} aria-labelledby="coord-academic-heading" className="space-y-3">
+        <h2 id="coord-academic-heading" className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-text-muted">Academic</h2>
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
+          <MetricCard title="Active Course Units" value={metrics.activeCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" href="/coordinator/course-units" />
+          <MetricCard title="Available Courses" value={formatNumber(metrics.totalCourses)} icon={<BookCopy className="h-6 w-6" />} color="success" href="/coordinator/courses" />
+          <MetricCard title="Total Students" value={formatNumber(metrics.totalStudents)} icon={<Users className="h-6 w-6" />} color="success" href="/coordinator/students" />
+        </div>
+      </motion.section>
+
+      <motion.section variants={itemVariants} aria-labelledby="coord-groups-heading" className="space-y-3">
+        <h2 id="coord-groups-heading" className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-text-muted">Groups</h2>
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+          <MetricCard title="Active Groups" value={formatNumber(metrics.totalGroups)} icon={<Target className="h-6 w-6" />} color="warning" href="/coordinator/groups" />
+          <MetricCard title="Formation Rate" value={`${metrics.groupFormationRate}%`} icon={<TrendingUp className="h-6 w-6" />} color="primary" />
+          <MetricCard title="Unassigned Students" value={formatNumber(metrics.unassignedStudents)} icon={<AlertCircle className="h-6 w-6" />} color="danger" href="/coordinator/students?status=orphan" />
+          <MetricCard title="Pending Requests" value={formatNumber(metrics.pendingJoinRequests)} icon={<UserPlus className="h-6 w-6" />} color="warning" href="/coordinator/groups" />
+        </div>
+      </motion.section>
 
       {/* Tables Grid */}
       <motion.div variants={itemVariants} className="grid gap-6 xl:grid-cols-2">
@@ -246,7 +259,12 @@ export function CoordinatorDashboard() {
           </CardHeader>
           <CardContent className="px-6 py-4">
             {recentGroups.length === 0 ? (
-              <p className="text-text-muted text-center py-10 text-xs">No groups formed yet</p>
+              <EmptyState
+                icon={Users}
+                title="No groups formed yet"
+                description="Create groups manually or let NEST auto-assign students for a coursework."
+                action={{ label: 'Go to groups', href: '/coordinator/groups' }}
+              />
             ) : (
               <DataTable
                 columns={[
@@ -289,14 +307,14 @@ export function CoordinatorDashboard() {
           </CardHeader>
           <CardContent className="px-6 py-4">
             {unassignedStudents.length === 0 ? (
-              <p className="text-text-muted text-center py-10 text-xs font-medium">All students are assigned to groups</p>
+              <EmptyState icon={CheckCircle2} title="Everyone has a group" description="All students are currently assigned to a group." />
             ) : (
               <div className="space-y-2.5 max-h-96 overflow-y-auto scrollbar-thin">
                 {unassignedStudents.slice(0, 10).map((student) => (
                   <div key={student.id} className="flex items-center justify-between p-3.5 rounded-2xl border border-border/60 bg-surface hover:bg-surface-hover/70 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-xl bg-primary-light flex items-center justify-center text-primary font-bold">
-                        <Users className="h-4 w-4" />
+                        <Users className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div>
                         <p className="font-bold text-sm text-text-primary">{student.full_name}</p>
@@ -326,6 +344,14 @@ export function CoordinatorDashboard() {
             <CardTitle>Recent Coursework</CardTitle>
           </CardHeader>
           <CardContent className="px-6 py-4">
+            {recentCourseworks.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="No coursework created yet"
+                description="Publish a coursework so students can start forming groups."
+                action={{ label: 'Create coursework', href: '/coordinator/coursework' }}
+              />
+            ) : (
             <DataTable
               columns={[
                 {
@@ -347,6 +373,7 @@ export function CoordinatorDashboard() {
               keyExtractor={(row) => row.id}
               emptyMessage="No coursework created yet"
             />
+            )}
           </CardContent>
         </Card>
       </motion.div>
