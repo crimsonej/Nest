@@ -13,8 +13,10 @@ import { Checkbox } from '../ui/Checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { DataTable } from '../ui/DataTable'
+import { useToast } from '@/hooks/useToast'
 
 export function CoordinatorCourses() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [courses, setCourses] = useState<any[]>([])
@@ -130,7 +132,7 @@ export function CoordinatorCourses() {
 
   const handleSubmit = async () => {
     if (!formValues.facultyId || !formValues.code.trim() || !formValues.name.trim()) {
-      alert('Please fill in all required fields before saving.')
+      toast.error('Please fill in all required fields before saving.')
       return
     }
 
@@ -159,7 +161,7 @@ export function CoordinatorCourses() {
       await fetchCourses()
     } catch (error) {
       console.error('Error saving course:', error)
-      alert(error instanceof Error ? error.message : 'Unable to save course.')
+      toast.error(error instanceof Error ? error.message : 'Unable to save course.')
     } finally {
       setSubmitting(false)
     }
@@ -177,7 +179,7 @@ export function CoordinatorCourses() {
 
       if (unitsError) throw unitsError
       if ((linkedUnits || []).length > 0) {
-        alert('This course still has linked course units. Remove or reassign those units before deleting the course.')
+        toast.error('This course still has linked course units. Remove or reassign those units before deleting the course.')
         return
       }
 
@@ -186,7 +188,7 @@ export function CoordinatorCourses() {
       await fetchCourses()
     } catch (error) {
       console.error('Error deleting course:', error)
-      alert(error instanceof Error ? error.message : 'Unable to delete course.')
+      toast.error(error instanceof Error ? error.message : 'Unable to delete course.')
     }
   }
 

@@ -11,8 +11,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/components/shared/ThemeToggle'
 import { PasskeySettings } from '@/components/shared/PasskeySettings'
+import { useToast } from '@/hooks/useToast'
 
 export function CoordinatorSettings() {
+  const toast = useToast()
   const { user, refreshUser } = useAuth()
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
@@ -86,7 +88,7 @@ export function CoordinatorSettings() {
       window.location.href = '/auth/login'
     } catch (error) {
       console.error('Failed to delete account:', error)
-      alert(error instanceof Error ? error.message : 'Unable to delete account. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Unable to delete account. Please try again.')
     } finally {
       setDeletingAccount(false)
     }

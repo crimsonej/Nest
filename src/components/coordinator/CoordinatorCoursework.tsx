@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { courseworkSchema } from '@/lib/validators'
+import { useToast } from '@/hooks/useToast'
 
 const typeLabels: Record<string, string> = {
   assignment: 'Assignment',
@@ -52,6 +53,7 @@ const submissionModeLabels: Record<string, string> = {
 }
 
 export function CoordinatorCoursework() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [courseworks, setCourseworks] = useState<any[]>([])
@@ -182,7 +184,7 @@ export function CoordinatorCoursework() {
       })
       const apiData = await res.json()
       if (!res.ok || apiData.error) {
-        alert(apiData.error || saveError.message || 'Unable to update status.')
+        toast.error(apiData.error || saveError.message || 'Unable to update status.')
         return
       }
     }
@@ -240,7 +242,7 @@ export function CoordinatorCoursework() {
       await fetchCourseworks()
     } catch (error) {
       console.error('Error saving coursework:', error)
-      alert(error instanceof Error ? error.message : 'Unable to save the course work.')
+      toast.error(error instanceof Error ? error.message : 'Unable to save the course work.')
     } finally {
       setSubmitting(false)
     }

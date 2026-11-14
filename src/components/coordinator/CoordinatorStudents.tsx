@@ -42,8 +42,10 @@ import { DataTable } from '../ui/DataTable'
 import { createClient } from '@/lib/supabase/client'
 import { validateRegNumber } from '@/lib/local-data'
 import { cn, formatNumber, getInitials, parseCSV } from '@/lib/utils'
+import { useToast } from '@/hooks/useToast'
 
 export function CoordinatorStudents() {
+  const toast = useToast()
   const searchParams = useSearchParams()
   const initialStatusFilter = searchParams.get('status') === 'orphan' ? 'orphan' : 'all'
 
@@ -112,7 +114,7 @@ export function CoordinatorStudents() {
       setSelectedUnitToAdd('')
       await fetchData()
     } catch (err: any) {
-      alert(err.message || 'Unable to add course unit.')
+      toast.error(err.message || 'Unable to add course unit.')
     } finally {
       setEnrollmentSubmitting(false)
     }
@@ -144,7 +146,7 @@ export function CoordinatorStudents() {
 
       await fetchData()
     } catch (err: any) {
-      alert(err.message || 'Unable to remove course unit.')
+      toast.error(err.message || 'Unable to remove course unit.')
     } finally {
       setEnrollmentSubmitting(false)
     }
@@ -446,7 +448,7 @@ export function CoordinatorStudents() {
       await fetchData()
     } catch (err: any) {
       console.error('Error saving SC assignments:', err)
-      alert(err.message || 'Unable to save SC powers.')
+      toast.error(err.message || 'Unable to save SC powers.')
     } finally {
       setSavingSc(false)
     }
@@ -475,7 +477,7 @@ export function CoordinatorStudents() {
       await fetchData()
     } catch (err: any) {
       console.error('Error unassigning SC powers:', err)
-      alert(err.message || 'Unable to unassign SC powers.')
+      toast.error(err.message || 'Unable to unassign SC powers.')
     } finally {
       setSavingSc(false)
     }

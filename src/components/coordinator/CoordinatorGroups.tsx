@@ -15,11 +15,13 @@ import { createClient } from '@/lib/supabase/client'
 import { groupCreationSchema } from '@/lib/validators'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useToast } from '@/hooks/useToast'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
 
 export function CoordinatorGroups() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
@@ -287,17 +289,17 @@ export function CoordinatorGroups() {
 
     const selectedCoursework = selectedCourseworks.find((item) => item.id === randomGroupCourseworkId)
     if (!selectedCoursework) {
-      alert('Select the coursework these groups should belong to.')
+      toast.error('Select the coursework these groups should belong to.')
       return
     }
 
     const requestedSize = randomMembersPerGroup.trim() ? Number(randomMembersPerGroup) : null
     if (requestedSize !== null && (!Number.isInteger(requestedSize) || requestedSize < 2)) {
-      alert('Members per group must be at least 2, or leave it blank for balanced groups.')
+      toast.error('Members per group must be at least 2, or leave it blank for balanced groups.')
       return
     }
     if (requestedSize !== null && requestedSize > selectedCoursework.max_group_size) {
-      alert(`This coursework allows a maximum of ${selectedCoursework.max_group_size} members per group.`)
+      toast.error(`This coursework allows a maximum of ${selectedCoursework.max_group_size} members per group.`)
       return
     }
 
@@ -320,7 +322,7 @@ export function CoordinatorGroups() {
       .sort(() => Math.random() - 0.5)
 
     if (roster.length === 0) {
-      alert('All enrolled students in this course unit are already assigned to groups.')
+      toast.info('All enrolled students in this course unit are already assigned to groups.')
       return
     }
 
@@ -374,7 +376,7 @@ export function CoordinatorGroups() {
       setRandomGroupModalOpen(false)
       await fetchData()
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Unable to create random groups.')
+      toast.error(error instanceof Error ? error.message : 'Unable to create random groups.')
     } finally {
       setRandomizing(false)
     }
@@ -436,7 +438,7 @@ export function CoordinatorGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error assigning student to group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to assign student to the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to assign student to the group.')
     } finally {
       setAssigningIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
@@ -445,7 +447,7 @@ export function CoordinatorGroups() {
   const handleRemoveFromGroup = async (studentId: string, groupId: string) => {
     const group = groups.find((item) => item.id === groupId)
     if (group?.leader_id === studentId) {
-      alert('The group leader cannot be removed. Assign another leader first.')
+      toast.error('The group leader cannot be removed. Assign another leader first.')
       return
     }
 
@@ -465,7 +467,7 @@ export function CoordinatorGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error removing student from group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to remove student from the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to remove student from the group.')
     } finally {
       setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
@@ -519,7 +521,7 @@ export function CoordinatorGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error changing group leader:', error)
-      alert(error instanceof Error ? error.message : 'Unable to change group leader.')
+      toast.error(error instanceof Error ? error.message : 'Unable to change group leader.')
     }
   }
 
@@ -542,15 +544,15 @@ export function CoordinatorGroups() {
     const courseworkMax = Number(coursework?.max_group_size || 20)
 
     if (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1) {
-      alert('Maximum members must be a whole number of at least 1.')
+      toast.error('Maximum members must be a whole number of at least 1.')
       return
     }
     if (nextMaxMembers < currentMemberCount) {
-      alert(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
+      toast.error(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
       return
     }
     if (nextMaxMembers > courseworkMax) {
-      alert(`This coursework allows a maximum of ${courseworkMax} members per group.`)
+      toast.error(`This coursework allows a maximum of ${courseworkMax} members per group.`)
       return
     }
 
@@ -583,7 +585,7 @@ export function CoordinatorGroups() {
       setEditingGroup(null)
       await fetchData()
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Unable to update the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to update the group.')
     } finally {
       setSavingGroup(false)
     }
@@ -594,7 +596,7 @@ export function CoordinatorGroups() {
     const currentMemberCount = groupMembers.filter((member) => member.group_id === editingGroup.id).length
     const capacity = Number(groupEditMaxMembers)
     if (currentMemberCount >= capacity) {
-      alert('The group is already at its maximum capacity.')
+      toast.error('The group is already at its maximum capacity.')
       return
     }
 
@@ -613,11 +615,11 @@ export function CoordinatorGroups() {
 
     const nextMaxMembers = bulkMaxMembers.trim() ? Number(bulkMaxMembers) : null
     if (nextMaxMembers !== null && (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1 || nextMaxMembers > 20)) {
-      alert('Maximum members must be a whole number between 1 and 20.')
+      toast.error('Maximum members must be a whole number between 1 and 20.')
       return
     }
     if (!nextMaxMembers && !bulkStatus) {
-      alert('Choose a new capacity, a new status, or both.')
+      toast.error('Choose a new capacity, a new status, or both.')
       return
     }
 
@@ -627,7 +629,7 @@ export function CoordinatorGroups() {
         groupMembers.filter((member) => member.group_id === group.id).length > nextMaxMembers
       ))
       if (tooSmall) {
-        alert(`${tooSmall.name} already has more members than the requested capacity. Remove members first.`)
+        toast.error(`${tooSmall.name} already has more members than the requested capacity. Remove members first.`)
         return
       }
 
@@ -637,7 +639,7 @@ export function CoordinatorGroups() {
       })
       if (exceedsCoursework) {
         const coursework = courseworks.find((item) => item.id === exceedsCoursework.coursework_id)
-        alert(`${exceedsCoursework.name} cannot exceed the coursework limit of ${coursework?.max_group_size || 20}.`)
+        toast.error(`${exceedsCoursework.name} cannot exceed the coursework limit of ${coursework?.max_group_size || 20}.`)
         return
       }
     }
@@ -659,7 +661,7 @@ export function CoordinatorGroups() {
       setBulkStatus('')
       await fetchData()
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Unable to update the selected groups.')
+      toast.error(error instanceof Error ? error.message : 'Unable to update the selected groups.')
     } finally {
       setBulkSaving(false)
     }
@@ -686,7 +688,7 @@ export function CoordinatorGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error deleting group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to delete the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to delete the group.')
     } finally {
       setDeletingGroupId(null)
     }

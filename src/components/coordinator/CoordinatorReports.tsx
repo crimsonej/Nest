@@ -40,6 +40,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import * as XLSX from 'xlsx'
+import { useToast } from '@/hooks/useToast'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
@@ -75,6 +76,7 @@ const reportTiles = [
 ] as const
 
 export function CoordinatorReports() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [viewMode, setViewMode] = useState<'tiles' | 'list'>('tiles')
@@ -557,7 +559,7 @@ export function CoordinatorReports() {
     const rows = getActiveRows()
 
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      toast.info('No matching records or columns selected for export.')
       return
     }
 
@@ -590,7 +592,7 @@ export function CoordinatorReports() {
     const rows = getActiveRows()
 
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      toast.info('No matching records or columns selected for export.')
       return
     }
 
@@ -631,7 +633,7 @@ export function CoordinatorReports() {
     const rows = getActiveRows()
 
     if (rows.length === 0 || columns.length === 0) {
-      alert('No matching records or columns selected for export.')
+      toast.info('No matching records or columns selected for export.')
       return
     }
 

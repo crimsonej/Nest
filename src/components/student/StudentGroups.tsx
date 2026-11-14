@@ -17,11 +17,13 @@ import { DataTable } from '../ui/DataTable'
 import { cn } from '@/lib/utils'
 import { getStudentCourseUnitIds } from '@/lib/faculty-access'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
+import { useToast } from '@/hooks/useToast'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
 
 export function StudentGroups() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   
@@ -607,7 +609,7 @@ export function StudentGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error assigning student to group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to assign student to the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to assign student to the group.')
     } finally {
       setAssigningIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
@@ -629,7 +631,7 @@ export function StudentGroups() {
       await fetchData()
     } catch (error) {
       console.error('Error removing student from group:', error)
-      alert(error instanceof Error ? error.message : 'Unable to remove student from the group.')
+      toast.error(error instanceof Error ? error.message : 'Unable to remove student from the group.')
     }
   }
 

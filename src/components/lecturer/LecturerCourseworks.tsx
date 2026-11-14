@@ -32,6 +32,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { courseworkSchema } from '@/lib/validators'
+import { useToast } from '@/hooks/useToast'
 
 const typeLabels: Record<string, string> = {
   assignment: 'Assignment',
@@ -53,6 +54,7 @@ const submissionModeLabels: Record<string, string> = {
 }
 
 export function LecturerCourseworks() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [courseworks, setCourseworks] = useState<any[]>([])
@@ -158,7 +160,7 @@ export function LecturerCourseworks() {
       .eq('id', cw.id)
 
     if (error) {
-      alert(`Unable to update status: ${error.message}`)
+      toast.error(`Unable to update status: ${error.message}`)
       return
     }
     if (assignedCourseUnit) await fetchCourseworks(assignedCourseUnit.id)
@@ -200,7 +202,7 @@ export function LecturerCourseworks() {
       if (assignedCourseUnit) await fetchCourseworks(assignedCourseUnit.id)
     } catch (error) {
       console.error('Error saving coursework:', error)
-      alert(error instanceof Error ? error.message : 'Unable to save the course work.')
+      toast.error(error instanceof Error ? error.message : 'Unable to save the course work.')
     } finally {
       setSubmitting(false)
     }
@@ -227,7 +229,7 @@ export function LecturerCourseworks() {
     if (!confirm('Are you sure you want to delete this course work? All associated groups will be deleted as well.')) return
     const { error } = await supabase.from('courseworks').delete().eq('id', id)
     if (error) {
-      alert(`Delete failed: ${error.message}`)
+      toast.error(`Delete failed: ${error.message}`)
       return
     }
     if (assignedCourseUnit) await fetchCourseworks(assignedCourseUnit.id)

@@ -12,8 +12,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
+import { useToast } from '@/hooks/useToast'
 
 export function CoordinatorInterventions() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [unassignedStudents, setUnassignedStudents] = useState<any[]>([])
@@ -65,7 +67,7 @@ export function CoordinatorInterventions() {
       )
 
       if (availableGroups.length === 0) {
-        alert('No available groups with capacity')
+        toast.error('No available groups with capacity')
         return
       }
 

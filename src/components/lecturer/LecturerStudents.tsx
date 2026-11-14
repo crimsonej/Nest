@@ -24,8 +24,10 @@ import { Modal } from '../ui/Modal'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatNumber, getInitials } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/hooks/useToast'
 
 export function LecturerStudents() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
 
@@ -164,7 +166,7 @@ export function LecturerStudents() {
       if (error) throw error
       await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to enroll student.')
+      toast.error(err instanceof Error ? err.message : 'Failed to enroll student.')
     } finally {
       setEnrollingId(null)
     }
@@ -198,7 +200,7 @@ export function LecturerStudents() {
 
       await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to remove student from course unit.')
+      toast.error(err instanceof Error ? err.message : 'Failed to remove student from course unit.')
     } finally {
       setRemovingId(null)
     }

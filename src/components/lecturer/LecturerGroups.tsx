@@ -33,11 +33,13 @@ import { DataTable } from '../ui/DataTable'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/useToast'
 
 const compareGroupNames = (a: string = '', b: string = '') =>
   a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
 
 export function LecturerGroups() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
 
@@ -226,7 +228,7 @@ export function LecturerGroups() {
   const handleSaveGroup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!groupFormData.name.trim() || !groupFormData.coursework_id) {
-      alert('Please fill in the group name and select a coursework.')
+      toast.error('Please fill in the group name and select a coursework.')
       return
     }
 
@@ -243,7 +245,7 @@ export function LecturerGroups() {
       setCreateModalOpen(false)
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create group.')
+      toast.error(err instanceof Error ? err.message : 'Failed to create group.')
     } finally {
       setSubmittingGroup(false)
     }
@@ -259,15 +261,15 @@ export function LecturerGroups() {
     const courseworkMax = Number(coursework?.max_group_size || 20)
 
     if (!Number.isInteger(nextMaxMembers) || nextMaxMembers < 1) {
-      alert('Maximum members must be a whole number of at least 1.')
+      toast.error('Maximum members must be a whole number of at least 1.')
       return
     }
     if (nextMaxMembers < currentMemberCount) {
-      alert(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
+      toast.error(`This group already has ${currentMemberCount} members. Remove members before lowering its capacity.`)
       return
     }
     if (nextMaxMembers > courseworkMax) {
-      alert(`This coursework allows a maximum of ${courseworkMax} members per group.`)
+      toast.error(`This coursework allows a maximum of ${courseworkMax} members per group.`)
       return
     }
 
@@ -297,7 +299,7 @@ export function LecturerGroups() {
       setEditingGroup(null)
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unable to update the group.')
+      toast.error(err instanceof Error ? err.message : 'Unable to update the group.')
     } finally {
       setSavingGroup(false)
     }
@@ -308,7 +310,7 @@ export function LecturerGroups() {
     const currentMemberCount = groupMembers.filter((m) => m.group_id === editingGroup.id).length
     const capacity = Number(groupEditMaxMembers)
     if (currentMemberCount >= capacity) {
-      alert('The group is already at its maximum capacity.')
+      toast.error('The group is already at its maximum capacity.')
       return
     }
     await handleAssignStudentToGroup(groupEditMemberId, editingGroup.id)
@@ -336,7 +338,7 @@ export function LecturerGroups() {
       await supabase.from('groups').update({ leader_id: newLeaderId }).eq('id', groupId)
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unable to change group leader.')
+      toast.error(err instanceof Error ? err.message : 'Unable to change group leader.')
     }
   }
 
@@ -344,7 +346,7 @@ export function LecturerGroups() {
     const nextStatus = group.status === 'locked' ? 'forming' : 'locked'
     const { error } = await supabase.from('groups').update({ status: nextStatus }).eq('id', group.id)
     if (error) {
-      alert(`Status update failed: ${error.message}`)
+      toast.error(`Status update failed: ${error.message}`)
       return
     }
     if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
@@ -354,7 +356,7 @@ export function LecturerGroups() {
     if (!confirm('Are you sure you want to delete this group? All member assignments in this group will be removed.')) return
     const { error } = await supabase.from('groups').delete().eq('id', groupId)
     if (error) {
-      alert(`Delete failed: ${error.message}`)
+      toast.error(`Delete failed: ${error.message}`)
       return
     }
     if (selectedGroupId === groupId) setSelectedGroupId(null)
@@ -389,7 +391,7 @@ export function LecturerGroups() {
 
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unable to assign student to group.')
+      toast.error(err instanceof Error ? err.message : 'Unable to assign student to group.')
     } finally {
       setAssigningIds((prev) => ({ ...prev, [studentId]: false }))
     }
@@ -398,7 +400,7 @@ export function LecturerGroups() {
   const handleRemoveFromGroup = async (studentId: string, groupId: string) => {
     const group = groups.find((g) => g.id === groupId)
     if (group?.leader_id === studentId) {
-      alert('The group leader cannot be removed directly. Please set another leader first.')
+      toast.error('The group leader cannot be removed directly. Please set another leader first.')
       return
     }
 
@@ -421,7 +423,7 @@ export function LecturerGroups() {
 
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unable to remove student from group.')
+      toast.error(err instanceof Error ? err.message : 'Unable to remove student from group.')
     } finally {
       setRemovingIds((prev) => ({ ...prev, [`${studentId}-${groupId}`]: false }))
     }
@@ -439,7 +441,7 @@ export function LecturerGroups() {
 
       if (assignedCourseUnit) await fetchData(assignedCourseUnit.id)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Unable to update group leader.')
+      toast.error(err instanceof Error ? err.message : 'Unable to update group leader.')
     }
   }
 

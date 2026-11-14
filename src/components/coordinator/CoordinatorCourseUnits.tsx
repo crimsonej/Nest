@@ -12,8 +12,10 @@ import { Modal } from '../ui/Modal'
 import { Checkbox } from '../ui/Checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/useToast'
 
 export function CoordinatorCourseUnits() {
+  const toast = useToast()
   const { user } = useAuth()
   const supabase = createClient()
   const [courseUnits, setCourseUnits] = useState<any[]>([])
@@ -92,7 +94,7 @@ export function CoordinatorCourseUnits() {
 
   const handleSubmit = async () => {
     if (!formValues.courseId || !formValues.code.trim() || !formValues.name.trim()) {
-      alert('Please select the course and fill in the course unit code and name.')
+      toast.error('Please select the course and fill in the course unit code and name.')
       return
     }
 
@@ -136,7 +138,7 @@ export function CoordinatorCourseUnits() {
       await fetchCourseUnits()
     } catch (error) {
       console.error('Error saving course unit:', error)
-      alert(error instanceof Error ? error.message : 'Unable to save course unit.')
+      toast.error(error instanceof Error ? error.message : 'Unable to save course unit.')
     } finally {
       setSubmitting(false)
     }
@@ -156,7 +158,7 @@ export function CoordinatorCourseUnits() {
       await fetchCourseUnits()
     } catch (error) {
       console.error('Error deleting course unit:', error)
-      alert(error instanceof Error ? error.message : 'Unable to delete course unit.')
+      toast.error(error instanceof Error ? error.message : 'Unable to delete course unit.')
     }
   }
 
