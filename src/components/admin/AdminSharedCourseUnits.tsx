@@ -42,15 +42,15 @@ export function AdminSharedCourseUnits() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-danger/20 bg-gradient-to-r from-danger/10 via-warning/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
-              <Layers3 className="h-3.5 w-3.5 text-danger animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Layers3 className="h-3.5 w-3.5 text-primary" />
               Administrator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Shared <span className="bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Course Units</span>
+              Shared <span className="text-primary">Course Units</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Courses stay owned by one faculty. Select extra faculties only for course units that are genuinely shared.</p>
           </div>

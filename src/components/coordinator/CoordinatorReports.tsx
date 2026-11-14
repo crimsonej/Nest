@@ -1109,15 +1109,15 @@ export function CoordinatorReports() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               Coordinator Analytics
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Reports <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">& Analytics Overview</span>
+              Reports <span className="text-primary">& Analytics Overview</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Browse, search, dynamically filter, and customize exports across all system rosters.</p>
           </div>

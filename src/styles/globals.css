@@ -1051,3 +1051,20 @@ html.palette-transitioning::after {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Short screens (phones in landscape, small windows): scroll the whole
+   sidebar instead of squeezing the link list to a sliver. */
+@media (max-height: 640px) {
+  .workspace-sidebar-content.workspace-sidebar-content {
+    overflow-y: auto;
+  }
+
+  .workspace-sidebar-content > * {
+    flex-shrink: 0;
+  }
+
+  .workspace-sidebar-nav.workspace-sidebar-nav {
+    flex: none;
+    overflow: visible;
+  }
+}

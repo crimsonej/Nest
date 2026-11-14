@@ -1,5 +1,6 @@
 'use client'
 
+import { WorkspaceLabel } from '@/components/shared/WorkspaceLabel'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
@@ -642,15 +643,15 @@ export function CoordinatorStudents() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
-              <GraduationCap className="h-3.5 w-3.5 text-success animate-pulse" />
-              Coordinator Workspace
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <GraduationCap className="h-3.5 w-3.5 text-primary" />
+              <WorkspaceLabel />
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Student Directory <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">& Management</span>
+              Student Directory <span className="text-primary">& Management</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
               Manage student records, edit profiles, process AI/spreadsheet imports with live staging preview, and assign granular Selected Coordinator (SC) course unit powers.
@@ -1141,10 +1142,10 @@ export function CoordinatorStudents() {
                             <Edit3 className="h-3.5 w-3.5" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); handleOpenSCModal(student) }}>
-                            <ShieldCheck className="h-3.5 w-3.5 text-success" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); setDeletingStudent(student) }}>
-                            <Trash2 className="h-3.5 w-3.5 text-danger" />
+                            <Trash2 className="h-3.5 w-3.5 text-primary" />
                           </Button>
                         </div>
                       </div>

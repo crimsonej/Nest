@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { useToast } from '@/hooks/useToast'
+import { WorkspaceLabel } from '@/components/shared/WorkspaceLabel'
 
 export function CoordinatorInterventions() {
   const toast = useToast()
@@ -158,15 +159,15 @@ export function CoordinatorInterventions() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              Coordinator Workspace
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <WorkspaceLabel />
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Interventions <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">& Automation</span>
+              Interventions <span className="text-primary">& Automation</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Manage unassigned students and automated group assignment algorithms.</p>
           </div>
@@ -175,7 +176,7 @@ export function CoordinatorInterventions() {
               <RefreshCw className="h-4 w-4 mr-1.5" />
               Refresh
             </Button>
-            <Button onClick={handleAutoFill} loading={autoFillLoading} className="bg-gradient-to-r from-success to-primary text-white hover:from-success hover:to-primary shadow-md">
+            <Button onClick={handleAutoFill} loading={autoFillLoading} className="shadow-md">
               <Shuffle className="h-4 w-4 mr-1.5" />
               Auto-Assign All
             </Button>

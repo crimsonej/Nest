@@ -63,19 +63,19 @@ export function AdminFaculties() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-danger/20 bg-gradient-to-r from-danger/10 via-warning/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
-              <Building2 className="h-3.5 w-3.5 text-danger animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
               Administrator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Academic <span className="bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Faculties</span>
+              Academic <span className="text-primary">Faculties</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Create, manage, and remove faculties for your academic institution.</p>
           </div>
-          <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-danger to-warning px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-danger hover:to-warning transition-all">
+          <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all">
             <Plus className="h-4 w-4" />Add faculty
           </button>
         </div>

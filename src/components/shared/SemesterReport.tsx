@@ -53,7 +53,7 @@ export function SemesterReport() {
           <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">{semesterLabel(viewingSemester)}</h1>
           <p className="mt-1 text-sm text-text-secondary">Use the semester selector in the top bar to report on another semester.</p>
         </div>
-        <Button variant="secondary" onClick={() => window.print()} className="print:hidden"><Printer className="h-4 w-4" aria-hidden="true" /> Print / save PDF</Button>
+        <Button variant="outline" onClick={() => window.print()} className="print:hidden"><Printer className="h-4 w-4" aria-hidden="true" /> Print / save PDF</Button>
       </section>
       {error && <ErrorBanner message={error} />}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">

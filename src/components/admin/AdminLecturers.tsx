@@ -264,15 +264,15 @@ export function AdminLecturers() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-danger/20 bg-gradient-to-r from-danger/10 via-warning/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
-              <Shield className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               Administrator Platform
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Lecturer <span className="bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Management</span>
+              Lecturer <span className="text-primary">Management</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary max-w-2xl">
               Create lecturer profiles in Supabase, assign faculties & course units, set initial login credentials, and perform default password resets.
@@ -281,7 +281,7 @@ export function AdminLecturers() {
 
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-danger to-warning px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--color-danger)]/20 hover:brightness-110 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-2.5 rounded-2xl bg-primary hover:bg-primary-hover px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:brightness-110 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             <span>Add New Lecturer</span>
@@ -467,7 +467,7 @@ export function AdminLecturers() {
                       {lecturer.faculties ? (
                         <div>
                           <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-semibold text-text-secondary">
-                            <Building2 className="h-3.5 w-3.5 text-success" />
+                            <Building2 className="h-3.5 w-3.5 text-primary" />
                             {lecturer.faculties.name} ({lecturer.faculties.code})
                           </span>
                         </div>

@@ -79,7 +79,7 @@ export function AdminDashboard() {
   }
 
   const cards = [
-    { title: 'Faculties', value: totals.faculties, icon: <Building2 className="h-6 w-6" />, color: 'danger' as const },
+    { title: 'Faculties', value: totals.faculties, icon: <Building2 className="h-6 w-6" />, color: 'secondary' as const },
     { title: 'Academic Courses', value: totals.courses, icon: <BookOpen className="h-6 w-6" />, color: 'primary' as const },
     { title: 'Course Units', value: totals.units, icon: <Layers3 className="h-6 w-6" />, color: 'warning' as const },
     { title: 'Enrolled Students', value: totals.students, icon: <GraduationCap className="h-6 w-6" />, color: 'success' as const },
@@ -99,16 +99,16 @@ export function AdminDashboard() {
       transition={applyMotionPreference(reducedMotion, { duration: 0.4 }, {})}
       className="space-y-8">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-danger/25 bg-gradient-to-r from-danger-light via-surface to-surface p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-danger/10 blur-3xl pointer-events-none" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-r from-primary-light via-surface to-surface p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between z-10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 px-3 py-1 text-[11px] font-bold text-[var(--color-danger)] backdrop-blur-md mb-2.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-[var(--color-danger)]" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md mb-2.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               <span>Super Administrator Control Hub</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-text-primary sm:text-4xl">
-              University <span className="text-danger">Overview</span>
+              University <span className="text-primary">Overview</span>
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-text-secondary font-medium max-w-xl">
               Manage system faculties, lecturer credentials, course unit structures, and global student enrollments.
@@ -117,7 +117,7 @@ export function AdminDashboard() {
           <div className="flex flex-wrap gap-2.5">
             <Link
               href="/admin/lecturers"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-danger-strong px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-[var(--color-danger)]/25 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               <UserCog className="h-4 w-4" aria-hidden="true" />
               Manage Lecturers
@@ -157,12 +157,12 @@ export function AdminDashboard() {
               transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 25 }, {})}
               className={`flex items-center justify-between rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-all ${
                 highlight
-                  ? 'border-danger/40 bg-danger/10 text-danger hover:border-danger/70'
+                  ? 'border-primary/40 bg-primary/10 text-primary hover:border-primary/70'
                   : 'border-border/80 bg-surface/90 text-text-primary hover:border-primary/40'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`h-5 w-5 ${highlight ? 'text-danger' : 'text-primary'}`} aria-hidden="true" />
+                <Icon className={`h-5 w-5 ${highlight ? 'text-primary' : 'text-primary'}`} aria-hidden="true" />
                 <span className="text-xs font-extrabold tracking-tight">{label}</span>
               </div>
               <ArrowRight className="h-4 w-4 opacity-60" aria-hidden="true" />

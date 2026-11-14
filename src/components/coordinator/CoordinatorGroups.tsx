@@ -16,6 +16,7 @@ import { groupCreationSchema } from '@/lib/validators'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToast } from '@/hooks/useToast'
+import { WorkspaceLabel } from '@/components/shared/WorkspaceLabel'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
@@ -702,7 +703,7 @@ export function CoordinatorGroups() {
   if (selectedCourseUnitId && selectedCourseSummary) {
     return (
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)} className="shrink-0">
@@ -710,12 +711,12 @@ export function CoordinatorGroups() {
                 All Units
               </Button>
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-success">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   Course Unit
                 </div>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-                  {selectedCourseSummary.code} <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">• {selectedCourseSummary.name}</span>
+                  {selectedCourseSummary.code} <span className="text-primary">• {selectedCourseSummary.name}</span>
                 </h1>
               </div>
             </div>
@@ -1269,15 +1270,15 @@ export function CoordinatorGroups() {
   // DEFAULT VIEW: Course Unit tiles only
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              Coordinator Workspace
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <WorkspaceLabel />
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Student <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">Groups</span>
+              Student <span className="text-primary">Groups</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Select a course unit to view its groups, rosters, and manage orphan student assignments.</p>
           </div>

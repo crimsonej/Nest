@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { DataTable } from '../ui/DataTable'
 import { useToast } from '@/hooks/useToast'
+import { WorkspaceLabel } from '@/components/shared/WorkspaceLabel'
 
 export function CoordinatorCourses() {
   const toast = useToast()
@@ -251,15 +252,15 @@ export function CoordinatorCourses() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              Coordinator Workspace
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <WorkspaceLabel />
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Academic <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">Courses</span>
+              Academic <span className="text-primary">Courses</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Manage the academic programmes that appear in the system and can be linked to course units.</p>
           </div>
@@ -282,7 +283,7 @@ export function CoordinatorCourses() {
                 List
               </button>
             </div>
-            <Button onClick={openCreateModal} className="bg-gradient-to-r from-success to-primary text-white hover:from-success hover:to-primary shadow-md">
+            <Button onClick={openCreateModal} className="shadow-md">
               <Plus className="h-4 w-4" />
               Add Course
             </Button>

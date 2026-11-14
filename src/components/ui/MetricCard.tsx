@@ -8,13 +8,14 @@ interface MetricCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
-  color: 'primary' | 'success' | 'warning' | 'danger';
+  color: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
   onClick?: () => void;
   href?: string;
 }
 
 const iconClasses = {
   primary: 'bg-primary/10 text-primary ring-1 ring-inset ring-primary/20',
+  secondary: 'bg-secondary/10 text-secondary ring-1 ring-inset ring-secondary/20',
   success: 'bg-success/10 text-success ring-1 ring-inset ring-success/20',
   warning: 'bg-warning/10 text-warning ring-1 ring-inset ring-warning/25',
   danger: 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/20',
@@ -22,6 +23,7 @@ const iconClasses = {
 
 const accentClasses = {
   primary: 'bg-primary',
+  secondary: 'bg-secondary',
   success: 'bg-success',
   warning: 'bg-warning',
   danger: 'bg-danger',
