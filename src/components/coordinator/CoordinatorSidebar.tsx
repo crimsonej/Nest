@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Bot, GraduationCap, Layers3, BookCopy, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Menu, X, Shield, FileText, Bot, GraduationCap, Layers3, BookCopy, Sparkles, CalendarRange, ClipboardList } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoutePrefetchEnabled } from '@/hooks/useConnectionPreferences'
@@ -20,7 +20,9 @@ const navigation = [
   { name: 'Groups', href: '/coordinator/groups', icon: Users },
   { name: 'Course Work', href: '/coordinator/coursework', icon: BookOpen },
   { name: 'AI Entry (Crimson)', href: '/coordinator/ai-entry', icon: Bot },
+  { name: 'Semesters', href: '/coordinator/semesters', icon: CalendarRange },
   { name: 'Reports', href: '/coordinator/reports', icon: FileText },
+  { name: 'Semester Report', href: '/coordinator/semester-report', icon: ClipboardList },
   { name: 'Settings', href: '/coordinator/settings', icon: Settings },
 ]
 

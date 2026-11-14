@@ -166,3 +166,36 @@ export interface CSVImportResult {
     data: Record<string, string>
   }>
 }
+export type SemesterStatus = 'upcoming' | 'active' | 'ended'
+
+export interface Semester {
+  id: string
+  name: string
+  academic_year: string
+  term_number: number
+  starts_on: string | null
+  ends_on: string | null
+  status: SemesterStatus
+  is_current: boolean
+  ended_at: string | null
+  created_at: string
+}
+
+export interface StudentAccess {
+  is_locked: boolean
+  locked_until: string | null
+  message: string | null
+  updated_at: string
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  body: string
+  audience: 'students' | 'staff' | 'everyone'
+  tone: 'info' | 'success' | 'warning'
+  semester_id: string | null
+  is_active: boolean
+  expires_at: string | null
+  created_at: string
+}

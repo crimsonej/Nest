@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { User, LogOut, ChevronDown, MapPin, ArrowLeftRight } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import ThemeToggle from './ThemeToggle'
+import { SemesterSwitcher } from './SemesterSwitcher'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 
@@ -75,6 +76,7 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <SemesterSwitcher className="hidden sm:inline-flex" />
           <ThemeToggle />
 
           <div className="relative">
@@ -124,6 +126,9 @@ export function TopBar({ role, onSwitchWorkspace }: { role: 'student' | 'coordin
                     <div className="px-4 py-2.5 border-b border-border/60 bg-surface-hover/30">
                       <p className="text-xs font-bold text-text-primary truncate">{user?.full_name}</p>
                       <p className="text-[11px] text-text-muted truncate mt-0.5">{user?.email}</p>
+                    </div>
+                    <div className="border-b border-border/60 px-3 py-2 sm:hidden">
+                      <SemesterSwitcher className="w-full justify-between" />
                     </div>
                     <div className="p-1">
                       {onSwitchWorkspace && (

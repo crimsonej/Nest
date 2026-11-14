@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { BookOpen, Building2, FileText, GraduationCap, LayoutDashboard, Layers3, LogOut, Menu, Settings, Shield, UserCheck, Users, X, Sparkles } from 'lucide-react'
+import { BookOpen, Building2, FileText, GraduationCap, LayoutDashboard, Layers3, LogOut, Menu, Settings, Shield, UserCheck, Users, X, Sparkles, CalendarRange, ClipboardList } from 'lucide-react'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -20,7 +20,9 @@ const navigation = [
   { name: 'Lecturers', href: '/admin/lecturers', icon: UserCheck },
   { name: 'Students', href: '/admin/students', icon: GraduationCap },
   { name: 'Groups', href: '/admin/groups', icon: Users },
+  { name: 'Semesters', href: '/admin/semesters', icon: CalendarRange },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
+  { name: 'Semester Report', href: '/admin/semester-report', icon: ClipboardList },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
@@ -154,7 +156,7 @@ function SidebarContent({ pathname, user, signOut, reducedMotion, routePrefetchE
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-text-primary truncate">{user?.full_name || 'Administrator'}</p>
               <span className="workspace-role-label inline-flex items-center gap-1 text-[10px] font-semibold truncate">
-                <Sparkles className="h-3 w-3 text-amber-500" aria-hidden="true" /> Super Admin
+                <Sparkles className="h-3 w-3 text-warning" aria-hidden="true" /> Super Admin
               </span>
             </div>
           </div>

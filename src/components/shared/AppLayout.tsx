@@ -10,6 +10,7 @@ import { AdminSidebar } from '../admin/AdminSidebar'
 import { LecturerSidebar } from '../lecturer/LecturerSidebar'
 import { TopBar } from './TopBar'
 import { RoleSwitchModal } from './RoleSwitchModal'
+import { SemesterGate } from './SemesterGate'
 import { useAuth } from '@/hooks/useAuth'
 
 interface LayoutProps {
@@ -71,7 +72,7 @@ export function AppLayout({ children, role }: LayoutProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: 'easeOut' }}
           >
-            {children}
+            <SemesterGate role={role}>{children}</SemesterGate>
           </motion.div>
         </main>
       </div>

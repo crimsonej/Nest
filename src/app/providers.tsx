@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { AuthProvider } from '@/hooks/useAuth'
 import { ToastProvider } from '@/hooks/useToast'
+import { SemesterProvider } from '@/hooks/useSemester'
 
 function PaletteInitializer() {
   useEffect(() => {
@@ -23,7 +24,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <MotionConfig reducedMotion="user">
         <PaletteInitializer />
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <SemesterProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </SemesterProvider>
         </AuthProvider>
       </MotionConfig>
     </ThemeProvider>
