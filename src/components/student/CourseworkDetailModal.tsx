@@ -466,7 +466,7 @@ export function CourseworkDetailModal({
                         className={cn(
                           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors',
                           task.status === 'completed'
-                            ? 'border-success bg-success text-white'
+                            ? 'border-success bg-success-strong text-white'
                             : 'border-border text-transparent hover:border-primary'
                         )}
                       >

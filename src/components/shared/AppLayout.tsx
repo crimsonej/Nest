@@ -58,7 +58,7 @@ export function AppLayout({ children, role }: LayoutProps) {
   const canSwitchWorkspace = user.role === 'admin' || user.status === 'admin' || user.status === 'coordinator' || user.status === 'selected_coordinator'
 
   return (
-    <div className="workspace-surface min-h-screen bg-background overflow-x-hidden">
+    <div className="workspace-surface min-h-screen bg-background overflow-x-clip">
       <Sidebar />
       <div className={cn('min-h-screen min-w-0 transition-all duration-300', 'lg:pl-[17rem]')}>
         <TopBar

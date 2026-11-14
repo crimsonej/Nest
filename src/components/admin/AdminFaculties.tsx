@@ -93,7 +93,7 @@ export function AdminFaculties() {
             Name
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. Faculty of Computing" />
           </label>
-          <button onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors">
+          <button onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-success-strong px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors">
             <Save className="h-4 w-4" />Save
           </button>
           <button onClick={() => { setEditing(null); setFormOpen(false) }} className="rounded-xl border border-border p-2 text-text-secondary hover:bg-surface-hover" aria-label="Cancel">

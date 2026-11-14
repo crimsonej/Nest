@@ -14,10 +14,10 @@ interface MetricCardProps {
 }
 
 const iconClasses = {
-  primary: 'bg-primary text-white shadow-md shadow-[var(--color-primary)]/25',
-  success: 'bg-gradient-to-tr from-[var(--color-success)] to-[var(--color-success-light)] text-white shadow-md shadow-[var(--color-success)]/30',
-  warning: 'bg-gradient-to-tr from-[var(--color-warning)] to-[var(--color-warning-light)] text-white shadow-md shadow-[var(--color-warning)]/30',
-  danger: 'bg-gradient-to-tr from-[var(--color-danger)] to-[var(--color-danger-light)] text-white shadow-md shadow-[var(--color-danger)]/30',
+  primary: 'bg-primary/10 text-primary ring-1 ring-inset ring-primary/20',
+  success: 'bg-success/10 text-success ring-1 ring-inset ring-success/20',
+  warning: 'bg-warning/10 text-warning ring-1 ring-inset ring-warning/25',
+  danger: 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/20',
 };
 
 const accentClasses = {

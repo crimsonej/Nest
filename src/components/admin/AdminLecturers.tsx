@@ -427,7 +427,7 @@ export function AdminLecturers() {
             {!searchQuery && selectedFacultyFilter === 'all' && (
               <button
                 onClick={openAddModal}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-success-strong px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors"
               >
                 <UserPlus className="h-4 w-4" /> Add Lecturer Profile
               </button>
@@ -697,7 +697,7 @@ export function AdminLecturers() {
                   <button
                     type="submit"
                     disabled={submittingAdd}
-                    className="inline-flex items-center gap-2 rounded-xl bg-success px-5 py-2.5 text-sm font-bold text-white hover:bg-success disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-xl bg-success-strong px-5 py-2.5 text-sm font-bold text-white hover:bg-success disabled:opacity-50 transition-colors"
                   >
                     {submittingAdd ? (
                       <>
@@ -896,7 +896,7 @@ export function AdminLecturers() {
                   type="button"
                   onClick={handleDeleteSubmit}
                   disabled={submittingDelete}
-                  className="inline-flex items-center gap-2 rounded-xl bg-danger px-5 py-2.5 text-sm font-bold text-white hover:bg-danger/90 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl bg-danger-strong px-5 py-2.5 text-sm font-bold text-white hover:bg-danger/90 disabled:opacity-50 transition-colors"
                 >
                   {submittingDelete ? (
                     <>

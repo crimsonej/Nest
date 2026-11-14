@@ -73,7 +73,7 @@ export function AdminSharedCourseUnits() {
             <>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-bold text-text-primary">Available faculties</h2>
-                <button onClick={save} className="inline-flex items-center gap-2 rounded-xl bg-success px-3 py-2 text-xs font-bold text-white">
+                <button onClick={save} className="inline-flex items-center gap-2 rounded-xl bg-success-strong px-3 py-2 text-xs font-bold text-white">
                   <Save className="h-4 w-4" />Save
                 </button>
               </div>

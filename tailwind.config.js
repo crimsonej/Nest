@@ -12,6 +12,8 @@ module.exports = {
         'secondary-hover': 'color-mix(in srgb, var(--color-secondary-hover) calc(<alpha-value> * 100%), transparent)',
         success: 'color-mix(in srgb, var(--color-success) calc(<alpha-value> * 100%), transparent)',
         'success-light': 'color-mix(in srgb, var(--color-success-light) calc(<alpha-value> * 100%), transparent)',
+        'success-strong': 'color-mix(in srgb, var(--color-success-strong) calc(<alpha-value> * 100%), transparent)',
+        'danger-strong': 'color-mix(in srgb, var(--color-danger-strong) calc(<alpha-value> * 100%), transparent)',
         warning: 'color-mix(in srgb, var(--color-warning) calc(<alpha-value> * 100%), transparent)',
         'warning-light': 'color-mix(in srgb, var(--color-warning-light) calc(<alpha-value> * 100%), transparent)',
         danger: 'color-mix(in srgb, var(--color-danger) calc(<alpha-value> * 100%), transparent)',

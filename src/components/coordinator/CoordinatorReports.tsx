@@ -1126,7 +1126,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('tiles')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-success-strong text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <Grid3X3 className="h-3.5 w-3.5" />
               Tiles
@@ -1134,7 +1134,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-success-strong text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <List className="h-3.5 w-3.5" />
               List

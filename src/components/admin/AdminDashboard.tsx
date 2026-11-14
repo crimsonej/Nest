@@ -117,7 +117,7 @@ export function AdminDashboard() {
           <div className="flex flex-wrap gap-2.5">
             <Link
               href="/admin/lecturers"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-[var(--color-danger)]/25 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-danger-strong px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-[var(--color-danger)]/25 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2"
             >
               <UserCog className="h-4 w-4" aria-hidden="true" />
               Manage Lecturers

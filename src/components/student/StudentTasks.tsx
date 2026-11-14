@@ -453,7 +453,7 @@ export function StudentTasks() {
                           className={cn(
                             'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors',
                             task.status === 'completed'
-                              ? 'border-success bg-success text-white'
+                              ? 'border-success bg-success-strong text-white'
                               : 'border-border text-transparent hover:border-primary'
                           )}
                         >

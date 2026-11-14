@@ -233,7 +233,7 @@ export function CoordinatorDashboard() {
       {/* Metric Cards: academic structure, then group health */}
       <motion.section variants={itemVariants} aria-labelledby="coord-academic-heading" className="space-y-3">
         <h2 id="coord-academic-heading" className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-text-muted">Academic</h2>
-        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 min-[380px]:max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
           <MetricCard title="Active Course Units" value={metrics.activeCourseUnits} icon={<BookOpen className="h-6 w-6" />} color="primary" href="/coordinator/course-units" />
           <MetricCard title="Available Courses" value={formatNumber(metrics.totalCourses)} icon={<BookCopy className="h-6 w-6" />} color="success" href="/coordinator/courses" />
           <MetricCard title="Total Students" value={formatNumber(metrics.totalStudents)} icon={<Users className="h-6 w-6" />} color="success" href="/coordinator/students" />

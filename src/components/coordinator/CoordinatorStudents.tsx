@@ -1630,7 +1630,7 @@ export function CoordinatorStudents() {
                 <Button variant="outline" size="sm" onClick={() => setScStudent(null)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSaveSC} loading={savingSc} className="bg-success hover:bg-success text-white">
+                <Button size="sm" onClick={handleSaveSC} loading={savingSc} className="bg-success-strong hover:bg-success text-white">
                   Save SC Powers
                 </Button>
               </div>
@@ -1783,7 +1783,7 @@ export function CoordinatorStudents() {
 
               <Button
                 size="sm"
-                className="bg-success hover:bg-success text-white"
+                className="bg-success-strong hover:bg-success text-white"
                 onClick={handleCommitImport}
                 loading={isCommitting}
                 disabled={stagingSummary.validNew === 0}
