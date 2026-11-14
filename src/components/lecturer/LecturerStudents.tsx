@@ -214,8 +214,8 @@ export function LecturerStudents() {
 
   if (!assignedCourseUnit) {
     return (
-      <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 mt-6">
-        <AlertCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-4 rounded-2xl border border-warning/30 bg-warning/10 p-6 mt-6">
+        <AlertCircle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
         <div>
           <h2 className="font-bold text-text-primary text-lg">No Course Unit Assigned</h2>
           <p className="text-text-secondary mt-1 text-sm">Ask your administrator to assign a course unit to your lecturer account in the database.</p>
@@ -228,25 +228,25 @@ export function LecturerStudents() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-secondary/20 bg-gradient-to-r from-secondary/10 via-secondary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-              <GraduationCap className="h-3.5 w-3.5 text-violet-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-secondary">
+              <GraduationCap className="h-3.5 w-3.5 text-secondary animate-pulse" />
               Lecturer Portal
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Course Unit <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Students</span>
+              Course Unit <span className="bg-gradient-to-r from-secondary to-secondary-hover bg-clip-text text-transparent">Students</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
-              Enrolled in: <span className="font-bold text-violet-500 dark:text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+              Enrolled in: <span className="font-bold text-secondary">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => fetchData(assignedCourseUnit.id)} loading={loading} className="border-border/60 backdrop-blur-md">
               <RefreshCw className="h-4 w-4 mr-1" /> Refresh
             </Button>
-            <Button size="sm" onClick={() => setIsEnrollModalOpen(true)} className="bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-md">
+            <Button size="sm" onClick={() => setIsEnrollModalOpen(true)} className="bg-gradient-to-r from-secondary to-secondary-hover text-white hover:from-secondary hover:to-secondary shadow-md">
               <UserPlus className="h-4 w-4 mr-1" /> Enroll Student
             </Button>
           </div>
@@ -260,21 +260,21 @@ export function LecturerStudents() {
           <div><p className="text-xs text-text-muted">Enrolled Students</p><p className="font-bold text-text-primary text-xl">{formatNumber(metrics.total)}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500"><UserCheck className="h-5 w-5" /></div>
+          <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary"><UserCheck className="h-5 w-5" /></div>
           <div>
             <p className="text-xs text-text-muted">Gender Ratio</p>
             <p className="text-sm font-bold text-text-primary">
-              <span className="text-blue-500">♂ {metrics.males}</span> / <span className="text-pink-500">♀ {metrics.females}</span>
+              <span className="text-primary">♂ {metrics.males}</span> / <span className="text-secondary">♀ {metrics.females}</span>
             </p>
           </div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500"><Users className="h-5 w-5" /></div>
-          <div><p className="text-xs text-text-muted">In a Group</p><p className="font-bold text-emerald-500 text-xl">{metrics.assigned}</p></div>
+          <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center text-success"><Users className="h-5 w-5" /></div>
+          <div><p className="text-xs text-text-muted">In a Group</p><p className="font-bold text-success text-xl">{metrics.assigned}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500"><AlertCircle className="h-5 w-5" /></div>
-          <div><p className="text-xs text-text-muted">Orphans</p><p className="font-bold text-amber-500 text-xl">{metrics.orphans}</p></div>
+          <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center text-warning"><AlertCircle className="h-5 w-5" /></div>
+          <div><p className="text-xs text-text-muted">Orphans</p><p className="font-bold text-warning text-xl">{metrics.orphans}</p></div>
         </CardContent></Card>
       </div>
 
@@ -346,7 +346,7 @@ export function LecturerStudents() {
                       <tr key={s.id} className="hover:bg-surface-hover/40 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-secondary to-secondary-hover flex items-center justify-center text-white text-xs font-bold shrink-0">
                               {getInitials(s.full_name)}
                             </div>
                             <div className="min-w-0">
@@ -357,7 +357,7 @@ export function LecturerStudents() {
                         </td>
                         <td className="px-4 py-3 text-xs text-text-secondary font-mono hidden sm:table-cell">{s.student_registration_number || '—'}</td>
                         <td className="px-4 py-3 text-xs text-text-muted hidden md:table-cell">
-                          {s.whatsapp_phone ? <span className="flex items-center gap-1"><Phone className="h-3 w-3 text-emerald-400" />{s.whatsapp_phone}</span> : '—'}
+                          {s.whatsapp_phone ? <span className="flex items-center gap-1"><Phone className="h-3 w-3 text-success" />{s.whatsapp_phone}</span> : '—'}
                         </td>
                         <td className="px-4 py-3">
                           {studentGroups.length > 0
@@ -365,7 +365,7 @@ export function LecturerStudents() {
                             : <Badge variant="warning" className="text-[11px]">Orphan</Badge>}
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
-                          <Badge variant="secondary" className={cn('text-[11px] capitalize', s.gender === 'female' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : s.gender === 'male' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : '')}>
+                          <Badge variant="secondary" className={cn('text-[11px] capitalize', s.gender === 'female' ? 'bg-secondary/10 text-secondary border-secondary/20' : s.gender === 'male' ? 'bg-primary/10 text-primary border-primary/20' : '')}>
                             {s.gender || '—'}
                           </Badge>
                         </td>
@@ -373,7 +373,7 @@ export function LecturerStudents() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            className="text-xs text-danger hover:text-danger hover:bg-danger/10"
                             onClick={() => handleUnenrollStudent(s)}
                             loading={removingId === s.id}
                           >
@@ -398,7 +398,7 @@ export function LecturerStudents() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-secondary to-secondary-hover flex items-center justify-center text-white text-sm font-bold shrink-0">
                         {getInitials(s.full_name)}
                       </div>
                       <div className="min-w-0">
@@ -409,7 +409,7 @@ export function LecturerStudents() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="p-1.5 h-auto text-red-500 hover:bg-red-500/10 shrink-0"
+                      className="p-1.5 h-auto text-danger hover:bg-danger/10 shrink-0"
                       onClick={() => handleUnenrollStudent(s)}
                       title="Remove from Course Unit"
                     >
@@ -418,13 +418,13 @@ export function LecturerStudents() {
                   </div>
                   <div className="space-y-1.5 text-xs text-text-muted">
                     <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{s.email}</span></div>
-                    {s.whatsapp_phone && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 shrink-0 text-emerald-400" />{s.whatsapp_phone}</div>}
+                    {s.whatsapp_phone && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 shrink-0 text-success" />{s.whatsapp_phone}</div>}
                   </div>
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     {studentGroups.length > 0
                       ? <Badge variant="success" className="text-[11px]">{studentGroups[0]}</Badge>
                       : <Badge variant="warning" className="text-[11px]">Orphan</Badge>}
-                    <Badge variant="secondary" className={cn('text-[11px] capitalize', s.gender === 'female' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : s.gender === 'male' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : '')}>
+                    <Badge variant="secondary" className={cn('text-[11px] capitalize', s.gender === 'female' ? 'bg-secondary/10 text-secondary border-secondary/20' : s.gender === 'male' ? 'bg-primary/10 text-primary border-primary/20' : '')}>
                       {s.gender || '—'}
                     </Badge>
                   </div>

@@ -368,7 +368,7 @@ export default function AICoordinatorEntryPage() {
                     {msg.sender === 'user' ? (
                       <div className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">U</div>
                     ) : (
-                      <div className="h-7 w-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <div className="h-7 w-7 rounded-lg bg-warning/20 text-warning flex items-center justify-center">
                         <Bot className="h-4 w-4" />
                       </div>
                     )}

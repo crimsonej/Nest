@@ -288,7 +288,7 @@ export function LecturerCourseworks() {
             <Pencil className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id)}>
-            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+            <Trash2 className="h-3.5 w-3.5 text-danger" />
           </Button>
         </div>
       ),
@@ -306,8 +306,8 @@ export function LecturerCourseworks() {
   if (!assignedCourseUnit) {
     return (
       <div className="space-y-6">
-        <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-          <AlertCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-4 rounded-2xl border border-warning/30 bg-warning/10 p-6">
+          <AlertCircle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
           <div>
             <h2 className="font-bold text-text-primary text-lg">No Course Unit Assigned</h2>
             <p className="text-text-secondary mt-1 text-sm">
@@ -321,18 +321,18 @@ export function LecturerCourseworks() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-secondary/20 bg-gradient-to-r from-secondary/10 via-secondary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-              <BookOpen className="h-3.5 w-3.5 text-violet-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-secondary">
+              <BookOpen className="h-3.5 w-3.5 text-secondary animate-pulse" />
               Lecturer Portal
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Course <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Work</span>
+              Course <span className="bg-gradient-to-r from-secondary to-secondary-hover bg-clip-text text-transparent">Work</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
-              Manage assignments for <span className="font-bold text-violet-500 dark:text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+              Manage assignments for <span className="font-bold text-secondary">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -340,7 +340,7 @@ export function LecturerCourseworks() {
               <button
                 type="button"
                 onClick={() => setViewMode('tile')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-violet-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-secondary text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
                 Tiles
@@ -348,13 +348,13 @@ export function LecturerCourseworks() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-violet-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-secondary text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
               >
                 <List className="h-3.5 w-3.5" />
                 List
               </button>
             </div>
-            <Button onClick={openCreateModal} className="bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-md">
+            <Button onClick={openCreateModal} className="bg-gradient-to-r from-secondary to-secondary-hover text-white hover:from-secondary hover:to-secondary shadow-md">
               <Plus className="h-4 w-4 mr-1" />
               Create Course Work
             </Button>
@@ -459,7 +459,7 @@ export function LecturerCourseworks() {
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(cw.id)}>
-                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        <Trash2 className="h-3.5 w-3.5 text-danger" />
                       </Button>
                     </div>
                   </div>

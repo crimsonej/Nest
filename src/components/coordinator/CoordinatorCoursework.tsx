@@ -337,15 +337,15 @@ export function CoordinatorCoursework() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Coordinator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Course <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Work</span>
+              Course <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">Work</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Create and manage course work, assignments, and submission requirements for each unit.</p>
           </div>
@@ -354,7 +354,7 @@ export function CoordinatorCoursework() {
               <button
                 type="button"
                 onClick={() => setViewMode('tile')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tile' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
                 Tiles
@@ -362,13 +362,13 @@ export function CoordinatorCoursework() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
               >
                 <List className="h-3.5 w-3.5" />
                 List
               </button>
             </div>
-            <Button onClick={openCreateModal} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md">
+            <Button onClick={openCreateModal} className="bg-gradient-to-r from-success to-primary text-white hover:from-success hover:to-primary shadow-md">
               <Plus className="h-4 w-4" />
               Add Course Work
             </Button>

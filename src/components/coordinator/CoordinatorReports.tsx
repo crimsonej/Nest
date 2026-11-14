@@ -65,14 +65,14 @@ type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
 type GroupReportFormat = 'student_roster' | 'group_summary' | 'department_matrix'
 
 const reportTiles = [
-  { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-blue-500 to-cyan-500', showCount: true },
-  { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-amber-500 to-orange-500', showCount: true },
-  { id: 'groups', label: 'Group list', description: 'All groups with member rosters', icon: Layers3, color: 'from-violet-500 to-purple-500', showCount: true },
-  { id: 'course_units', label: 'Course units', description: 'Unit roster and structure', icon: BookOpen, color: 'from-emerald-500 to-teal-500', showCount: true },
-  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-pink-500 to-rose-500', showCount: true },
-  { id: 'coursework', label: 'Coursework', description: 'Assignments, projects and presentations', icon: NotebookText, color: 'from-sky-500 to-indigo-500', showCount: true },
-  { id: 'course_unit_students', label: 'Students per course unit', description: 'Roster by unit', icon: FolderOpen, color: 'from-green-500 to-emerald-500', showCount: false },
-  { id: 'course_students', label: 'Students per course', description: 'Roster by programme', icon: Grid3X3, color: 'from-cyan-500 to-blue-500', showCount: false },
+  { id: 'students', label: 'General student list', description: 'All active student records', icon: Users, color: 'from-primary to-primary-hover', showCount: true },
+  { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-warning to-warning', showCount: true },
+  { id: 'groups', label: 'Group list', description: 'All groups with member rosters', icon: Layers3, color: 'from-secondary to-secondary-hover', showCount: true },
+  { id: 'course_units', label: 'Course units', description: 'Unit roster and structure', icon: BookOpen, color: 'from-success to-primary', showCount: true },
+  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-secondary to-danger', showCount: true },
+  { id: 'coursework', label: 'Coursework', description: 'Assignments, projects and presentations', icon: NotebookText, color: 'from-primary to-secondary', showCount: true },
+  { id: 'course_unit_students', label: 'Students per course unit', description: 'Roster by unit', icon: FolderOpen, color: 'from-success to-success', showCount: false },
+  { id: 'course_students', label: 'Students per course', description: 'Roster by programme', icon: Grid3X3, color: 'from-primary to-primary-hover', showCount: false },
 ] as const
 
 export function CoordinatorReports() {
@@ -1109,15 +1109,15 @@ export function CoordinatorReports() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Coordinator Analytics
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Reports <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">& Analytics Overview</span>
+              Reports <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">& Analytics Overview</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Browse, search, dynamically filter, and customize exports across all system rosters.</p>
           </div>
@@ -1126,7 +1126,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('tiles')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <Grid3X3 className="h-3.5 w-3.5" />
               Tiles
@@ -1134,7 +1134,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <List className="h-3.5 w-3.5" />
               List
@@ -1542,7 +1542,7 @@ export function CoordinatorReports() {
                 onClick={handleExportCsv}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <Download className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                <Download className="h-3.5 w-3.5 mr-1.5 text-success" />
                 CSV
               </Button>
               <Button
@@ -1551,7 +1551,7 @@ export function CoordinatorReports() {
                 onClick={handleExportXlsx}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <Download className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
+                <Download className="h-3.5 w-3.5 mr-1.5 text-primary" />
                 Excel
               </Button>
               <Button
@@ -1560,7 +1560,7 @@ export function CoordinatorReports() {
                 onClick={handleExportPdf}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <FileText className="h-3.5 w-3.5 mr-1.5 text-rose-600" />
+                <FileText className="h-3.5 w-3.5 mr-1.5 text-danger" />
                 Export PDF
               </Button>
             </div>

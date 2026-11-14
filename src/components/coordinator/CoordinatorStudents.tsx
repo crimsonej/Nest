@@ -642,15 +642,15 @@ export function CoordinatorStudents() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <GraduationCap className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
+              <GraduationCap className="h-3.5 w-3.5 text-success animate-pulse" />
               Coordinator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Student Directory <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">& Management</span>
+              Student Directory <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">& Management</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
               Manage student records, edit profiles, process AI/spreadsheet imports with live staging preview, and assign granular Selected Coordinator (SC) course unit powers.
@@ -658,7 +658,7 @@ export function CoordinatorStudents() {
           </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)}>
-            <Sparkles className="h-4 w-4 mr-1.5 text-amber-500" />
+            <Sparkles className="h-4 w-4 mr-1.5 text-warning" />
             AI & Spreadsheet Import
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
@@ -701,15 +701,15 @@ export function CoordinatorStudents() {
                   {metrics.malePercent}% M / {metrics.femalePercent}% F
                 </p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[11px]">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[11px]">
                     ♂ {metrics.males} Male
                   </Badge>
-                  <Badge variant="secondary" className="bg-pink-500/10 text-pink-600 border-pink-500/20 text-[11px]">
+                  <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20 text-[11px]">
                     ♀ {metrics.females} Female
                   </Badge>
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-600">
+              <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                 <UserCheck className="h-6 w-6" />
               </div>
             </div>
@@ -734,7 +734,7 @@ export function CoordinatorStudents() {
                   </Badge>
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+              <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center text-warning">
                 <AlertCircle className="h-6 w-6" />
               </div>
             </div>
@@ -750,7 +750,7 @@ export function CoordinatorStudents() {
                 <p className="mt-1 text-3xl font-bold text-text-primary">{metrics.scCount}</p>
                 <p className="mt-1 text-xs text-text-muted">Scoped to specific course units</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center text-success">
                 <ShieldCheck className="h-6 w-6" />
               </div>
             </div>
@@ -948,7 +948,7 @@ export function CoordinatorStudents() {
                           variant="secondary"
                           className={cn(
                             'capitalize text-xs',
-                            row.gender === 'female' ? 'bg-pink-500/10 text-pink-600 border-pink-500/20' : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                            row.gender === 'female' ? 'bg-secondary/10 text-secondary border-secondary/20' : 'bg-primary/10 text-primary border-primary/20'
                           )}
                         >
                           {row.gender === 'female' ? '♀ Female' : row.gender === 'male' ? '♂ Male' : row.gender || 'N/A'}
@@ -977,7 +977,7 @@ export function CoordinatorStudents() {
                           .map((uId) => courseUnits.find((cu) => cu.id === uId)?.code || 'Unit')
                           .join(', ')
                         return (
-                          <Badge variant="success" className="text-[11px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                          <Badge variant="success" className="text-[11px] bg-success/10 text-success border-success/20">
                             SC: {codes}
                           </Badge>
                         )
@@ -1028,7 +1028,7 @@ export function CoordinatorStudents() {
                               className={cn(
                                 'p-1.5 rounded-lg transition-colors',
                                 isSC
-                                  ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                                  ? 'text-success bg-success-light hover:bg-success-light'
                                   : 'text-text-secondary hover:bg-surface-hover'
                               )}
                               title="Configure SC Powers"
@@ -1038,7 +1038,7 @@ export function CoordinatorStudents() {
                             {isSC && (
                               <button
                                 onClick={() => handleUnassignSC(row)}
-                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
+                                className="p-1.5 rounded-lg text-warning hover:bg-warning-light"
                                 title="Unassign SC Powers"
                               >
                                 <X className="h-4 w-4" />
@@ -1094,7 +1094,7 @@ export function CoordinatorStudents() {
                           variant="secondary"
                           className={cn(
                             'capitalize text-[11px]',
-                            student.gender === 'female' ? 'bg-pink-500/10 text-pink-600' : 'bg-blue-500/10 text-blue-600'
+                            student.gender === 'female' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'
                           )}
                         >
                           {student.gender === 'female' ? '♀' : '♂'} {student.gender}
@@ -1108,7 +1108,7 @@ export function CoordinatorStudents() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-text-muted">SC Powers:</span>
-                          <span className="font-medium text-emerald-600">
+                          <span className="font-medium text-success">
                             {scUnits.length > 0
                               ? scUnits.map((uId) => courseUnits.find((cu) => cu.id === uId)?.code || uId).join(', ')
                               : 'None'}
@@ -1120,7 +1120,7 @@ export function CoordinatorStudents() {
                             href={`https://wa.me/${student.whatsapp_phone?.replace(/\D/g, '')}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-medium text-emerald-600 hover:underline flex items-center gap-1"
+                            className="font-medium text-success hover:underline flex items-center gap-1"
                           >
                             <Phone className="h-3 w-3" />
                             {student.whatsapp_phone || 'N/A'}
@@ -1141,7 +1141,7 @@ export function CoordinatorStudents() {
                             <Edit3 className="h-3.5 w-3.5" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); handleOpenSCModal(student) }}>
-                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-success" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); setDeletingStudent(student) }}>
                             <Trash2 className="h-3.5 w-3.5 text-danger" />
@@ -1262,11 +1262,11 @@ export function CoordinatorStudents() {
               </div>
               <div className="rounded-xl border border-border p-3 space-y-1">
                 <span className="text-text-muted font-medium">WhatsApp Phone</span>
-                <p className="font-mono font-semibold text-emerald-600">{detailStudent.whatsapp_phone || 'N/A'}</p>
+                <p className="font-mono font-semibold text-success">{detailStudent.whatsapp_phone || 'N/A'}</p>
               </div>
               <div className="rounded-xl border border-border p-3 space-y-1">
                 <span className="text-text-muted font-medium">SC Course Unit Powers</span>
-                <p className="font-semibold text-emerald-600">
+                <p className="font-semibold text-success">
                   {(studentSCMap.get(detailStudent.id) || []).length > 0
                     ? (studentSCMap.get(detailStudent.id) || [])
                         .map((uId) => courseUnits.find((cu) => cu.id === uId)?.code || uId)
@@ -1349,7 +1349,7 @@ export function CoordinatorStudents() {
                             </Badge>
                             <button
                               onClick={() => handleRemoveCourseUnitFromStudent(detailStudent.id, enrollment.course_unit_id)}
-                              className="p-1 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                              className="p-1 rounded-lg text-danger hover:bg-danger/10 transition-colors"
                               title="Remove student from this course unit"
                             >
                               <UserX className="h-4 w-4" />
@@ -1402,7 +1402,7 @@ export function CoordinatorStudents() {
                   setDetailStudent(null)
                 }}
               >
-                <ShieldCheck className="h-4 w-4 mr-1.5 text-emerald-600" />
+                <ShieldCheck className="h-4 w-4 mr-1.5 text-success" />
                 Configure SC Powers
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setDetailStudent(null)}>
@@ -1569,7 +1569,7 @@ export function CoordinatorStudents() {
           <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                <ShieldCheck className="h-5 w-5 text-success" />
                 <h3 className="text-lg font-bold text-text-primary">Assign SC Course Unit Powers</h3>
               </div>
               <button onClick={() => setScStudent(null)} className="p-1 rounded-lg text-text-muted hover:bg-surface-hover">
@@ -1630,7 +1630,7 @@ export function CoordinatorStudents() {
                 <Button variant="outline" size="sm" onClick={() => setScStudent(null)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSaveSC} loading={savingSc} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={handleSaveSC} loading={savingSc} className="bg-success hover:bg-success text-white">
                   Save SC Powers
                 </Button>
               </div>
@@ -1646,7 +1646,7 @@ export function CoordinatorStudents() {
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-background p-6 shadow-2xl space-y-4 overflow-hidden">
             <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+                <Sparkles className="h-5 w-5 text-warning" />
                 <div>
                   <h3 className="text-lg font-bold text-text-primary">AI & Spreadsheet Import Engine</h3>
                   <p className="text-xs text-text-muted">Upload CSV/Excel, paste roster text, or link Google Sheets with Live Staging Preview</p>
@@ -1661,7 +1661,7 @@ export function CoordinatorStudents() {
               <div
                 className={cn(
                   'rounded-xl p-3 text-xs shrink-0',
-                  importNotice.includes('Success') ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-danger-light text-danger'
+                  importNotice.includes('Success') ? 'bg-success/10 text-success border border-success/20' : 'bg-danger-light text-danger'
                 )}
               >
                 {importNotice}
@@ -1783,7 +1783,7 @@ export function CoordinatorStudents() {
 
               <Button
                 size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-success hover:bg-success text-white"
                 onClick={handleCommitImport}
                 loading={isCommitting}
                 disabled={stagingSummary.validNew === 0}

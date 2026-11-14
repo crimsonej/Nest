@@ -452,8 +452,8 @@ export function LecturerGroups() {
 
   if (!assignedCourseUnit) {
     return (
-      <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 mt-6">
-        <AlertCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-4 rounded-2xl border border-warning/30 bg-warning/10 p-6 mt-6">
+        <AlertCircle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
         <div>
           <h2 className="font-bold text-text-primary text-lg">No Course Unit Assigned</h2>
           <p className="text-text-secondary mt-1 text-sm">Ask your administrator to assign a course unit to your lecturer account in the database.</p>
@@ -476,7 +476,7 @@ export function LecturerGroups() {
               All Groups
             </Button>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-500">Group Detail</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-secondary">Group Detail</p>
               <h1 className="text-xl font-bold text-text-primary">{selectedGroup.name}</h1>
             </div>
           </div>
@@ -488,7 +488,7 @@ export function LecturerGroups() {
             <Button variant="outline" size="sm" onClick={() => handleOpenEditModal(selectedGroup)}>
               <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
             </Button>
-            <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={() => handleDeleteGroup(selectedGroup.id)}>
+            <Button variant="outline" size="sm" className="text-danger hover:text-danger" onClick={() => handleDeleteGroup(selectedGroup.id)}>
               <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
             </Button>
           </div>
@@ -496,7 +496,7 @@ export function LecturerGroups() {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Card><CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500"><Users className="h-5 w-5" /></div>
+            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary"><Users className="h-5 w-5" /></div>
             <div><p className="text-xs text-text-muted">Members</p><p className="font-bold text-text-primary">{selectedGroupMemberRows.length} / {selectedGroup.max_members || '—'}</p></div>
           </CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3">
@@ -504,7 +504,7 @@ export function LecturerGroups() {
             <div><p className="text-xs text-text-muted">Leader</p><p className="font-bold text-text-primary truncate">{selectedGroup.leader?.full_name || 'Unassigned'}</p></div>
           </CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500"><BookCopy className="h-5 w-5" /></div>
+            <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center text-success"><BookCopy className="h-5 w-5" /></div>
             <div><p className="text-xs text-text-muted">Status</p><Badge variant={selectedGroup.status === 'active' ? 'success' : selectedGroup.status === 'locked' ? 'warning' : 'secondary'}>{selectedGroup.status}</Badge></div>
           </CardContent></Card>
         </div>
@@ -563,7 +563,7 @@ export function LecturerGroups() {
                               <Crown className="h-3.5 w-3.5 mr-1" /> Make Leader
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" className="text-xs text-red-500 hover:text-red-600" onClick={() => handleRemoveFromGroup(row.user_id, selectedGroup.id)}>
+                          <Button size="sm" variant="ghost" className="text-xs text-danger hover:text-danger" onClick={() => handleRemoveFromGroup(row.user_id, selectedGroup.id)}>
                             <UserX className="h-3.5 w-3.5 mr-1" /> Remove
                           </Button>
                         </div>
@@ -586,25 +586,25 @@ export function LecturerGroups() {
   // ─── GROUPS MAIN VIEW ────────────────────────────────────────────────────
   return (
     <div className="space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-secondary/20 bg-gradient-to-r from-secondary/10 via-secondary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-              <Users className="h-3.5 w-3.5 text-violet-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-secondary">
+              <Users className="h-3.5 w-3.5 text-secondary animate-pulse" />
               Lecturer Portal
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Group <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">Management</span>
+              Group <span className="bg-gradient-to-r from-secondary to-secondary-hover bg-clip-text text-transparent">Management</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
-              Assigned unit: <span className="font-bold text-violet-500 dark:text-violet-400">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
+              Assigned unit: <span className="font-bold text-secondary">{assignedCourseUnit.code} · {assignedCourseUnit.name}</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => fetchData(assignedCourseUnit.id)} loading={loading} className="border-border/60 backdrop-blur-md">
               <RefreshCw className="h-4 w-4 mr-1" /> Refresh
             </Button>
-            <Button size="sm" onClick={handleOpenCreateModal} disabled={courseworks.length === 0} className="bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-md">
+            <Button size="sm" onClick={handleOpenCreateModal} disabled={courseworks.length === 0} className="bg-gradient-to-r from-secondary to-secondary-hover text-white hover:from-secondary hover:to-secondary shadow-md">
               <Plus className="h-4 w-4 mr-1" /> Create Group
             </Button>
           </div>
@@ -614,15 +614,15 @@ export function LecturerGroups() {
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500"><Users className="h-5 w-5" /></div>
+          <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary"><Users className="h-5 w-5" /></div>
           <div><p className="text-xs text-text-muted">Total Groups</p><p className="font-bold text-text-primary text-xl">{groups.length}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500"><CheckCircle2 className="h-5 w-5" /></div>
+          <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center text-success"><CheckCircle2 className="h-5 w-5" /></div>
           <div><p className="text-xs text-text-muted">Assigned Students</p><p className="font-bold text-text-primary text-xl">{totalAssigned}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500"><UserX className="h-5 w-5" /></div>
+          <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center text-warning"><UserX className="h-5 w-5" /></div>
           <div><p className="text-xs text-text-muted">Unassigned (Orphans)</p><p className="font-bold text-text-primary text-xl">{orphanCount}</p></div>
         </CardContent></Card>
       </div>
@@ -744,7 +744,7 @@ export function LecturerGroups() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0 text-amber-500 hover:bg-amber-500/10"
+                                    className="h-7 w-7 p-0 text-warning hover:bg-warning/10"
                                     title="Make this student Group Leader"
                                     onClick={() => handleChangeGroupLeader(group.id, member.user_id)}
                                   >
@@ -775,7 +775,7 @@ export function LecturerGroups() {
                       {group.status === 'locked' ? <Unlock className="h-3.5 w-3.5 mr-1" /> : <Lock className="h-3.5 w-3.5 mr-1" />}
                       {group.status === 'locked' ? 'Unlock' : 'Lock'}
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-xs text-violet-400" onClick={() => setSelectedGroupId(group.id)}>
+                    <Button variant="ghost" size="sm" className="text-xs text-secondary" onClick={() => setSelectedGroupId(group.id)}>
                       View Detail
                     </Button>
                   </div>
@@ -791,7 +791,7 @@ export function LecturerGroups() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-              <Layers3 className="h-5 w-5 text-violet-500" />
+              <Layers3 className="h-5 w-5 text-secondary" />
               Enrolled Students & Group Assignments
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
@@ -856,7 +856,7 @@ export function LecturerGroups() {
                     render: (row: any) => (
                       <div className="text-text-muted">
                         <p className="text-xs">{row.email}</p>
-                        {row.whatsapp_phone && <p className="text-[10px] text-emerald-400">WA: {row.whatsapp_phone}</p>}
+                        {row.whatsapp_phone && <p className="text-[10px] text-success">WA: {row.whatsapp_phone}</p>}
                       </div>
                     ),
                   },
@@ -873,7 +873,7 @@ export function LecturerGroups() {
                           {assignedGroup.name}
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-[11px] text-amber-500 border-amber-500/30">
+                        <Badge variant="secondary" className="text-[11px] text-warning border-warning/30">
                           Unassigned (Orphan)
                         </Badge>
                       )
@@ -893,7 +893,7 @@ export function LecturerGroups() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-xs text-red-500 hover:text-red-600"
+                            className="text-xs text-danger hover:text-danger"
                             onClick={() => handleRemoveFromGroup(row.id, assignedGroup.id)}
                             loading={!!assigningIds[row.id]}
                           >

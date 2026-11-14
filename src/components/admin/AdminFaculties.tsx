@@ -63,19 +63,19 @@ export function AdminFaculties() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-danger/20 bg-gradient-to-r from-danger/10 via-warning/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-              <Building2 className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-danger/30 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
+              <Building2 className="h-3.5 w-3.5 text-danger animate-pulse" />
               Administrator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Academic <span className="bg-gradient-to-r from-rose-600 to-amber-500 bg-clip-text text-transparent">Faculties</span>
+              Academic <span className="bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Faculties</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Create, manage, and remove faculties for your academic institution.</p>
           </div>
-          <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-rose-700 hover:to-amber-700 transition-all">
+          <button onClick={() => start()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-danger to-warning px-4 py-2.5 text-sm font-bold text-white shadow-md hover:from-danger hover:to-warning transition-all">
             <Plus className="h-4 w-4" />Add faculty
           </button>
         </div>
@@ -84,7 +84,7 @@ export function AdminFaculties() {
       {error && <p className="rounded-xl border border-danger/30 bg-danger-light/40 p-3 text-sm text-danger">{error}</p>}
 
       {formOpen && (
-        <div className="grid gap-3 rounded-2xl border border-emerald-500/30 bg-surface p-5 sm:grid-cols-[180px_1fr_auto_auto] sm:items-end">
+        <div className="grid gap-3 rounded-2xl border border-success/30 bg-surface p-5 sm:grid-cols-[180px_1fr_auto_auto] sm:items-end">
           <label className="text-xs font-bold text-text-secondary">
             Code
             <input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. FOC" />
@@ -93,7 +93,7 @@ export function AdminFaculties() {
             Name
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. Faculty of Computing" />
           </label>
-          <button onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">
+          <button onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-bold text-white hover:bg-success transition-colors">
             <Save className="h-4 w-4" />Save
           </button>
           <button onClick={() => { setEditing(null); setFormOpen(false) }} className="rounded-xl border border-border p-2 text-text-secondary hover:bg-surface-hover" aria-label="Cancel">
@@ -110,7 +110,7 @@ export function AdminFaculties() {
             faculties.map((faculty) => (
               <div key={faculty.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>

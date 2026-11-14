@@ -702,7 +702,7 @@ export function CoordinatorGroups() {
   if (selectedCourseUnitId && selectedCourseSummary) {
     return (
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
+        <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6 mb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={() => setSelectedCourseUnitId(null)} className="shrink-0">
@@ -710,12 +710,12 @@ export function CoordinatorGroups() {
                 All Units
               </Button>
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-success">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                   Course Unit
                 </div>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-                  {selectedCourseSummary.code} <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">• {selectedCourseSummary.name}</span>
+                  {selectedCourseSummary.code} <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">• {selectedCourseSummary.name}</span>
                 </h1>
               </div>
             </div>
@@ -926,7 +926,7 @@ export function CoordinatorGroups() {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-7 w-7 p-0 text-amber-500 hover:bg-amber-500/10"
+                                          className="h-7 w-7 p-0 text-warning hover:bg-warning/10"
                                           title="Make this student Group Leader"
                                           onClick={() => handleChangeGroupLeader(group.id, member.user_id)}
                                         >
@@ -962,11 +962,11 @@ export function CoordinatorGroups() {
 
         {/* Orphan Students Spreadsheet Table — Coordinator & SC Only */}
         {currentUnitManagers && (
-          <Card className="border-amber-500/30 shadow-sm">
-            <CardHeader className="bg-amber-500/5 pb-3 border-b border-border">
+          <Card className="border-warning/30 shadow-sm">
+            <CardHeader className="bg-warning/5 pb-3 border-b border-border">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <BookCopy className="h-5 w-5 text-amber-600" />
+                  <BookCopy className="h-5 w-5 text-warning" />
                   <div>
                     <CardTitle className="text-base text-text-primary">
                       Orphan Students — {selectedCourseSummary.code}
@@ -1269,15 +1269,15 @@ export function CoordinatorGroups() {
   // DEFAULT VIEW: Course Unit tiles only
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-gradient-to-r from-success/10 via-primary/5 to-transparent p-5 backdrop-blur-xl shadow-lg sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-success">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Coordinator Workspace
             </div>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
-              Student <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Groups</span>
+              Student <span className="bg-gradient-to-r from-success to-primary bg-clip-text text-transparent">Groups</span>
             </h1>
             <p className="mt-1 text-sm text-text-secondary">Select a course unit to view its groups, rosters, and manage orphan student assignments.</p>
           </div>
