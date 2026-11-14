@@ -26,6 +26,7 @@ import {
   Layers,
   Sparkles,
   Printer,
+  CalendarDays,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -36,13 +37,22 @@ import { createClient } from '@/lib/supabase/client'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
-import * as XLSX from 'xlsx'
+import { semesterLabel, useSemester } from '@/hooks/useSemester'
+import { useSemesterEvents } from '@/hooks/useSemesterEvents'
+import { calendarColumns, calendarRows } from '@/lib/reports/calendar'
+import { downloadCsv } from '@/lib/reports/csv'
+import { reportFileName } from '@/lib/reports/format'
+import { GROUP_FORMAT_INFO, groupPrintDocument, groupSheets, type ReportGroup } from '@/lib/reports/groups'
+import { LIST_LAYOUT_INFO, calendarPrintHtml, calendarSummary, listPrintDocument, listSheets } from '@/lib/reports/lists'
+import { openPrintDocument, type PrintDocument } from '@/lib/reports/print'
+import type { ReportColumnSpec, ReportMeta } from '@/lib/reports/types'
+import { downloadXlsx, type SheetSpec } from '@/lib/reports/xlsx'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
   firstName.localeCompare(secondName, undefined, { numeric: true, sensitivity: 'base' })
 
-type ReportCategory = 'students' | 'orphan_students' | 'groups' | 'course_unit_students'
-type ReportColumn = { key: string; header: string; value: (row: any) => string }
+type ReportCategory = 'students' | 'orphan_students' | 'groups' | 'course_unit_students' | 'semester_calendar'
+type ReportColumn = { key: string; header: string; value: (row: any) => string | number; numeric?: boolean }
 type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
 type GroupReportFormat = 'student_roster' | 'group_summary' | 'department_matrix'
 
@@ -51,6 +61,7 @@ const reportTiles = [
   { id: 'orphan_students', label: 'Orphan List', description: 'Students not assigned to a group', icon: UserX, color: 'from-warning to-secondary' },
   { id: 'groups', label: 'Group List', description: 'All groups with member rosters', icon: Layers3, color: 'from-secondary to-secondary-hover' },
   { id: 'course_unit_students', label: 'Students per Course Unit', description: 'Roster for your assigned unit', icon: Grid3X3, color: 'from-success to-primary' },
+  { id: 'semester_calendar', label: 'Semester Calendar', description: 'Opening, orientation, exams and other key dates', icon: CalendarDays, color: 'from-primary to-secondary' },
 ] as const
 
 export function LecturerReports() {
@@ -77,6 +88,9 @@ export function LecturerReports() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({})
   const [exportNotice, setExportNotice] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const { viewingSemester } = useSemester()
+  const { events: semesterEvents } = useSemesterEvents(viewingSemester?.id)
 
   // Step 1: Fetch the lecturer's assigned course unit
   useEffect(() => {
@@ -193,6 +207,7 @@ export function LecturerReports() {
         })),
         groups: groupRows,
         course_unit_students: courseUnitStudents,
+        semester_calendar: calendarRows(viewingSemester, semesterEvents),
       })
     } catch (err) {
       console.error('Error loading lecturer report data:', err)
@@ -260,10 +275,16 @@ export function LecturerReports() {
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (r) => r.whatsapp_phone || '—' },
           { key: 'gender', header: 'Gender', value: (r) => r.gender || '—' },
         ]
+      case 'semester_calendar':
+        return calendarColumns as ReportColumn[]
       default:
         return []
     }
   }
+
+  useEffect(() => {
+    setOverviewData((previous) => ({ ...previous, semester_calendar: calendarRows(viewingSemester, semesterEvents) }))
+  }, [viewingSemester, semesterEvents])
 
   useEffect(() => {
     if (selectedCategory) {
@@ -365,217 +386,96 @@ export function LecturerReports() {
     }
   }
 
-  const handleExportCsv = () => {
-    if (!selectedCategory) return
-    setExportNotice(null)
-    const columns = getActiveColumns()
-    const rows = getActiveRows()
-    if (rows.length === 0 || columns.length === 0) {
-      setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
-      return
+  // ── Exports ────────────────────────────────────────────────────────────
+  const unitText = assignedCourseUnit ? `${assignedCourseUnit.code} · ${assignedCourseUnit.name}` : 'Your course unit'
+
+  const exportSpecs = (): ReportColumnSpec[] =>
+    getActiveColumns().map((column) => ({ ...column, numeric: column.numeric || column.key === 'student_number' || column.key === 'days', mono: /registration|phone/.test(column.key) }))
+
+  const reportMeta = (): ReportMeta => {
+    const parts = [unitText]
+    if (selectedGroup) parts.push(`Group: ${selectedGroup.name}`)
+    if (inModalSearch.trim()) parts.push(`Matching “${inModalSearch.trim()}”`)
+    return {
+      title: reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report',
+      subtitle: parts.join('  ·  '),
+      semester: viewingSemester ? semesterLabel(viewingSemester) : undefined,
+      preparedBy: `Lecturer workspace${user?.full_name ? ` · ${user.full_name}` : ''}`,
     }
-    const escapeValue = (v: unknown) => {
-      const text = v === null || v === undefined ? '' : String(v)
-      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-    }
-    const csvRows = [
-      columns.map((c) => escapeValue(c.header)).join(','),
-      ...rows.map((r: any) => columns.map((c) => escapeValue(c.value(r))).join(',')),
-    ]
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${assignedCourseUnit?.code || 'lecturer'}_${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
   }
 
-  const handleExportXlsx = () => {
-    if (!selectedCategory) return
+  const signatures = ['Course Lecturer', 'Head of Department']
+
+  const targetGroups = (): ReportGroup[] => {
+    const list = selectedGroup ? [selectedGroup] : [...groupOptions].sort((a: any, b: any) => compareGroupNames(a.name, b.name))
+    const query = inModalSearch.trim().toLowerCase()
+    return query ? list.filter((group: any) => JSON.stringify(group).toLowerCase().includes(query)) : list
+  }
+
+  const ensureRows = () => {
     setExportNotice(null)
-    const columns = getActiveColumns()
-    const rows = getActiveRows()
-    if (rows.length === 0 || columns.length === 0) {
+    if (!selectedCategory) return false
+    if (getActiveRows().length === 0 || getActiveColumns().length === 0) {
       setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
-      return
+      return false
     }
-    const ws = XLSX.utils.json_to_sheet(rows.map((r: any) => Object.fromEntries(columns.map((c) => [c.header, c.value(r)]))))
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Filtered Report')
-    XLSX.writeFile(wb, `${assignedCourseUnit?.code || 'lecturer'}_${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+    return true
+  }
+
+  const fileName = (extension: string) =>
+    reportFileName([
+      assignedCourseUnit?.code || 'lecturer',
+      selectedCategory,
+      selectedCategory === 'groups' ? groupReportFormat : null,
+      viewingSemester ? `${viewingSemester.name} ${viewingSemester.academic_year}` : null,
+    ], extension)
+
+  const listOptions = {
+    groupKey: (row: any) => row.course || 'Unassigned',
+    groupLabel: 'Course',
+    titleOf: (row: any) => row.full_name || row.student_name || row.title || row.name || 'Record',
+    subtitleOf: (row: any) => row.student_registration_number || row.registration_number || row.email || '',
+  }
+
+  const handleExportCsv = () => {
+    if (!ensureRows()) return
+    downloadCsv(fileName('csv'), exportSpecs(), getActiveRows())
+  }
+
+  const handleExportXlsx = async () => {
+    if (!ensureRows() || !selectedCategory) return
+    setExporting(true)
+    try {
+      const columns = exportSpecs()
+      const rows = getActiveRows()
+      const meta = reportMeta()
+      let sheets: SheetSpec[]
+      if (selectedCategory === 'groups') sheets = groupSheets(groupReportFormat, targetGroups(), { columns, rows })
+      else if (selectedCategory === 'semester_calendar') sheets = [{ name: 'Semester calendar', columns, sections: [{ rows }], summary: calendarSummary(rows), wrapKeys: ['description'] }]
+      else sheets = listSheets({ name: meta.title, layout: modalLayoutMode, columns, rows, ...listOptions })
+      await downloadXlsx(fileName('xlsx'), meta, sheets)
+    } catch (error) {
+      console.error('Excel export failed:', error)
+      setExportNotice('Could not build the Excel file. Please try again.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   const handleExportPdf = () => {
-    if (!selectedCategory) return
-    setExportNotice(null)
-    const columns = getActiveColumns()
+    if (!ensureRows() || !selectedCategory) return
+    const columns = exportSpecs()
     const rows = getActiveRows()
-
-    if (rows.length === 0 || columns.length === 0) {
-      setExportNotice('Nothing to export yet. Adjust your search or select at least one column.')
-      return
+    const meta = reportMeta()
+    let doc: PrintDocument
+    if (selectedCategory === 'groups') {
+      doc = groupPrintDocument(groupReportFormat, meta, targetGroups(), { columns, rows, groupedOrder: !sortColumn || sortColumn === 'name' }, signatures)
+    } else if (selectedCategory === 'semester_calendar') {
+      doc = { meta, orientation: 'portrait', summary: calendarSummary(rows), bodyHtml: calendarPrintHtml(rows, modalLayoutMode === 'table' ? 'table' : 'timeline') }
+    } else {
+      doc = listPrintDocument({ layout: modalLayoutMode, meta, columns, rows, signatures, ...listOptions })
     }
-
-    const printWindow = window.open('', '_blank', 'width=1200,height=800')
-    if (!printWindow) return
-
-    const escapeHtml = (value: unknown) => String(value ?? '—')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-
-    if (selectedCategory === 'groups' && (groupReportFormat === 'department_matrix' || groupReportFormat === 'group_summary')) {
-      const groupsToPrint = selectedGroup ? [selectedGroup] : [...groupOptions].sort((a: any, b: any) => compareGroupNames(a.name, b.name))
-
-      const unitName = `${assignedCourseUnit?.code || '—'} - ${assignedCourseUnit?.name || 'Course Unit'}`
-      
-      const groupedHtml = `
-        <section class="course-unit">
-          <h2 style="background:#1e293b; color:#fff; padding:10px 14px; border-radius:6px; font-size:15px; margin-top:20px;">
-            Course Unit: ${escapeHtml(unitName)}
-          </h2>
-          ${groupsToPrint.map((group: any) => {
-            const members = group.members || []
-            const memberRows = members.length > 0
-              ? members.map((member: any, index: number) => `
-                  <tr>
-                    <td style="width:40px; text-align:center;">${index + 1}</td>
-                    <td><strong>${escapeHtml(member.student_name || member.full_name)}</strong></td>
-                    <td><code>${escapeHtml(member.registration_number)}</code></td>
-                    <td>${member.user_id === group.leader_id || member.role === 'leader' ? '<span style="color:#0284c7; font-weight:bold;">Leader</span>' : 'Member'}</td>
-                    <td>${escapeHtml(member.gender)}</td>
-                    <td>${escapeHtml(member.email)}</td>
-                    <td>${escapeHtml(member.whatsapp_phone)}</td>
-                  </tr>
-                `).join('')
-              : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:12px;">No members assigned yet</td></tr>`
-
-            return `
-              <div style="border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:14px; page-break-inside:avoid; background:#fff;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
-                  <h3 style="margin:0; font-size:16px; color:#0f172a;">Group Name: ${escapeHtml(group.name || 'Unnamed Group')}</h3>
-                  <span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">
-                    Capacity: ${members.length} / ${escapeHtml(group.max_members)} Members
-                  </span>
-                </div>
-                <div style="display:flex; gap:20px; font-size:12px; color:#475569; margin-bottom:10px;">
-                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework)}</span>
-                  <span><strong>Group Leader:</strong> ${escapeHtml(group.leader)}</span>
-                  <span><strong>Status:</strong> ${escapeHtml(group.status)}</span>
-                </div>
-                <table style="width:100%; border-collapse:collapse; font-size:12px;">
-                  <thead>
-                    <tr style="background:#f1f5f9; color:#334155; font-weight:bold;">
-                      <th style="border:1px solid #cbd5e1; padding:6px;">No.</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Student Name</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Registration No.</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Role</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Gender</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Email</th>
-                      <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">WhatsApp</th>
-                    </tr>
-                  </thead>
-                  <tbody>${memberRows}</tbody>
-                </table>
-              </div>
-            `
-          }).join('')}
-        </section>
-      `
-
-      printWindow.document.write(`
-        <!doctype html>
-        <html>
-          <head>
-            <title>Ndejje University - Course Unit Roster Report</title>
-            <style>
-              body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #0f172a; line-height:1.4; }
-              .header { text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
-              .header h1 { margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color:#1e293b; }
-              .header h2 { margin: 4px 0 0; font-size: 14px; font-weight: 500; color: #475569; }
-              .header p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
-              .footer-signature { margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; font-size: 12px; }
-              .signature-box { border-top: 1px solid #0f172a; width: 220px; text-align: center; padding-top: 6px; }
-              .page-break { page-break-before: always; }
-              @media print { body { padding: 0; } }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>NDEJJE UNIVERSITY</h1>
-              <h2>Faculty of Science and Computing · Academic Department</h2>
-              <p>Official Lecturer Group Roster Report · ${escapeHtml(assignedCourseUnit?.code)} ${escapeHtml(assignedCourseUnit?.name)} · Generated ${escapeHtml(formatDate(new Date().toISOString()))}</p>
-            </div>
-            ${groupedHtml || '<p>No groups found for the selected filters.</p>'}
-            <div class="footer-signature">
-              <div class="signature-box">
-                <strong>Course Lecturer</strong><br/>
-                <span>Signature & Date</span>
-              </div>
-              <div class="signature-box">
-                <strong>Head of Department</strong><br/>
-                <span>Signature & Date</span>
-              </div>
-            </div>
-          </body>
-        </html>
-      `)
-      printWindow.document.close()
-      printWindow.focus()
-      printWindow.print()
-      return
-    }
-
-    const rowsHtml = rows
-      .slice(0, 500)
-      .map((row: any) => {
-        const cells = columns
-          .map((column) => `<td style="border:1px solid #d1d5db; padding:8px; text-align:left;">${escapeHtml(column.value(row))}</td>`)
-          .join('')
-        return `<tr>${cells}</tr>`
-      })
-      .join('')
-
-    const headerHtml = columns
-      .map((column) => `<th style="border:1px solid #d1d5db; padding:8px; text-align:left; background:#f3f4f6; font-weight:600;">${escapeHtml(column.header)}</th>`)
-      .join('')
-
-    printWindow.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>${assignedCourseUnit?.code} - ${selectedCategory} Filtered Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-            table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-            th, td { font-size: 12px; }
-            .header { text-align: center; border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 16px; }
-            .header h1 { margin:0; font-size: 20px; }
-            .header p { margin: 4px 0 0; font-size: 12px; color: #4b5563; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>NDEJJE UNIVERSITY</h1>
-            <p>${escapeHtml(assignedCourseUnit?.code)} - ${escapeHtml(assignedCourseUnit?.name)} · Official Report</p>
-          </div>
-          <h2>${selectedCategory.replace(/_/g, ' ').toUpperCase()} Report</h2>
-          <p style="font-size: 12px; color: #6b7280;">Exporting ${rows.length} matching records across ${columns.length} selected columns.</p>
-          <table>
-            <thead><tr>${headerHtml}</tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    if (!openPrintDocument(doc)) setExportNotice('Your browser blocked the report window. Allow pop-ups for this site and try again.')
   }
 
   // --- LAYOUT VIEWER RENDERERS ---
@@ -925,9 +825,9 @@ export function LecturerReports() {
               <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-primary" /> Select Group List Report Format
+                    <Sparkles className="h-4 w-4 text-primary" /> Report format
                   </span>
-                  <span className="text-[11px] text-text-muted">Choose 1 of 3 standardized formats</span>
+                  <span className="text-[11px] text-text-muted">Changes the PDF and Excel layout</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
@@ -940,8 +840,8 @@ export function LecturerReports() {
                         : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                     )}
                   >
-                    <div className="font-bold text-xs">Format 1: Student Roster</div>
-                    <div className="text-[10px] opacity-85 mt-0.5">Flat student-by-student group list with roles</div>
+                    <div className="font-bold text-xs">1 · {GROUP_FORMAT_INFO.student_roster.label}</div>
+                    <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.student_roster.description}</div>
                   </button>
 
                   <button
@@ -954,8 +854,8 @@ export function LecturerReports() {
                         : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                     )}
                   >
-                    <div className="font-bold text-xs">Format 2: Group Summary</div>
-                    <div className="text-[10px] opacity-85 mt-0.5">Group-centric overview, capacity & member rosters</div>
+                    <div className="font-bold text-xs">2 · {GROUP_FORMAT_INFO.group_summary.label}</div>
+                    <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.group_summary.description}</div>
                   </button>
 
                   <button
@@ -968,8 +868,8 @@ export function LecturerReports() {
                         : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                     )}
                   >
-                    <div className="font-bold text-xs">Format 3: Department Matrix</div>
-                    <div className="text-[10px] opacity-85 mt-0.5">Official Ndejje University print layout</div>
+                    <div className="font-bold text-xs">3 · {GROUP_FORMAT_INFO.department_matrix.label}</div>
+                    <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.department_matrix.description}</div>
                   </button>
                 </div>
               </div>
@@ -1192,6 +1092,13 @@ export function LecturerReports() {
                 {inModalSearch && (
                   <span className="text-xs text-text-muted">matching "{inModalSearch}"</span>
                 )}
+                <span className="text-[11px] text-text-muted">
+                  {selectedCategory === 'groups'
+                    ? `Exports use the ${GROUP_FORMAT_INFO[groupReportFormat].label.toLowerCase()} layout`
+                    : selectedCategory === 'semester_calendar'
+                      ? modalLayoutMode === 'table' ? 'PDF prints as a dated table' : 'PDF prints as a timeline'
+                      : `PDF prints as: ${LIST_LAYOUT_INFO[modalLayoutMode].toLowerCase()}`}
+                </span>
                 {exportNotice && (
                   <span role="status" className="inline-flex items-center gap-1 text-xs font-semibold text-warning">
                     <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1207,13 +1114,14 @@ export function LecturerReports() {
                   onClick={handleExportCsv}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
-                  <Download className="h-3.5 w-3.5 mr-1.5 text-success" aria-hidden="true" />
+                  <Download className="h-3.5 w-3.5 mr-1.5 text-text-muted" aria-hidden="true" />
                   CSV
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleExportXlsx}
+                  loading={exporting}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
                   <Download className="h-3.5 w-3.5 mr-1.5 text-primary" aria-hidden="true" />
@@ -1225,8 +1133,8 @@ export function LecturerReports() {
                   onClick={handleExportPdf}
                   disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
                 >
-                  <FileText className="h-3.5 w-3.5 mr-1.5 text-danger" aria-hidden="true" />
-                  Export PDF
+                  <FileText className="h-3.5 w-3.5 mr-1.5 text-primary" aria-hidden="true" />
+                  PDF
                 </Button>
               </div>
             </div>

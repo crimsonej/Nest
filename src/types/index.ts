@@ -181,6 +181,21 @@ export interface Semester {
   created_at: string
 }
 
+export type SemesterEventKind =
+  | 'opening' | 'registration' | 'orientation' | 'lectures' | 'coursework' | 'tests'
+  | 'break' | 'exams' | 'results' | 'closing' | 'holiday' | 'other'
+
+export interface SemesterEvent {
+  id: string
+  semester_id: string
+  title: string
+  kind: SemesterEventKind
+  starts_on: string
+  ends_on: string | null
+  description: string | null
+  created_at: string
+}
+
 export interface StudentAccess {
   is_locked: boolean
   locked_until: string | null

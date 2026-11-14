@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
+  CalendarDays,
   CalendarPlus,
   CalendarRange,
+  Pencil,
+  Trash2,
   ClipboardList,
   Download,
   Eye,
@@ -26,7 +29,9 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import type { Announcement, Semester } from '@/types'
+import { useSemesterEvents } from '@/hooks/useSemesterEvents'
+import { SEMESTER_EVENT_KINDS, eventDateRange, eventKindLabel, eventStatus } from '@/lib/reports/calendar'
+import type { Announcement, Semester, SemesterEvent, SemesterEventKind } from '@/types'
 
 const fieldClasses =
   'w-full rounded-2xl border border-border/80 bg-surface/90 px-4 py-2.5 text-sm text-text-primary shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15'
@@ -81,6 +86,18 @@ export function SemesterManager() {
   const [startTarget, setStartTarget] = useState<Semester | null>(null)
   const [unlockOnStart, setUnlockOnStart] = useState(true)
 
+  // Edit semester details
+  const [editTarget, setEditTarget] = useState<Semester | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', academic_year: '', term_number: '1', starts_on: '', ends_on: '' })
+
+  // Semester calendar
+  const [calendarSemesterId, setCalendarSemesterId] = useState('')
+  const calendarSemester = semesters.find((semester) => semester.id === calendarSemesterId) || null
+  const { events, loading: eventsLoading, reload: reloadEvents } = useSemesterEvents(calendarSemesterId || null)
+  const emptyEvent = { id: '', kind: 'orientation' as SemesterEventKind, title: 'Orientation week', starts_on: '', ends_on: '', description: '' }
+  const [eventForm, setEventForm] = useState(emptyEvent)
+  const [deleteEvent, setDeleteEvent] = useState<SemesterEvent | null>(null)
+
   const nextUpcoming = useMemo(
     () => semesters.filter((semester) => semester.status === 'upcoming' && !semester.is_current).sort((a, b) => (a.starts_on || '').localeCompare(b.starts_on || ''))[0] || null,
     [semesters]
@@ -91,6 +108,10 @@ export function SemesterManager() {
     const term = currentSemester ? Math.min(currentSemester.term_number + 1, 3) : 1
     setNewSemester((form) => (form.academic_year ? form : { ...form, academic_year: year, term_number: String(term), name: `Semester ${term}` }))
   }, [currentSemester])
+
+  useEffect(() => {
+    if (!calendarSemesterId && viewingSemester) setCalendarSemesterId(viewingSemester.id)
+  }, [calendarSemesterId, viewingSemester])
 
   useEffect(() => {
     setLockMessage(access?.message || '')
@@ -274,6 +295,81 @@ export function SemesterManager() {
       await loadAnnouncements()
     })
 
+  function openEdit(semester: Semester) {
+    setEditTarget(semester)
+    setEditForm({
+      name: semester.name,
+      academic_year: semester.academic_year,
+      term_number: String(semester.term_number),
+      starts_on: semester.starts_on || '',
+      ends_on: semester.ends_on || '',
+    })
+  }
+
+  const saveEdit = () =>
+    run('edit', async () => {
+      if (!editTarget) return
+      if (!editForm.name.trim() || !editForm.academic_year.trim()) throw new Error('Give the semester a name and academic year.')
+      if (editForm.starts_on && editForm.ends_on && editForm.ends_on < editForm.starts_on) throw new Error('The end date must be on or after the start date.')
+      const { error } = await supabase
+        .from('semesters')
+        .update({
+          name: editForm.name.trim(),
+          academic_year: editForm.academic_year.trim(),
+          term_number: Number(editForm.term_number),
+          starts_on: editForm.starts_on || null,
+          ends_on: editForm.ends_on || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editTarget.id)
+      if (error?.code === '23505') throw new Error('Another semester already uses that name and academic year.')
+      fail(error)
+      toast.success(`${editForm.name.trim()} updated.`)
+      setEditTarget(null)
+      await refresh()
+    })
+
+  const outsideSemester =
+    !!calendarSemester &&
+    !!eventForm.starts_on &&
+    ((!!calendarSemester.starts_on && eventForm.starts_on < calendarSemester.starts_on) ||
+      (!!calendarSemester.ends_on && (eventForm.ends_on || eventForm.starts_on) > calendarSemester.ends_on))
+
+  const saveEvent = () =>
+    run('event', async () => {
+      if (!calendarSemesterId) throw new Error('Choose a semester first.')
+      if (!eventForm.title.trim()) throw new Error('Give the event a name.')
+      if (!eventForm.starts_on) throw new Error('Choose the date the event starts.')
+      if (eventForm.ends_on && eventForm.ends_on < eventForm.starts_on) throw new Error('The end date must be on or after the start date.')
+      const payload = {
+        semester_id: calendarSemesterId,
+        kind: eventForm.kind,
+        title: eventForm.title.trim(),
+        starts_on: eventForm.starts_on,
+        ends_on: eventForm.ends_on && eventForm.ends_on !== eventForm.starts_on ? eventForm.ends_on : null,
+        description: eventForm.description.trim() || null,
+        updated_at: new Date().toISOString(),
+      }
+      const { error } = eventForm.id
+        ? await supabase.from('semester_events').update(payload).eq('id', eventForm.id)
+        : await supabase.from('semester_events').insert({ ...payload, created_by: user?.id })
+      fail(error)
+      toast.success(eventForm.id ? 'Event updated.' : 'Event added to the calendar.')
+      setEventForm(emptyEvent)
+      await reloadEvents()
+    })
+
+  const confirmDeleteEvent = () =>
+    run('delete-event', async () => {
+      if (!deleteEvent) return
+      const { error } = await supabase.from('semester_events').delete().eq('id', deleteEvent.id)
+      fail(error)
+      toast.success('Event removed.')
+      if (eventForm.id === deleteEvent.id) setEventForm(emptyEvent)
+      setDeleteEvent(null)
+      await reloadEvents()
+    })
+
   const toggleAnnouncement = (item: Announcement) =>
     run(`toggle-${item.id}`, async () => {
       const { error } = await supabase.from('announcements').update({ is_active: !item.is_active }).eq('id', item.id)
@@ -337,6 +433,9 @@ export function SemesterManager() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(semester)} aria-label={`Edit ${semesterLabel(semester)}`}>
+                    <Pencil className="h-4 w-4" aria-hidden="true" /> Edit
+                  </Button>
                   {semester.id !== viewingSemester?.id && (
                     <Button size="sm" variant="ghost" onClick={() => selectSemester(semester.id)}>
                       <Eye className="h-4 w-4" aria-hidden="true" /> View
@@ -401,6 +500,104 @@ export function SemesterManager() {
           </div>
         </section>
       </div>
+
+      {/* Semester calendar */}
+      <section className={sectionClasses} aria-labelledby="calendar-heading">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="calendar-heading" className="flex items-center gap-2 text-base font-black text-text-primary">
+              <CalendarDays className="h-4 w-4 text-primary" aria-hidden="true" /> Semester calendar
+            </h2>
+            <p className="mt-0.5 text-xs text-text-secondary">Key dates such as opening, orientation, tests and exams. They appear in the semester report and on the reports page.</p>
+          </div>
+          <div className="sm:w-64">
+            <label htmlFor="calendar-semester" className="sr-only">Semester</label>
+            <select id="calendar-semester" className={fieldClasses} value={calendarSemesterId} onChange={(event) => { setCalendarSemesterId(event.target.value); setEventForm(emptyEvent) }}>
+              {semesters.map((semester) => <option key={semester.id} value={semester.id}>{semesterLabel(semester)}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+          <div className="space-y-3 rounded-2xl border border-border/70 bg-surface-hover/30 p-4">
+            <p className="text-sm font-bold text-text-primary">{eventForm.id ? 'Edit event' : 'Add an event'}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="event-kind" className="block text-sm font-semibold text-text-primary">Type</label>
+                <select
+                  id="event-kind"
+                  className={cn(fieldClasses, 'mt-1.5')}
+                  value={eventForm.kind}
+                  onChange={(event) => {
+                    const kind = event.target.value as SemesterEventKind
+                    const wasDefault = SEMESTER_EVENT_KINDS.some((item) => item.defaultTitle === eventForm.title) || !eventForm.title
+                    const preset = SEMESTER_EVENT_KINDS.find((item) => item.value === kind)
+                    setEventForm({ ...eventForm, kind, title: wasDefault ? preset?.defaultTitle || '' : eventForm.title })
+                  }}
+                >
+                  {SEMESTER_EVENT_KINDS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+              </div>
+              <Input label="Name" value={eventForm.title} onChange={(event) => setEventForm({ ...eventForm, title: event.target.value })} placeholder="Orientation week" />
+              <Input label="Starts on" type="date" value={eventForm.starts_on} onChange={(event) => setEventForm({ ...eventForm, starts_on: event.target.value })} />
+              <Input label="Ends on (optional)" type="date" min={eventForm.starts_on || undefined} value={eventForm.ends_on} onChange={(event) => setEventForm({ ...eventForm, ends_on: event.target.value })} />
+            </div>
+            <Textarea label="Notes (optional)" rows={2} value={eventForm.description} onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })} placeholder="Venue, who it is for, anything students should know" />
+            {outsideSemester && (
+              <p className="text-xs font-semibold text-warning">This falls outside the semester dates ({formatDate(calendarSemester?.starts_on)} – {formatDate(calendarSemester?.ends_on)}). You can still save it.</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={saveEvent} loading={busy === 'event'}>
+                <CalendarPlus className="h-4 w-4" aria-hidden="true" /> {eventForm.id ? 'Save changes' : 'Add event'}
+              </Button>
+              {eventForm.id && <Button variant="ghost" onClick={() => setEventForm(emptyEvent)}>Cancel</Button>}
+            </div>
+          </div>
+
+          <div>
+            {calendarSemester && (
+              <p className="mb-3 text-xs text-text-muted">
+                {calendarSemester.name} runs {formatDate(calendarSemester.starts_on)} – {formatDate(calendarSemester.ends_on)}.{' '}
+                <button type="button" className="font-bold text-primary hover:underline" onClick={() => openEdit(calendarSemester)}>Change dates</button>
+              </p>
+            )}
+            {eventsLoading ? (
+              <div className="space-y-2">{[1, 2, 3].map((item) => <div key={item} className="h-14 animate-pulse rounded-2xl bg-surface-hover/60" />)}</div>
+            ) : events.length === 0 ? (
+              <EmptyState icon={CalendarDays} title="No events yet" description="Add the opening date, orientation, exams and other key dates for this semester." />
+            ) : (
+              <ol className="relative space-y-2 border-l-2 border-primary/30 pl-4">
+                {events.map((item) => {
+                  const status = eventStatus(item)
+                  return (
+                    <li key={item.id} className="relative rounded-2xl border border-border/70 bg-surface p-3">
+                      <span className={cn('absolute -left-[1.4rem] top-4 h-3 w-3 rounded-full border-2 border-primary', status === 'Completed' ? 'bg-primary' : 'bg-surface')} aria-hidden="true" />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">{eventDateRange(item)}</p>
+                          <p className="text-sm font-bold text-text-primary">{item.title}</p>
+                          <p className="text-xs text-text-muted">
+                            {eventKindLabel(item.kind)} · {status}
+                            {item.description ? ` · ${item.description}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <Button size="sm" variant="ghost" aria-label={`Edit ${item.title}`} onClick={() => setEventForm({ id: item.id, kind: item.kind, title: item.title, starts_on: item.starts_on, ends_on: item.ends_on || '', description: item.description || '' })}>
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                          <Button size="sm" variant="ghost" aria-label={`Remove ${item.title}`} onClick={() => setDeleteEvent(item)}>
+                            <Trash2 className="h-4 w-4 text-danger" aria-hidden="true" />
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-2">
         {/* New semester */}
@@ -524,6 +721,47 @@ export function SemesterManager() {
           </div>
         </div>
       </section>
+
+      {/* Edit semester dialog */}
+      <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title={editTarget ? `Edit ${semesterLabel(editTarget)}` : ''} size="md">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Name" value={editForm.name} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} />
+            <Input label="Academic year" value={editForm.academic_year} onChange={(event) => setEditForm({ ...editForm, academic_year: event.target.value })} />
+            <div>
+              <label htmlFor="edit-term" className="block text-sm font-semibold text-text-primary">Term</label>
+              <select id="edit-term" className={cn(fieldClasses, 'mt-1.5')} value={editForm.term_number} onChange={(event) => setEditForm({ ...editForm, term_number: event.target.value })}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3 (recess)</option>
+              </select>
+            </div>
+            <div className="hidden sm:block" />
+            <Input label="Starts on" type="date" value={editForm.starts_on} onChange={(event) => setEditForm({ ...editForm, starts_on: event.target.value })} />
+            <Input label="Ends on" type="date" min={editForm.starts_on || undefined} value={editForm.ends_on} onChange={(event) => setEditForm({ ...editForm, ends_on: event.target.value })} />
+          </div>
+          <p className="text-xs text-text-muted">Changing dates does not start or end the semester. Use Start and End semester for that.</p>
+          <div className="flex flex-col-reverse gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={() => setEditTarget(null)}>Cancel</Button>
+            <Button onClick={saveEdit} loading={busy === 'edit'}>Save changes</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete event dialog */}
+      <Modal isOpen={!!deleteEvent} onClose={() => setDeleteEvent(null)} title="Remove this event?" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            <strong className="text-text-primary">{deleteEvent?.title}</strong> ({deleteEvent ? eventDateRange(deleteEvent) : ''}) will be removed from the calendar and from reports.
+          </p>
+          <div className="flex flex-col-reverse gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={() => setDeleteEvent(null)}>Keep it</Button>
+            <Button variant="danger" onClick={confirmDeleteEvent} loading={busy === 'delete-event'}>
+              <Trash2 className="h-4 w-4" aria-hidden="true" /> Remove
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* End semester dialog */}
       <Modal isOpen={!!endTarget} onClose={() => setEndTarget(null)} title={endTarget ? `End ${endTarget.name}?` : ''} size="md">

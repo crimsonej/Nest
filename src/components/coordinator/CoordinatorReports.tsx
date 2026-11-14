@@ -29,6 +29,7 @@ import {
   UserCheck,
   ShieldCheck,
   Building,
+  CalendarDays,
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import ReportCard from '@/components/shared/ReportCard'
@@ -39,7 +40,18 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatDate } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
-import * as XLSX from 'xlsx'
+import { usePathname } from 'next/navigation'
+import { semesterLabel, useSemester } from '@/hooks/useSemester'
+import { useSemesterEvents } from '@/hooks/useSemesterEvents'
+import { calendarColumns, calendarRows } from '@/lib/reports/calendar'
+import { downloadCsv } from '@/lib/reports/csv'
+import { reportFileName } from '@/lib/reports/format'
+import { GROUP_FORMAT_INFO, groupPrintDocument, groupSheets, type ReportGroup } from '@/lib/reports/groups'
+import { LIST_LAYOUT_INFO, calendarPrintHtml, calendarSummary, listPrintDocument, listSheets } from '@/lib/reports/lists'
+import { openPrintDocument, type PrintDocument } from '@/lib/reports/print'
+import type { ReportColumnSpec, ReportMeta } from '@/lib/reports/types'
+import type { SheetSpec } from '@/lib/reports/xlsx'
+import { downloadXlsx } from '@/lib/reports/xlsx'
 import { useToast } from '@/hooks/useToast'
 
 const compareGroupNames = (firstName: string = '', secondName: string = '') =>
@@ -54,11 +66,13 @@ type ReportCategory =
   | 'coursework'
   | 'course_unit_students'
   | 'course_students'
+  | 'semester_calendar'
 
 type ReportColumn = {
   key: string
   header: string
-  value: (row: any) => string
+  value: (row: any) => string | number
+  numeric?: boolean
 }
 
 type ModalLayoutMode = 'table' | 'cards' | 'roster' | 'accordion'
@@ -69,10 +83,11 @@ const reportTiles = [
   { id: 'orphan_students', label: 'Orphan list', description: 'Students not assigned to a group', icon: UserX, color: 'from-warning to-warning', showCount: true },
   { id: 'groups', label: 'Group list', description: 'All groups with member rosters', icon: Layers3, color: 'from-secondary to-secondary-hover', showCount: true },
   { id: 'course_units', label: 'Course units', description: 'Unit roster and structure', icon: BookOpen, color: 'from-success to-primary', showCount: true },
-  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-secondary to-danger', showCount: true },
+  { id: 'courses', label: 'Courses', description: 'Faculty-wide programme list', icon: GraduationCap, color: 'from-secondary to-secondary-hover', showCount: true },
   { id: 'coursework', label: 'Coursework', description: 'Assignments, projects and presentations', icon: NotebookText, color: 'from-primary to-secondary', showCount: true },
   { id: 'course_unit_students', label: 'Students per course unit', description: 'Roster by unit', icon: FolderOpen, color: 'from-success to-success', showCount: false },
   { id: 'course_students', label: 'Students per course', description: 'Roster by programme', icon: Grid3X3, color: 'from-primary to-primary-hover', showCount: false },
+  { id: 'semester_calendar', label: 'Semester calendar', description: 'Opening, orientation, exams and other key dates', icon: CalendarDays, color: 'from-primary to-secondary', showCount: true },
 ] as const
 
 export function CoordinatorReports() {
@@ -96,6 +111,11 @@ export function CoordinatorReports() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({})
+  const [exporting, setExporting] = useState<'xlsx' | null>(null)
+  const pathname = usePathname()
+  const isAdminWorkspace = pathname?.startsWith('/admin') ?? false
+  const { viewingSemester } = useSemester()
+  const { events: semesterEvents } = useSemesterEvents(viewingSemester?.id)
 
   useEffect(() => {
     fetchOverviewData()
@@ -287,7 +307,7 @@ export function CoordinatorReports() {
         ),
       }
 
-      setOverviewData(datasetMap)
+      setOverviewData((previous) => ({ ...datasetMap, semester_calendar: previous.semester_calendar || [] }))
     } catch (error) {
       console.error('Error loading report overview data:', error)
     } finally {
@@ -384,10 +404,16 @@ export function CoordinatorReports() {
           { key: 'whatsapp_phone', header: 'WhatsApp', value: (row) => row.whatsapp_phone || '—' },
           { key: 'gender', header: 'Gender', value: (row) => row.gender || '—' },
         ]
+      case 'semester_calendar':
+        return calendarColumns as ReportColumn[]
       default:
         return []
     }
   }
+
+  useEffect(() => {
+    setOverviewData((previous) => ({ ...previous, semester_calendar: calendarRows(viewingSemester, semesterEvents) }))
+  }, [viewingSemester, semesterEvents])
 
   useEffect(() => {
     if (selectedCategory) {
@@ -553,362 +579,116 @@ export function CoordinatorReports() {
     }
   }
 
+  // ── Exports ────────────────────────────────────────────────────────────
+  const exportSpecs = (): ReportColumnSpec[] =>
+    getActiveColumns().map((column) => ({ ...column, numeric: column.numeric || column.key === 'student_number' || column.key === 'days', mono: /registration|reg_no|^code$|course_unit$|phone/.test(column.key) }))
+
+  const filterDescription = () => {
+    const parts: string[] = []
+    const unit = courseUnitOptions.find((item: any) => item.id === selectedCourseUnitId)
+    if (unit && (selectedCategory === 'groups' || selectedCategory === 'course_unit_students')) parts.push(`${unit.code} · ${unit.name}`)
+    if (selectedGroup) parts.push(`Group: ${selectedGroup.name}`)
+    if (selectedCourse && selectedCategory === 'course_students') parts.push(`${selectedCourse.code} · ${selectedCourse.name}`)
+    if (inModalSearch.trim()) parts.push(`Matching “${inModalSearch.trim()}”`)
+    return parts.join('  ·  ') || 'All records'
+  }
+
+  const reportMeta = (): ReportMeta => ({
+    title: reportTiles.find((tile) => tile.id === selectedCategory)?.label || 'Report',
+    subtitle: filterDescription(),
+    semester: viewingSemester ? semesterLabel(viewingSemester) : undefined,
+    preparedBy: isAdminWorkspace ? 'Administrator workspace' : 'Coordinator workspace',
+  })
+
+  const signatures = ['Course Coordinator', 'Head of Department', 'Academic Registrar']
+
+  const targetGroups = (): ReportGroup[] => {
+    const list = selectedGroup
+      ? [selectedGroup]
+      : selectedCourseUnitId
+        ? filteredGroupsForUnit
+        : [...(overviewData.groups || [])].sort((first: any, second: any) => compareGroupNames(first.name, second.name))
+    const query = inModalSearch.trim().toLowerCase()
+    return query ? list.filter((group: any) => JSON.stringify(group).toLowerCase().includes(query)) : list
+  }
+
+  const ensureRows = () => {
+    if (!selectedCategory) return false
+    if (getActiveRows().length === 0 || getActiveColumns().length === 0) {
+      toast.info('Nothing to export. Clear the search or pick at least one column.')
+      return false
+    }
+    return true
+  }
+
+  const fileName = (extension: string) =>
+    reportFileName([
+      'nest',
+      selectedCategory,
+      selectedCategory === 'groups' ? groupReportFormat : null,
+      viewingSemester ? `${viewingSemester.name} ${viewingSemester.academic_year}` : null,
+    ], extension)
+
+  const listOptions = () => {
+    const isUnitList = selectedCategory === 'course_unit_students' || selectedCategory === 'coursework'
+    const isFacultyList = selectedCategory === 'courses'
+    return {
+      groupKey: (row: any) => (isUnitList ? row.course_unit : isFacultyList ? row.faculty : selectedCategory === 'course_units' ? row.course : row.course) || 'Unassigned',
+      groupLabel: isUnitList ? 'Course unit' : isFacultyList ? 'Faculty' : 'Course',
+      titleOf: (row: any) => row.full_name || row.student_name || row.title || row.name || row.code || 'Record',
+      subtitleOf: (row: any) => row.student_registration_number || row.registration_number || row.code || row.course_unit || row.email || '',
+    }
+  }
+
   const handleExportCsv = () => {
-    if (!selectedCategory) return
-    const columns = getActiveColumns()
-    const rows = getActiveRows()
-
-    if (rows.length === 0 || columns.length === 0) {
-      toast.info('No matching records or columns selected for export.')
-      return
-    }
-
-    const escapeValue = (value: unknown) => {
-      const text = value === null || value === undefined ? '' : String(value)
-      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-    }
-
-    const csvRows = [
-      columns.map((col) => escapeValue(col.header)).join(','),
-      ...rows.map((row: any) => columns.map((col) => escapeValue(col.value(row))).join(',')),
-    ]
-
-    // Prepend UTF-8 BOM for proper Excel encoding
-    const csvContent = '\uFEFF' + csvRows.join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${selectedCategory}_${groupReportFormat}_report_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    if (!ensureRows()) return
+    downloadCsv(fileName('csv'), exportSpecs(), getActiveRows())
   }
 
-  const handleExportXlsx = () => {
-    if (!selectedCategory) return
-    const columns = getActiveColumns()
-    const rows = getActiveRows()
-
-    if (rows.length === 0 || columns.length === 0) {
-      toast.info('No matching records or columns selected for export.')
-      return
-    }
-
-    // Build data rows
-    const jsonData = rows.map((row: any) =>
-      Object.fromEntries(columns.map((column) => [column.header, column.value(row)]))
-    )
-
-    const worksheet = XLSX.utils.json_to_sheet(jsonData)
-
-    // Style header row
-    const headerKeys = columns.map((c) => c.header)
-    headerKeys.forEach((_, colIdx) => {
-      const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIdx })
-      if (worksheet[cellRef]) {
-        worksheet[cellRef].s = {
-          font: { bold: true, color: { rgb: 'FFFFFF' } },
-          fill: { fgColor: { rgb: '1E293B' } },
-          alignment: { horizontal: 'center' },
-        }
+  const handleExportXlsx = async () => {
+    if (!ensureRows() || !selectedCategory) return
+    setExporting('xlsx')
+    try {
+      const columns = exportSpecs()
+      const rows = getActiveRows()
+      const meta = reportMeta()
+      let sheets: SheetSpec[]
+      if (selectedCategory === 'groups') {
+        sheets = groupSheets(groupReportFormat, targetGroups(), { columns, rows })
+      } else if (selectedCategory === 'semester_calendar') {
+        sheets = [{ name: 'Semester calendar', columns, sections: [{ rows }], summary: calendarSummary(rows), wrapKeys: ['description'] }]
+      } else {
+        sheets = listSheets({ name: meta.title, layout: modalLayoutMode, columns, rows, summary: [{ label: 'Records', value: rows.length }], ...listOptions() })
       }
-    })
-
-    // Auto column widths
-    worksheet['!cols'] = headerKeys.map((header) => ({
-      wch: Math.max(header.length + 4, 14),
-    }))
-
-    const workbook = XLSX.utils.book_new()
-    const sheetName = selectedCategory.replace(/_/g, ' ').slice(0, 31)
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
-    XLSX.writeFile(workbook, `ndejje_${selectedCategory}_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+      await downloadXlsx(fileName('xlsx'), meta, sheets)
+    } catch (error) {
+      console.error('Excel export failed:', error)
+      toast.error('Could not build the Excel file. Please try again.')
+    } finally {
+      setExporting(null)
+    }
   }
 
-  const handleExportPdf = async () => {
-    if (!selectedCategory) return
-    const columns = getActiveColumns()
+  const handleExportPdf = () => {
+    if (!ensureRows() || !selectedCategory) return
+    const columns = exportSpecs()
     const rows = getActiveRows()
-
-    if (rows.length === 0 || columns.length === 0) {
-      toast.info('No matching records or columns selected for export.')
-      return
+    const meta = reportMeta()
+    let doc: PrintDocument
+    if (selectedCategory === 'groups') {
+      doc = groupPrintDocument(groupReportFormat, meta, targetGroups(), { columns, rows, groupedOrder: !sortColumn || sortColumn === 'name' }, signatures)
+    } else if (selectedCategory === 'semester_calendar') {
+      doc = {
+        meta,
+        orientation: 'portrait',
+        summary: calendarSummary(rows),
+        bodyHtml: calendarPrintHtml(rows, modalLayoutMode === 'table' ? 'table' : 'timeline'),
+        signatures: ['Academic Registrar', 'Dean of Faculty'],
+      }
+    } else {
+      doc = listPrintDocument({ layout: modalLayoutMode, meta, columns, rows, signatures, ...listOptions() })
     }
-
-    const printWindow = window.open('', '_blank', 'width=1200,height=800')
-    if (!printWindow) return
-
-    const escapeHtml = (value: unknown) => String(value ?? '—')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-
-    if (selectedCategory === 'groups' && (groupReportFormat === 'department_matrix' || groupReportFormat === 'group_summary')) {
-      const groupsToPrint = selectedGroup
-        ? [selectedGroup]
-        : selectedCourseUnitId
-          ? filteredGroupsForUnit
-          : [...(overviewData.groups || [])].sort((firstGroup: any, secondGroup: any) => compareGroupNames(firstGroup.name, secondGroup.name))
-      
-      const groupedUnits = groupsToPrint.reduce((units: Record<string, any[]>, group: any) => {
-        const unitKey = `${group.course_unit || '—'} - ${group.course_unit_name || 'Course Unit'}`
-        if (!units[unitKey]) units[unitKey] = []
-        units[unitKey].push(group)
-        return units
-      }, {})
-
-      const groupedHtml = Object.entries(groupedUnits).map(([unitName, unitGroups], unitIndex) => `
-        <section class="${unitIndex > 0 ? 'page-break' : ''}">
-          <div class="cu-heading">
-            <span>Course Unit: ${escapeHtml(unitName)}</span>
-            <span style="font-size:11px; font-weight:400; opacity:0.8;">${unitGroups.length} group${unitGroups.length !== 1 ? 's' : ''}</span>
-          </div>
-          ${unitGroups.map((group: any) => {
-            const members = group.members || []
-            const memberRows = members.length > 0
-              ? members.map((member: any, index: number) => {
-                  const isLeader = member.user_id === group.leader_id || member.role === 'leader'
-                  const rowBg = index % 2 === 0 ? '' : 'style="background:#f8fafc;"'
-                  return `
-                    <tr ${rowBg}>
-                      <td style="width:36px; text-align:center; color:#94a3b8;">${index + 1}</td>
-                      <td><strong>${escapeHtml(member.student_name || member.full_name || '—')}</strong></td>
-                      <td style="font-family:monospace; color:#475569;">${escapeHtml(member.registration_number || '—')}</td>
-                      <td>${isLeader ? '<span class="leader-tag">&#9733; Leader</span>' : 'Member'}</td>
-                      <td>${escapeHtml(member.gender || '—')}</td>
-                      <td style="color:#334155;">${escapeHtml(member.email || '—')}</td>
-                      <td style="color:#334155;">${escapeHtml(member.whatsapp_phone || '—')}</td>
-                    </tr>
-                  `
-                }).join('')
-              : `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:12px; font-style:italic;">No members assigned yet</td></tr>`
-
-            return `
-              <div class="group-card">
-                <div class="group-header">
-                  <span class="group-title">${escapeHtml(group.name || 'Unnamed Group')}</span>
-                  <span class="group-badge">Members: ${members.length} / ${escapeHtml(String(group.max_members || '—'))}</span>
-                </div>
-                <div class="group-meta">
-                  <span><strong>Coursework:</strong> ${escapeHtml(group.coursework || '—')}</span>
-                  <span><strong>Group Leader:</strong> ${escapeHtml(group.leader || 'Not assigned')}</span>
-                  <span><strong>Status:</strong> ${escapeHtml(group.status || '—')}</span>
-                </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th style="width:36px;">#</th>
-                      <th>Student Name</th>
-                      <th>Registration No.</th>
-                      <th>Role</th>
-                      <th>Gender</th>
-                      <th>Email</th>
-                      <th>WhatsApp</th>
-                    </tr>
-                  </thead>
-                  <tbody>${memberRows}</tbody>
-                </table>
-              </div>
-            `
-          }).join('')}
-        </section>
-      `).join('')
-
-      const generatedOn = new Date().toLocaleString('en-UG', { dateStyle: 'full', timeStyle: 'short' })
-      const formatLabel = groupReportFormat === 'group_summary' ? 'Group Summary Report' : 'Department Matrix Report'
-
-      printWindow.document.write(`
-        <!doctype html>
-        <html lang="en">
-          <head>
-            <meta charset="UTF-8" />
-            <title>Ndejje University — ${formatLabel}</title>
-            <style>
-              * { box-sizing: border-box; margin: 0; padding: 0; }
-              body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #0f172a; padding: 28px 32px; line-height: 1.5; }
-              /* ── Letterhead ── */
-              .lh { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px; }
-              .lh-left h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
-              .lh-left h2 { font-size: 12px; font-weight: 500; color: #475569; margin-top: 3px; }
-              .lh-badge { background: #1e293b; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-              .meta { display: flex; gap: 24px; font-size: 11px; color: #64748b; margin-bottom: 18px; flex-wrap: wrap; }
-              .meta strong { color: #334155; }
-              /* ── Course-unit section ── */
-              .cu-heading { background: #1e293b; color: #fff; padding: 9px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; }
-              /* ── Group card ── */
-              .group-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 14px; page-break-inside: avoid; background: #fff; }
-              .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
-              .group-title { font-size: 15px; font-weight: 700; color: #0f172a; }
-              .group-badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-              .group-meta { display: flex; gap: 20px; font-size: 11.5px; color: #475569; margin-bottom: 10px; flex-wrap: wrap; }
-              .group-meta span strong { color: #1e293b; }
-              /* ── Member table ── */
-              table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-              thead tr { background: #f1f5f9; }
-              th { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-weight: 700; color: #334155; }
-              td { border: 1px solid #e2e8f0; padding: 6px 8px; color: #1e293b; }
-              tr:nth-child(even) td { background: #f8fafc; }
-              .leader-tag { color: #0284c7; font-weight: 700; }
-              /* ── Signatures ── */
-              .sigs { display: flex; justify-content: space-between; margin-top: 48px; page-break-inside: avoid; }
-              .sig-box { width: 200px; text-align: center; }
-              .sig-line { border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px; font-weight: 700; }
-              .sig-role { font-size: 10px; color: #64748b; margin-top: 2px; }
-              .page-break { page-break-before: always; }
-              @media print { body { padding: 0; } thead { display: table-header-group; } tr { page-break-inside: avoid; } }
-            </style>
-          </head>
-          <body>
-            <div class="lh">
-              <div class="lh-left">
-                <h1>Ndejje University</h1>
-                <h2>Faculty of Science &amp; Computing &nbsp;·&nbsp; Academic Records Office</h2>
-              </div>
-              <span class="lh-badge">${formatLabel}</span>
-            </div>
-
-            <div class="meta">
-              <span><strong>Report:</strong> ${formatLabel}</span>
-              <span><strong>Generated:</strong> ${escapeHtml(generatedOn)}</span>
-            </div>
-
-            ${groupedHtml || '<p style="color:#64748b; font-size:13px;">No groups found for the selected filters.</p>'}
-
-            <div class="sigs">
-              <div class="sig-box">
-                <div class="sig-line">Course Coordinator</div>
-                <div class="sig-role">Signature &amp; Date</div>
-              </div>
-              <div class="sig-box">
-                <div class="sig-line">Head of Department</div>
-                <div class="sig-role">Signature &amp; Date</div>
-              </div>
-              <div class="sig-box">
-                <div class="sig-line">Academic Registrar</div>
-                <div class="sig-role">Signature &amp; Date</div>
-              </div>
-            </div>
-          </body>
-        </html>
-      `)
-      printWindow.document.close()
-      printWindow.focus()
-      printWindow.print()
-      return
-    }
-
-    // ── Generic branded document for all non-group categories ──
-    const categoryLabel = selectedCategory.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    const generatedOn = new Date().toLocaleString('en-UG', { dateStyle: 'full', timeStyle: 'short' })
-    const totalCount = rows.length
-
-    // Alternating row colours
-    const rowsHtml = rows
-      .slice(0, 1000)
-      .map((row: any, idx: number) => {
-        const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc'
-        const cells = columns
-          .map((column) => `<td style="border:1px solid #e2e8f0; padding:7px 10px; font-size:11.5px; color:#1e293b; background:${bg};">${escapeHtml(column.value(row))}</td>`)
-          .join('')
-        return `<tr>${cells}</tr>`
-      })
-      .join('')
-
-    const headerHtml = columns
-      .map((column) => `<th style="border:1px solid #cbd5e1; padding:8px 10px; text-align:left; background:#1e293b; color:#fff; font-size:11px; font-weight:700; letter-spacing:0.04em; white-space:nowrap;">${escapeHtml(column.header)}</th>`)
-      .join('')
-
-    printWindow.document.write(`
-      <!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <title>Ndejje University — ${categoryLabel} Report</title>
-          <style>
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #0f172a; padding: 28px 32px; line-height: 1.5; }
-            /* ── Letterhead ── */
-            .lh { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px; }
-            .lh-left h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #0f172a; }
-            .lh-left h2 { font-size: 12px; font-weight: 500; color: #475569; margin-top: 3px; }
-            .lh-badge { background: #1e293b; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-            /* ── Meta strip ── */
-            .meta { display: flex; gap: 24px; font-size: 11px; color: #64748b; margin-bottom: 18px; flex-wrap: wrap; }
-            .meta strong { color: #334155; }
-            /* ── Table ── */
-            table { border-collapse: collapse; width: 100%; margin-top: 4px; }
-            thead tr { background: #1e293b; }
-            tfoot tr td { background: #f1f5f9; font-size: 11px; color: #475569; padding: 6px 10px; border: 1px solid #e2e8f0; font-style: italic; }
-            /* ── Signatures ── */
-            .sigs { display: flex; justify-content: space-between; margin-top: 44px; page-break-inside: avoid; }
-            .sig-box { width: 200px; text-align: center; }
-            .sig-line { border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px; color: #334155; }
-            .sig-role { font-size: 10px; color: #64748b; margin-top: 2px; }
-            /* ── Print ── */
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none !important; }
-              thead { display: table-header-group; }
-              tr { page-break-inside: avoid; }
-            }
-          </style>
-        </head>
-        <body>
-          <!-- Letterhead -->
-          <div class="lh">
-            <div class="lh-left">
-              <h1>Ndejje University</h1>
-              <h2>Faculty of Science &amp; Computing &nbsp;·&nbsp; Academic Records Office</h2>
-            </div>
-            <span class="lh-badge">${escapeHtml(categoryLabel)}</span>
-          </div>
-
-          <!-- Meta strip -->
-          <div class="meta">
-            <span><strong>Report Type:</strong> ${escapeHtml(categoryLabel)}</span>
-            <span><strong>Total Records:</strong> ${totalCount}</span>
-            <span><strong>Columns Included:</strong> ${columns.length}</span>
-            <span><strong>Generated:</strong> ${escapeHtml(generatedOn)}</span>
-          </div>
-
-          <!-- Data table -->
-          <table>
-            <thead><tr>${headerHtml}</tr></thead>
-            <tbody>${rowsHtml}</tbody>
-            <tfoot>
-              <tr>
-                <td colspan="${columns.length}">
-                  End of report &mdash; ${totalCount} records exported &mdash; Ndejje University Academic System
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <!-- Signature blocks -->
-          <div class="sigs">
-            <div class="sig-box">
-              <div class="sig-line"><strong>Course Coordinator</strong></div>
-              <div class="sig-role">Signature &amp; Date</div>
-            </div>
-            <div class="sig-box">
-              <div class="sig-line"><strong>Head of Department</strong></div>
-              <div class="sig-role">Signature &amp; Date</div>
-            </div>
-            <div class="sig-box">
-              <div class="sig-line"><strong>Academic Registrar</strong></div>
-              <div class="sig-role">Signature &amp; Date</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    if (!openPrintDocument(doc)) toast.error('Your browser blocked the report window. Allow pop-ups for this site and try again.')
   }
 
   const renderTile = (tile: (typeof reportTiles)[number]) => {
@@ -1126,7 +906,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('tiles')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-success-strong text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'tiles' ? 'bg-primary text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <Grid3X3 className="h-3.5 w-3.5" />
               Tiles
@@ -1134,7 +914,7 @@ export function CoordinatorReports() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-success-strong text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <List className="h-3.5 w-3.5" />
               List
@@ -1147,7 +927,7 @@ export function CoordinatorReports() {
         <div className="rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 text-xs text-text-secondary flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <span>Select any list tile below to open interactive controls, live search, 4 layout modes, 3 Group Report formats, and custom CSV/PDF exports.</span>
+            <span>Open a report to filter it, choose columns and a layout, then export to Excel, CSV or PDF{viewingSemester ? ` for ${semesterLabel(viewingSemester)}` : ''}.</span>
           </div>
         </div>
       )}
@@ -1222,9 +1002,9 @@ export function CoordinatorReports() {
             <div className="rounded-2xl border border-primary/25 bg-primary/5 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-primary" /> Select Group List Report Format
+                  <Sparkles className="h-4 w-4 text-primary" /> Report format
                 </span>
-                <span className="text-[11px] text-text-muted">Choose 1 of 3 standardized formats</span>
+                <span className="text-[11px] text-text-muted">Changes the PDF and Excel layout</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
@@ -1237,8 +1017,8 @@ export function CoordinatorReports() {
                       : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                   )}
                 >
-                  <div className="font-bold text-xs">Format 1: Student Roster</div>
-                  <div className="text-[10px] opacity-85 mt-0.5">Flat student-by-student group list with roles</div>
+                  <div className="font-bold text-xs">1 · {GROUP_FORMAT_INFO.student_roster.label}</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.student_roster.description}</div>
                 </button>
 
                 <button
@@ -1251,8 +1031,8 @@ export function CoordinatorReports() {
                       : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                   )}
                 >
-                  <div className="font-bold text-xs">Format 2: Group Summary</div>
-                  <div className="text-[10px] opacity-85 mt-0.5">Group-centric overview, capacity & member rosters</div>
+                  <div className="font-bold text-xs">2 · {GROUP_FORMAT_INFO.group_summary.label}</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.group_summary.description}</div>
                 </button>
 
                 <button
@@ -1265,8 +1045,8 @@ export function CoordinatorReports() {
                       : 'border-border bg-surface text-text-secondary hover:border-primary/40'
                   )}
                 >
-                  <div className="font-bold text-xs">Format 3: Department Matrix</div>
-                  <div className="text-[10px] opacity-85 mt-0.5">Official Ndejje University print layout</div>
+                  <div className="font-bold text-xs">3 · {GROUP_FORMAT_INFO.department_matrix.label}</div>
+                  <div className="text-[10px] opacity-85 mt-0.5">{GROUP_FORMAT_INFO.department_matrix.description}</div>
                 </button>
               </div>
             </div>
@@ -1533,6 +1313,13 @@ export function CoordinatorReports() {
               {inModalSearch && (
                 <span className="text-xs text-text-muted">matching "{inModalSearch}"</span>
               )}
+              <span className="text-[11px] text-text-muted">
+                {selectedCategory === 'groups'
+                  ? `Exports use the ${GROUP_FORMAT_INFO[groupReportFormat].label.toLowerCase()} layout`
+                  : selectedCategory === 'semester_calendar'
+                    ? modalLayoutMode === 'table' ? 'PDF prints as a dated table' : 'PDF prints as a timeline'
+                    : `PDF prints as: ${LIST_LAYOUT_INFO[modalLayoutMode].toLowerCase()}`}
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1542,13 +1329,14 @@ export function CoordinatorReports() {
                 onClick={handleExportCsv}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <Download className="h-3.5 w-3.5 mr-1.5 text-success" />
+                <Download className="h-3.5 w-3.5 mr-1.5 text-text-muted" />
                 CSV
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportXlsx}
+                loading={exporting === 'xlsx'}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
                 <Download className="h-3.5 w-3.5 mr-1.5 text-primary" />
@@ -1560,8 +1348,8 @@ export function CoordinatorReports() {
                 onClick={handleExportPdf}
                 disabled={getActiveRows().length === 0 || getActiveColumns().length === 0}
               >
-                <FileText className="h-3.5 w-3.5 mr-1.5 text-danger" />
-                Export PDF
+                <FileText className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                PDF
               </Button>
             </div>
           </div>
