@@ -53,10 +53,37 @@ export function CoordinatorDashboard() {
   useEffect(() => {
     if (!user?.id) return
     setDataError('')
-    // The grouped-students query is the slowest one; run it once and share it.
-    const membersPromise = supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active'])
-    Promise.all([fetchMetrics(membersPromise), fetchRecentData(membersPromise)]).then(([nextMetrics, recent]) => {
-      if (nextMetrics && recent) writeScreenCache(screenKey('coordinator-dashboard', user.id), { metrics: nextMetrics, ...recent })
+    const cacheKey = screenKey('coordinator-dashboard', user.id)
+
+    // Fallback: the separate queries, if the one-trip function is unavailable.
+    const loadSeparately = () => {
+      const membersPromise = supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active'])
+      return Promise.all([fetchMetrics(membersPromise), fetchRecentData(membersPromise)]).then(([nextMetrics, recent]) => {
+        if (nextMetrics && recent) writeScreenCache(cacheKey, { metrics: nextMetrics, ...recent })
+      })
+    }
+
+    // The whole dashboard in one request (same access rules as the separate queries).
+    supabase.rpc('coordinator_dashboard').then(({ data, error }) => {
+      if (error || !data) return loadSeparately()
+      const m = data.metrics
+      const totalStudents = Number(m.totalStudents) || 0
+      const grouped = Number(m.groupedStudents) || 0
+      const nextMetrics = {
+        activeCourseUnits: Number(m.activeCourseUnits) || 0,
+        totalCourses: Number(m.totalCourses) || 0,
+        totalStudents,
+        totalGroups: Number(m.totalGroups) || 0,
+        groupFormationRate: totalStudents > 0 ? Math.round((grouped / totalStudents) * 100) : 0,
+        unassignedStudents: totalStudents - grouped,
+        pendingJoinRequests: Number(m.pendingJoinRequests) || 0,
+      }
+      setMetrics(nextMetrics)
+      setRecentGroups(data.recentGroups || [])
+      setRecentCourseworks(data.recentCourseworks || [])
+      setUnassignedStudents(data.unassignedStudents || [])
+      setLoading(false)
+      writeScreenCache(cacheKey, { metrics: nextMetrics, recentGroups: data.recentGroups || [], recentCourseworks: data.recentCourseworks || [], unassignedStudents: data.unassignedStudents || [] })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, dataVersion])
