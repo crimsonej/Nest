@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createClient } from '@/lib/supabase/client'
 import type { User, UserRole } from '@/types'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
+import { clearScreenCache, readScreenCache, writeScreenCache } from '@/lib/screen-cache'
 
 interface AuthContextType {
   user: User | null
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // when `user` changes, so handing out a new-but-identical object made pages load twice.
   const setUser = useCallback((next: User | null) => {
     setUserState((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next))
+    if (next) writeScreenCache('profile', next)
   }, [])
 
   const loadUser = async () => {
@@ -152,11 +154,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Show the app straight away with the profile from the last visit; the middleware has
+    // already confirmed there is a valid session. The fresh profile replaces it if different.
+    const cached = readScreenCache<User>('profile')
+    if (cached?.id) {
+      setUserState(cached)
+      setLoading(false)
+    }
     void fetchUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session) => {
       if (event === 'SIGNED_OUT') {
         loadedFor.current = null
+        clearScreenCache()
         setUser(null)
         return
       }
@@ -171,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUser, setUser, supabase])
 
   const signOut = async () => {
+    clearScreenCache()
     try {
       await supabase.auth.signOut()
     } catch {

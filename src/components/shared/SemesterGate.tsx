@@ -322,15 +322,16 @@ export function SemesterGate({ role, children }: { role: Role; children: ReactNo
       .then(({ data, error }) => setNeedsVerification(!error && !data))
   }, [user, role, currentSemester, locked])
 
-  if (loading) return <>{children}</>
-
-  if (role === 'student' && locked && !staff) {
+  // Note: keep `children` at the same position in every render below. Moving it (for
+  // example returning it bare while loading) makes React remount the page, which then
+  // fetches all of its data a second time.
+  if (!loading && role === 'student' && locked && !staff) {
     return <LockScreen announcements={announcements} />
   }
 
   return (
     <>
-      {(announcements.length > 0 || (staff && !isViewingCurrent && viewingSemester) || (staff && locked && role === 'student')) && (
+      {!loading && (announcements.length > 0 || (staff && !isViewingCurrent && viewingSemester) || (staff && locked && role === 'student')) && (
         <div className="mb-5 space-y-2.5">
           {staff && !isViewingCurrent && viewingSemester && (
             <div className="flex flex-col gap-2 rounded-2xl border border-warning/35 bg-warning-light/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -354,7 +355,7 @@ export function SemesterGate({ role, children }: { role: Role; children: ReactNo
         </div>
       )}
       {children}
-      {needsVerification && <VerifyDetailsDialog onDone={() => setNeedsVerification(false)} />}
+      {!loading && needsVerification && <VerifyDetailsDialog onDone={() => setNeedsVerification(false)} />}
     </>
   )
 }

@@ -14,6 +14,7 @@ import { formatDate, formatNumber } from '@/lib/utils'
 import { DataTable } from '../ui/DataTable'
 import { motion } from 'framer-motion'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
+import { readScreenCache, screenKey, writeScreenCache } from '@/lib/screen-cache'
 
 export function CoordinatorDashboard() {
   const { user } = useAuth()
@@ -36,19 +37,40 @@ export function CoordinatorDashboard() {
   const reducedMotion = useReducedMotion()
 
   useEffect(() => {
-    setDataError('')
-    fetchMetrics()
-    fetchRecentData()
-  }, [user, dataVersion])
+    if (!user?.id) return
+    // Show the last figures straight away, then refresh them.
+    const cached = readScreenCache<{ metrics: typeof metrics; recentGroups: any[]; recentCourseworks: any[]; unassignedStudents: any[] }>(screenKey('coordinator-dashboard', user.id))
+    if (cached) {
+      setMetrics(cached.metrics)
+      setRecentGroups(cached.recentGroups)
+      setRecentCourseworks(cached.recentCourseworks)
+      setUnassignedStudents(cached.unassignedStudents)
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
-  async function fetchMetrics() {
+  useEffect(() => {
+    if (!user?.id) return
+    setDataError('')
+    // The grouped-students query is the slowest one; run it once and share it.
+    const membersPromise = supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active'])
+    Promise.all([fetchMetrics(membersPromise), fetchRecentData(membersPromise)]).then(([nextMetrics, recent]) => {
+      if (nextMetrics && recent) writeScreenCache(screenKey('coordinator-dashboard', user.id), { metrics: nextMetrics, ...recent })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, dataVersion])
+
+  type MembersQuery = PromiseLike<{ data: { user_id: string }[] | null; error: unknown }>
+
+  async function fetchMetrics(membersPromise: MembersQuery) {
     try {
       const [unitsRes, coursesRes, studentsRes, groupsRes, membersRes, requestsRes] = await Promise.all([
         supabase.from('course_units').select('id', { count: 'exact' }).eq('is_active', true),
         supabase.from('courses').select('id', { count: 'exact' }).eq('is_active', true),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'student'),
         supabase.from('groups').select('id', { count: 'exact' }).in('status', ['forming', 'active']),
-        supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active']),
+        membersPromise,
         supabase.from('group_join_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
       ])
 
@@ -64,7 +86,7 @@ export function CoordinatorDashboard() {
       const unassignedStudents = totalStudents - groupedStudents
       const pendingJoinRequests = requestsRes.count || 0
 
-      setMetrics({
+      const nextMetrics = {
         activeCourseUnits,
         totalCourses,
         totalStudents,
@@ -72,14 +94,17 @@ export function CoordinatorDashboard() {
         groupFormationRate,
         unassignedStudents,
         pendingJoinRequests,
-      })
+      }
+      setMetrics(nextMetrics)
+      return nextMetrics
     } catch (error) {
       console.error('Error fetching metrics:', error)
       setDataError('Some dashboard figures couldn’t be loaded. Check your connection and try again.')
+      return null
     }
   }
 
-  async function fetchRecentData() {
+  async function fetchRecentData(membersPromise: MembersQuery) {
     try {
       const [groupsRes, courseworksRes, unassignedRes] = await Promise.all([
         supabase
@@ -114,14 +139,14 @@ export function CoordinatorDashboard() {
       setRecentGroups(groupsRes.data || [])
       setRecentCourseworks(courseworksRes.data || [])
 
-      const groupedStudentIds = new Set(
-        (await supabase.from('group_members').select('user_id, groups!inner(status)').in('groups.status', ['forming', 'active'])).data?.map((m: { user_id: string }) => m.user_id) || []
-      )
+      const groupedStudentIds = new Set(((await membersPromise).data || []).map((m: { user_id: string }) => m.user_id))
       const unassigned = (unassignedRes.data || []).filter((s: { id: string }) => !groupedStudentIds.has(s.id))
       setUnassignedStudents(unassigned)
+      return { recentGroups: groupsRes.data || [], recentCourseworks: courseworksRes.data || [], unassignedStudents: unassigned }
     } catch (error) {
       console.error('Error fetching recent data:', error)
       setDataError('Some dashboard figures couldn’t be loaded. Check your connection and try again.')
+      return null
     } finally {
       setLoading(false)
     }

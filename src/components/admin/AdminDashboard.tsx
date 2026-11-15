@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { readScreenCache, screenKey, writeScreenCache } from '@/lib/screen-cache'
 import { BookOpen, Building2, GraduationCap, Layers3, ShieldCheck, ArrowRight, UserCog } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,9 +27,20 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (authLoading) return
-    if (user) loadOverview()
-    else setLoading(false)
-  }, [authLoading, user])
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    // Show the last overview straight away, then refresh it.
+    const cached = readScreenCache<{ rows: any[]; totals: typeof totals }>(screenKey('admin-dashboard', user.id))
+    if (cached) {
+      setRows(cached.rows)
+      setTotals(cached.totals)
+      setLoading(false)
+    }
+    loadOverview()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id])
 
   async function loadOverview() {
     setError('')
@@ -48,8 +60,10 @@ export function AdminDashboard() {
         const courseIds = new Set(courseRows.filter((course) => course.faculty_id === faculty.id).map((course) => course.id))
         return { ...faculty, courses: courseIds.size, units: unitRows.filter((unit) => courseIds.has(unit.course_id)).length, students: studentRows.filter((student) => student.faculty_id === faculty.id || student.faculty === faculty.name).length }
       })
+      const nextTotals = { faculties: summaries.length, courses: courseRows.length, units: unitRows.length, students: studentRows.length }
       setRows(summaries)
-      setTotals({ faculties: summaries.length, courses: courseRows.length, units: unitRows.length, students: studentRows.length })
+      setTotals(nextTotals)
+      if (user?.id) writeScreenCache(screenKey('admin-dashboard', user.id), { rows: summaries, totals: nextTotals })
     } catch (err) {
       console.error('Error loading admin overview:', err)
       setError('We couldn’t load the university overview. Check your connection and try again.')

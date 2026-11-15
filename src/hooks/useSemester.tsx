@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { createClient, SEMESTER_STORAGE_KEY } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import type { Semester, StudentAccess, User } from '@/types'
+import { readScreenCache, writeScreenCache } from '@/lib/screen-cache'
 
 export function isStaffUser(user: User | null | undefined) {
   if (!user) return false
@@ -68,13 +69,25 @@ export function SemesterProvider({ children }: { children: ReactNode }) {
       supabase.from('semesters').select('*').order('academic_year', { ascending: false }).order('term_number', { ascending: false }),
       user ? supabase.from('student_access').select('is_locked, locked_until, message, updated_at').maybeSingle() : Promise.resolve({ data: null }),
     ])
-    setSemesters((semesterRes.data as Semester[]) || [])
-    setAccess((accessRes.data as StudentAccess | null) || null)
+    const nextSemesters = (semesterRes.data as Semester[]) || []
+    const nextAccess = (accessRes.data as StudentAccess | null) || null
+    setSemesters((previous) => (JSON.stringify(previous) === JSON.stringify(nextSemesters) ? previous : nextSemesters))
+    setAccess((previous) => (JSON.stringify(previous) === JSON.stringify(nextAccess) ? previous : nextAccess))
+    if (!semesterRes.error) writeScreenCache('semesters', { semesters: nextSemesters, access: nextAccess })
     setLoading(false)
-  }, [user])
+  }, [user?.id])
 
   useEffect(() => {
     setStoredId(readStoredSemester())
+    const cached = readScreenCache<{ semesters: Semester[]; access: StudentAccess | null }>('semesters')
+    if (cached) {
+      setSemesters(cached.semesters)
+      setAccess(cached.access)
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
     void refresh()
   }, [refresh])
 

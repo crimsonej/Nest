@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { readScreenCache, screenKey, writeScreenCache } from '@/lib/screen-cache'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
 import { MetricCard } from '../ui/MetricCard'
@@ -346,6 +347,21 @@ export function StudentDashboard() {
   const [groupModalOpen, setGroupModalOpen] = useState(false)
 
   useEffect(() => {
+    if (!user?.id) return
+    // Show the last dashboard straight away, then refresh it.
+    const cached = readScreenCache<any>(screenKey('student-dashboard', user.id))
+    if (cached) {
+      setMetrics(cached.metrics)
+      setRecentGroups(cached.recentGroups)
+      setRecentTasks(cached.recentTasks)
+      setAllCourseUnits(cached.allCourseUnits)
+      setMyCourseUnitIds(cached.myCourseUnitIds)
+      setNearestCoursework(cached.nearestCoursework)
+      setLoading(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
     async function fetchData() {
       if (!user) return
 
@@ -426,11 +442,12 @@ export function StudentDashboard() {
         }, relevantCourseworks, null)
         reportStudentQuery('active task metric', { task_count: tasks.length, status: 'active' }, tasks.filter((task: { status: string }) => task.status !== 'completed' && task.status !== 'submitted'), null)
 
-        setMetrics({
+        const nextMetrics = {
           myGroups: groups.length,
           registeredCourseUnits: enrolledIds.length,
           activeTasks: tasks.filter((t: { status: string }) => t.status !== 'completed' && t.status !== 'submitted').length,
-        })
+        }
+        setMetrics(nextMetrics)
 
         setRecentGroups(groups.slice(0, 5))
         setRecentTasks(tasks.slice(0, 5))
@@ -439,6 +456,14 @@ export function StudentDashboard() {
 
         const activeCw = relevantCourseworks.find((coursework: any) => coursework.lock_at && new Date(coursework.lock_at) > new Date())
         setNearestCoursework(activeCw || relevantCourseworks[0] || null)
+        writeScreenCache(screenKey('student-dashboard', user.id), {
+          metrics: nextMetrics,
+          recentGroups: groups.slice(0, 5),
+          recentTasks: tasks.slice(0, 5),
+          allCourseUnits: allUnitsRes.data || [],
+          myCourseUnitIds: enrolledIds,
+          nearestCoursework: activeCw || relevantCourseworks[0] || null,
+        })
       } catch (error) {
         console.error('[student-data][temporary] Dashboard load failed', {
           errorName: error instanceof Error ? error.name : 'unknown',
@@ -450,7 +475,8 @@ export function StudentDashboard() {
     }
 
     fetchData()
-  }, [user, dataVersion])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, dataVersion])
 
   async function toggleCourseUnitEnrollment(unitId: string) {
     if (!user || pendingUnitId) return
