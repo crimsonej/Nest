@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User, UserRole } from '@/types'
 import { reportStudentQuery } from '@/lib/student-query-diagnostics'
@@ -16,13 +16,24 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUserState] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const inFlight = useRef<Promise<void> | null>(null)
+  const loadedFor = useRef<string | null>(null)
 
-  const fetchUser = async () => {
+  // Only replace the user when something actually changed. Every page reloads its data
+  // when `user` changes, so handing out a new-but-identical object made pages load twice.
+  const setUser = useCallback((next: User | null) => {
+    setUserState((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next))
+  }, [])
+
+  const loadUser = async () => {
     try {
-      let { data: { user: authUser } } = await supabase.auth.getUser()
+      // The session was already verified by the middleware, so read it locally instead of
+      // asking the auth server again. Row-level security still guards every query.
+      let { data: { session } } = await supabase.auth.getSession()
+      let authUser = session?.user ?? null
 
       if (!authUser && (window.location.pathname.startsWith('/student') || window.location.pathname.startsWith('/coordinator'))) {
         const role = window.location.pathname.startsWith('/coordinator') ? 'coordinator' : 'student'
@@ -33,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
 
         if (response.ok) {
-          const refreshed = await supabase.auth.getUser()
-          authUser = refreshed.data.user
+          const refreshed = await supabase.auth.getSession()
+          authUser = refreshed.data.session?.user ?? null
         }
       }
 
@@ -122,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null)
       }
+      loadedFor.current = authUser?.id ?? null
     } catch (error) {
       console.error('[auth][temporary] Unable to load the authenticated profile.', {
         errorName: error instanceof Error ? error.name : 'unknown',
@@ -132,17 +144,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  useEffect(() => {
-    fetchUser()
+  // Collapse overlapping calls (mount + auth events) into one request.
+  const fetchUser = useCallback(() => {
+    inFlight.current ??= loadUser().finally(() => { inFlight.current = null })
+    return inFlight.current
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        fetchUser()
+  useEffect(() => {
+    void fetchUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session) => {
+      if (event === 'SIGNED_OUT') {
+        loadedFor.current = null
+        setUser(null)
+        return
+      }
+      // SIGNED_IN also fires when the tab regains focus; a token refresh doesn't change the
+      // profile. Only reload when a different person has signed in.
+      if (event === 'SIGNED_IN' && session?.user?.id && session.user.id !== loadedFor.current) {
+        void fetchUser()
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchUser, setUser, supabase])
 
   const signOut = async () => {
     try {
