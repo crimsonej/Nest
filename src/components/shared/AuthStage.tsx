@@ -129,10 +129,10 @@ export function AuthStage({ initialMode }: AuthStageProps) {
   return (
     <div className={`w-full ${mode === 'register' ? 'auth-mode-register' : 'auth-mode-login'}`}>
       {/* Tab Row */}
-      <div className="mb-6 flex flex-col items-stretch gap-2 border-b border-border/60 pb-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:mb-8 sm:gap-2.5 sm:pb-6">
+      <div className="mb-6 flex items-center gap-2 border-b border-border/60 pb-4 sm:mb-7 sm:gap-3 sm:pb-5">
         {/* Segmented Pill Tabs */}
         <div
-          className="relative inline-flex w-full min-w-0 items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner min-[420px]:w-auto min-[420px]:shrink"
+          className="relative flex min-w-0 flex-1 items-center rounded-2xl border border-border/80 bg-surface-hover/50 p-1 shadow-inner"
           style={{ backdropFilter: 'blur(12px)' }}
         >
           {/* Shared sliding pill — always rendered, moves between tabs */}
@@ -156,16 +156,16 @@ export function AuthStage({ initialMode }: AuthStageProps) {
               key={tab}
               type="button"
               onClick={() => handleModeChange(tab)}
-              className={`relative z-10 flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 text-[10px] font-bold transition-colors duration-250 select-none min-[420px]:flex-none sm:min-w-[110px] sm:gap-2 sm:px-5 sm:text-xs ${
+              className={`relative z-10 flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 text-xs font-bold transition-colors duration-200 select-none sm:gap-2 ${
                 mode === tab
                   ? 'text-white'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
               {tab === 'login' ? (
-                <LogIn className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+                <LogIn className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               ) : (
-                <UserPlus className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+                <UserPlus className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               )}
               <span>{tab === 'login' ? 'Sign In' : 'Create Account'}</span>
             </button>
@@ -173,7 +173,7 @@ export function AuthStage({ initialMode }: AuthStageProps) {
         </div>
 
         {/* Theme Toggle */}
-        <div className="self-end min-[420px]:self-auto">
+        <div className="shrink-0">
           <ThemeToggle />
         </div>
       </div>
@@ -211,6 +211,21 @@ export function AuthStage({ initialMode }: AuthStageProps) {
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+/** Show/hide password button that sits inside the password field. */
+function PasswordToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex h-9 w-9 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      aria-label={shown ? 'Hide password' : 'Show password'}
+      aria-pressed={shown}
+    >
+      {shown ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+    </button>
   )
 }
 
@@ -463,14 +478,14 @@ function LoginFormSection({
         </motion.div>
 
         <motion.div variants={fieldVariant}>
-          <OAuthButtons />
-        </motion.div>
-
-        <motion.div variants={fieldVariant}>
-          <Button type="button" variant="outline" className="w-full" onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={loading}>
-            <Fingerprint className="h-4 w-4" />
-            Sign in with a passkey
-          </Button>
+          <OAuthButtons
+            extra={
+              <Button type="button" variant="outline" className="w-full" onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={loading}>
+                <Fingerprint className="h-4 w-4" />
+                Sign in with a passkey
+              </Button>
+            }
+          />
         </motion.div>
 
         {/* Fields */}
@@ -488,38 +503,18 @@ function LoginFormSection({
           />
         </motion.div>
 
-        <motion.div variants={fieldVariant} className="relative">
+        <motion.div variants={fieldVariant}>
           <Input
             label="Password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
+            placeholder="Your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             icon={<Lock className="h-4 w-4" />}
             autoComplete="current-password"
             required
-            className="pr-12"
+            trailing={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-1.5 top-[34px] flex h-11 w-11 items-center justify-center rounded-xl text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            aria-pressed={showPassword}
-          >
-            <motion.span
-              key={showPassword ? 'hide' : 'show'}
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.15 }}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </motion.span>
-          </button>
         </motion.div>
 
         <AnimatePresence>
@@ -1260,36 +1255,16 @@ function RegisterFormSection({
           variants={fieldVariant}
           className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4"
         >
-          <div className="relative">
-            <Input
-              label="Password *"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="At least 8 characters"
-              error={form.formState.errors.password?.message}
-              {...form.register('password')}
-              icon={<Lock className="h-4 w-4" />}
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-[38px] text-text-muted hover:text-text-primary transition-colors"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              <motion.span
-                key={showPassword ? 'hide' : 'show'}
-                initial={{ scale: 0.7, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.15 }}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </motion.span>
-            </button>
-          </div>
+          <Input
+            label="Password *"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="At least 8 characters"
+            error={form.formState.errors.password?.message}
+            {...form.register('password')}
+            icon={<Lock className="h-4 w-4" />}
+            autoComplete="new-password"
+            trailing={<PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
+          />
           <Input
             label="Confirm Password *"
             type={showPassword ? 'text' : 'password'}

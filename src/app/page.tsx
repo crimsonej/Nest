@@ -2,257 +2,257 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Button } from '@/components/ui/Button'
-import { Users, BookOpen, Shield, CheckCircle, LogIn, UserPlus, ArrowRight, Sparkles } from 'lucide-react'
-import ThemeToggle from '@/components/shared/ThemeToggle'
 import { motion } from 'framer-motion'
-import { useReducedMotion, applyMotionPreference } from '@/lib/animation'
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  GraduationCap,
+  LogIn,
+  ShieldCheck,
+  UserCog,
+  UserPlus,
+  Users,
+} from 'lucide-react'
+import ThemeToggle from '@/components/shared/ThemeToggle'
+import { useReducedMotion } from '@/lib/animation'
+
+const features = [
+  {
+    icon: Users,
+    title: 'Group formation',
+    description: 'Students find and join groups for each course unit, or coordinators place them automatically.',
+    points: ['Groups per coursework', 'Join requests and approvals', 'Leaders and live rosters'],
+  },
+  {
+    icon: BookOpen,
+    title: 'Coursework and tasks',
+    description: 'Every group gets a shared space for tasks, files and deadlines, so nothing slips.',
+    points: ['Task boards per group', 'Deadlines and lock dates', 'Shared resources'],
+  },
+  {
+    icon: BarChart3,
+    title: 'Oversight and reports',
+    description: 'Coordinators and lecturers see who is grouped, who is not, and export clean reports.',
+    points: ['Unassigned student alerts', 'Excel, CSV and PDF exports', 'Semester calendar and reports'],
+  },
+]
+
+const steps = [
+  { title: 'Create your account', description: 'Sign up with your university email and registration number.' },
+  { title: 'Pick your course units', description: 'Choose the units you are taking this semester.' },
+  { title: 'Work in your groups', description: 'Join a group, share tasks and meet every deadline together.' },
+]
+
+const roles = [
+  { icon: GraduationCap, title: 'Students', text: 'Join groups, track tasks and see every deadline in one place.' },
+  { icon: ClipboardCheck, title: 'Coordinators', text: 'Set up course units, form groups and follow up on stragglers.' },
+  { icon: UserCog, title: 'Lecturers', text: 'See your unit’s groups and students, and export rosters.' },
+  { icon: ShieldCheck, title: 'Administrators', text: 'Manage faculties, courses, semesters and the student portal.' },
+]
 
 export default function HomePage() {
   const reducedMotion = useReducedMotion()
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
+  const rise = (delay = 0) =>
+    reducedMotion
+      ? {}
+      : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay, ease: 'easeOut' as const } }
 
   return (
-    <div className="site-grid min-h-screen bg-background relative overflow-hidden transition-colors duration-300 flex flex-col justify-between">
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/75 backdrop-blur-xl">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-1 px-4 py-3.5 sm:flex-nowrap sm:gap-3 sm:px-6">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3 max-[380px]:w-full">
-            <motion.div
-              whileHover={applyMotionPreference(reducedMotion, { scale: 1.05 }, {})}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className="shrink-0"
-            >
-              <Image src="/logo.png" alt="NEST Logo" width={44} height={44} className="h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11" priority />
-            </motion.div>
-            <div>
-              <span className="text-lg font-black tracking-[0.14em] text-text-primary sm:text-xl sm:tracking-[0.2em]">NEST</span>
-              <p className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted md:block">University Workspace</p>
-            </div>
-          </div>
+    <div className="min-h-dvh bg-background text-text-primary">
+      {/* Header */}
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Image src="/logo.png" alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-xl" priority />
+            <span className="text-base font-black tracking-[0.18em]">NEST</span>
+          </Link>
 
-          <nav className="flex shrink-0 items-center justify-end gap-1 sm:gap-4 max-[380px]:ml-auto max-[380px]:w-full">
-            <Link href="#features" className="hidden text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors md:block">
-              Features
-            </Link>
-            <ThemeToggle />
-            <Link href="/auth/login">
-              <Button variant="outline" size="sm" className="min-h-11 min-w-11 px-2 text-xs font-semibold sm:min-h-10 sm:min-w-0 sm:px-3">
-                <LogIn className="mr-0 h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="sr-only sm:not-sr-only">Sign In</span>
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button size="sm" className="min-h-11 min-w-11 px-2 text-xs font-semibold sm:min-h-10 sm:min-w-0 sm:px-3.5">
-                <UserPlus className="mr-0 h-3.5 w-3.5 sm:mr-1.5" />
-                <span className="sr-only sm:not-sr-only">Sign Up</span>
-              </Button>
-            </Link>
+          <nav className="hidden items-center gap-7 text-sm font-medium text-text-secondary md:flex" aria-label="Sections">
+            <a href="#features" className="transition-colors hover:text-text-primary">Features</a>
+            <a href="#how-it-works" className="transition-colors hover:text-text-primary">How it works</a>
+            <a href="#roles" className="transition-colors hover:text-text-primary">Who it’s for</a>
           </nav>
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              href="/auth/login"
+              className="inline-flex h-10 items-center rounded-xl px-2.5 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-hover sm:px-3.5"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/auth/register"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <span className="hidden min-[400px]:inline">Get started</span>
+              <span className="min-[400px]:hidden">Join</span>
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="flex-1">
-        <section className="relative isolate flex min-h-[520px] items-end overflow-hidden bg-[#15272b] px-5 pb-12 pt-24 text-white sm:min-h-[600px] sm:px-8 sm:pb-16 lg:min-h-[660px] lg:px-14 lg:pb-20">
+      <main>
+        {/* Hero */}
+        <section className="relative isolate overflow-hidden bg-[#0f2129] text-white">
           <Image
             src="/campus-building.jpg"
-            alt="A university campus building framed by trees and a lawn"
+            alt=""
             fill
             priority
             sizes="100vw"
-            className="-z-20 object-cover object-center"
+            className="-z-20 object-cover object-[center_35%]"
           />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(13,29,34,0.92)_0%,rgba(13,29,34,0.78)_42%,rgba(13,29,34,0.20)_100%)]" />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(13,29,34,0.64)_0%,transparent_48%)]" />
-          <div className="pointer-events-none absolute right-8 top-8 hidden h-40 w-40 rounded-full border border-white/20 lg:block" />
-          <div className="pointer-events-none absolute right-16 top-16 hidden h-24 w-24 rounded-full border border-white/25 lg:block" />
-          <motion.div
-            variants={applyMotionPreference(reducedMotion,
-              { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15 } } },
-              { hidden: { opacity: 0 }, visible: { opacity: 1 } }
-            )}
-            initial="hidden"
-            animate="visible"
-            className="mx-auto w-full max-w-[1440px]"
-          >
-            <motion.div
-              variants={applyMotionPreference(reducedMotion,
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
-              )}
-              className="mb-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-white/80"
-            >
-              <span className="h-px w-8 bg-secondary" />
-              Campus collaboration
-            </motion.div>
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(9,22,27,0.94)_0%,rgba(9,22,27,0.82)_45%,rgba(9,22,27,0.35)_100%)]" />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(9,22,27,0.85)_0%,transparent_45%)]" />
 
-            <motion.h1
-              variants={applyMotionPreference(reducedMotion,
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
-              )}
-              className="max-w-3xl text-3xl font-semibold leading-[1.08] sm:text-6xl sm:leading-[1.04] lg:text-7xl"
-            >
-              A better way to do university work, together.
-            </motion.h1>
-
-            <motion.p
-              variants={applyMotionPreference(reducedMotion,
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
-              )}
-              className="mb-8 mt-5 max-w-xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8"
-            >
-              Bring course groups, assignments, and campus coordination into one shared workspace built for students and faculty.
+          <div className="mx-auto max-w-6xl px-4 pb-16 pt-20 sm:px-6 sm:pb-24 sm:pt-28 lg:pb-28 lg:pt-32">
+            <motion.p {...rise(0)} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden="true" />
+              Ndejje University · Kampala Campus
             </motion.p>
 
-            <motion.div
-              variants={applyMotionPreference(reducedMotion,
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
-              )}
-              className="mb-10 flex flex-col gap-3 sm:flex-row"
-            >
-              <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full border-0 bg-white px-8 text-[#1c3238] shadow-lg hover:bg-white/90 sm:w-auto">
-                  Enter workspace
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+            <motion.h1 {...rise(0.06)} className="mt-5 max-w-3xl text-[1.95rem] font-bold leading-[1.12] tracking-tight min-[400px]:text-[2.25rem] sm:text-5xl lg:text-6xl">
+              Group work, coursework and deadlines in one campus workspace.
+            </motion.h1>
+
+            <motion.p {...rise(0.12)} className="mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
+              NEST helps students form groups and stay on track, and gives coordinators and lecturers a clear view of every course unit.
+            </motion.p>
+
+            <motion.div {...rise(0.18)} className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/auth/login"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-semibold text-[#0f2129] shadow-lg transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f2129]"
+              >
+                <LogIn className="h-4 w-4" aria-hidden="true" />
+                Sign in to your workspace
               </Link>
-              <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full border-white/40 bg-white/10 px-8 text-white backdrop-blur-sm hover:border-white hover:bg-white/15 sm:w-auto">
-                  Create Account
-                </Button>
+              <Link
+                href="/auth/register"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+                Create an account
               </Link>
             </motion.div>
 
-            <motion.div
-              variants={applyMotionPreference(reducedMotion,
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } },
-                { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
-              )}
-              className="flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-white/80 sm:text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-secondary" />
-                Student collaboration
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-secondary" />
-                Coursework management
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-secondary" />
-                Academic oversight
-              </div>
-            </motion.div>
-          </motion.div>
+            <motion.ul {...rise(0.24)} className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/75">
+              {['Student groups', 'Coursework tracking', 'Semester reports'].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-white/60" aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </motion.ul>
+          </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="container mx-auto px-4 py-20 border-t border-border/60">
-          <motion.div
-            initial={applyMotionPreference(reducedMotion, { opacity: 0, y: 14 }, {})}
-            whileInView={applyMotionPreference(reducedMotion, { opacity: 1, y: 0 }, {})}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={applyMotionPreference(reducedMotion, { duration: 0.45, ease: 'easeOut' }, { duration: 0.45, ease: 'easeOut' })}
-            className="mb-16 text-center"
-          >
-            <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-text-primary lg:text-5xl">
-              Built for Modern University Workflows
-            </h2>
-            <p className="mx-auto max-w-2xl text-base text-text-secondary sm:text-lg">
-              Purpose-built tools designed for seamless student collaboration and real-time coordinator oversight.
-            </p>
-          </motion.div>
+        {/* Features */}
+        <section id="features" className="scroll-mt-20 border-b border-border/60">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-primary">Features</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Everything a semester of group work needs</h2>
+              <p className="mt-3 text-base leading-relaxed text-text-secondary">
+                One place for students, coordinators and lecturers, so nobody is chasing lists across chats and spreadsheets.
+              </p>
+            </div>
 
-          <motion.div
-            variants={applyMotionPreference(reducedMotion,
-              { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } },
-              { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }
-            )}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.12 }}
-            className="grid gap-8 md:grid-cols-3"
-          >
-            <FeatureCard
-              icon={Users}
-              title="Student Group Formation"
-              description="Students can create, browse, and join project groups categorized by course units with public/private visibility and join request management."
-              features={['Course-based group discovery', 'Private groups with approval', 'Real-time roster updates', 'WhatsApp integration']}
-            />
-            <FeatureCard
-              icon={BookOpen}
-              title="Coursework & Task Management"
-              description="Per-coursework group workspaces with task tracking, resource sharing, and deadline management across all assignments."
-              features={['Kanban task boards', 'File sharing per group', 'Due date tracking', 'Progress visualization']}
-            />
-            <FeatureCard
-              icon={Shield}
-              title="Coordinator Oversight"
-              description="Complete administrative control with live group monitoring, intervention tools, automated sync, and comprehensive reporting."
-              features={['Real-time group monitor', 'Auto-assign unassigned students', 'Google Sheets sync', 'Audit logs']}
-            />
-          </motion.div>
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              {features.map(({ icon: Icon, title, description, points }) => (
+                <article key={title} className="flex flex-col rounded-2xl border border-border/80 bg-surface p-6 shadow-sm transition-shadow hover:shadow-md">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-text-secondary">{description}</p>
+                  <ul className="mt-5 space-y-2 border-t border-border/60 pt-5">
+                    {points.map((point) => (
+                      <li key={point} className="flex items-center gap-2.5 text-sm text-text-secondary">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section id="how-it-works" className="scroll-mt-20 border-b border-border/60 bg-surface/50">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-primary">How it works</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Up and running in three steps</h2>
+            </div>
+            <ol className="mt-10 grid gap-5 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <li key={step.title} className="relative rounded-2xl border border-border/80 bg-surface p-6">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">{index + 1}</span>
+                  <h3 className="mt-4 text-base font-semibold">{step.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{step.description}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Roles */}
+        <section id="roles" className="scroll-mt-20">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-primary">Who it’s for</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">A workspace for everyone on campus</h2>
+            </div>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {roles.map(({ icon: Icon, title, text }) => (
+                <div key={title} className="rounded-2xl border border-border/80 bg-surface p-5">
+                  <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                  <h3 className="mt-4 text-base font-semibold">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{text}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Call to action */}
+            <div className="mt-16 flex flex-col items-start justify-between gap-6 rounded-3xl bg-primary px-6 py-10 text-white sm:px-10 md:flex-row md:items-center">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-medium text-white/80">
+                  <CalendarDays className="h-4 w-4" aria-hidden="true" /> This semester
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Ready to get your group sorted?</h2>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Link href="/auth/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-semibold text-primary transition-colors hover:bg-white/90">
+                  Create an account <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link href="/auth/login" className="inline-flex h-12 items-center justify-center rounded-xl border border-white/35 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 
-      <footer className="border-t border-border/80 bg-surface/50 py-8 backdrop-blur-sm">
-        <div className="container mx-auto space-y-2 px-4 text-center text-xs text-text-muted">
-          <p>© 2026 NEST. Created by Kibirige Joachim Elijah.</p>
-          <p>
-            GitHub:{' '}
-            <a href="https://github.com/crimsonej" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
-              crimsonej
-            </a>
-          </p>
+      <footer className="border-t border-border/70">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-text-muted sm:flex-row sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Image src="/logo.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md" />
+            <span>© {new Date().getFullYear()} NEST. Created by Kibirige Joachim Elijah.</span>
+          </div>
+          <a href="https://github.com/crimsonej" target="_blank" rel="noreferrer" className="font-medium text-text-secondary hover:text-primary">
+            GitHub · crimsonej
+          </a>
         </div>
       </footer>
     </div>
-  )
-}
-
-function FeatureCard({ icon: Icon, title, description, features }: { icon: React.ComponentType<{ className?: string }>; title: string; description: string; features: string[] }) {
-  const reducedMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      variants={applyMotionPreference(reducedMotion,
-        { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } },
-        { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } }
-      )}
-      whileHover={applyMotionPreference(reducedMotion, { y: -6, scale: 1.01 }, {})}
-      transition={applyMotionPreference(reducedMotion, { type: 'spring', stiffness: 350, damping: 25 }, {})}
-      className="flex h-full flex-col justify-between rounded-3xl border border-border/80 bg-surface/85 p-6 shadow-lg backdrop-blur-xl transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 sm:p-8"
-    >
-      <div>
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-primary to-secondary text-white shadow-md shadow-primary/30">
-          <Icon className="h-7 w-7" />
-        </div>
-        <h3 className="text-xl font-bold text-text-primary mb-3">{title}</h3>
-        <p className="text-sm text-text-secondary leading-relaxed mb-6">{description}</p>
-      </div>
-      <ul className="space-y-2.5 border-t border-border/60 pt-6">
-        {features.map((feature, i) => (
-          <li key={i} className="flex items-center gap-2.5 text-xs font-semibold text-text-secondary">
-            <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-            {feature}
-          </li>
-        ))}
-      </ul>
-    </motion.div>
   )
 }

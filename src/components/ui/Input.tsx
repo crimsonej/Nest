@@ -10,10 +10,12 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
   helperText?: string
   icon?: ReactNode
+  /** Control shown inside the right edge of the field, vertically centred (e.g. a show-password button). */
+  trailing?: ReactNode
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, id, icon, ...props }, ref) => {
+  ({ className, label, error, helperText, id, icon, trailing, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     const reducedMotion = useReducedMotion()
 
@@ -36,6 +38,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'input w-full rounded-2xl border border-border/80 bg-surface/90 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/70 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-border/100 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:opacity-50 disabled:cursor-not-allowed',
               Boolean(icon) && 'pl-10',
+              Boolean(trailing) && 'pr-12',
               error && 'border-danger focus:border-danger focus:ring-danger/20',
               className,
             )}
@@ -43,6 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
             {...props}
           />
+          {trailing && <span className="absolute inset-y-0 right-1 flex items-center">{trailing}</span>}
         </div>
         {error && (
           <motion.p

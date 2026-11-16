@@ -24,7 +24,7 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
     return null
   }
 
-  const roleTitle = user.role === 'admin' || user.status === 'admin' ? 'System Administrator' : user.status === 'selected_coordinator' ? 'Selected Coordinator (SC)' : 'Faculty Coordinator'
+  const roleTitle = user.role === 'admin' || user.status === 'admin' ? 'Administrator' : user.status === 'selected_coordinator' ? 'Selected Coordinator (SC)' : 'Faculty Coordinator'
 
   function handleSelectRole(role: 'student' | 'coordinator' | 'admin') {
     onClose()
@@ -131,7 +131,7 @@ export function RoleSwitchModal({ isOpen, onClose, user }: RoleSwitchModalProps)
             <div className="mb-2.5 sm:mb-4 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-warning-light text-warning shadow-sm">
               <Shield className="h-5 w-5 sm:h-7 sm:w-7" />
             </div>
-            <h4 className="font-bold text-text-primary text-sm sm:text-base">{roleTitle}</h4>
+            <h4 className="font-bold text-text-primary text-sm sm:text-base">Coordinator</h4>
             <p className="mt-1 text-xs text-text-secondary leading-relaxed">Manage group allocations, course units, student rosters, and AI Entry.</p>
           </motion.button>
         </div>

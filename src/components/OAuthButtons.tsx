@@ -1,7 +1,7 @@
 // src/components/OAuthButtons.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
@@ -19,7 +19,8 @@ function GoogleIcon() {
   );
 }
 
-export default function OAuthButtons() {
+/** `extra` renders more sign-in options (e.g. passkey) above the email divider. */
+export default function OAuthButtons({ extra }: { extra?: ReactNode } = {}) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +51,14 @@ export default function OAuthButtons() {
         <motion.p
           initial={applyMotionPreference(reducedMotion, { opacity: 0 }, {})}
           animate={applyMotionPreference(reducedMotion, { opacity: 1 }, {})}
-          className="text-sm text-red-500 text-center"
+          className="text-sm text-danger text-center"
         >
           {error}
         </motion.p>
       )}
 
       <Button
+        type="button"
         variant="outline"
         onClick={handleGoogle}
         disabled={loading}
@@ -67,10 +69,12 @@ export default function OAuthButtons() {
         {loading ? 'Connecting to Google…' : 'Continue with Google'}
       </Button>
 
+      {extra}
+
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border/80" aria-hidden="true" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted" aria-hidden="true">
-          or continue with email
+          or sign in with your details
         </span>
         <span className="h-px flex-1 bg-border/80" aria-hidden="true" />
       </div>
